@@ -9,8 +9,8 @@
 #include "Window.h"
 
 // センサ関連の処理
-#include "KinectV1.h"
-//#include "KinectV2.h"
+//#include "KinectV1.h"
+#include "KinectV2.h"
 //#include "Ds325.h"
 
 // 描画に用いるメッシュ
@@ -54,7 +54,7 @@ int main()
   }
 
   // 深度センサを有効にする
-  KinectV1 sensor;
+  KinectV2 sensor;
   if (sensor.getActivated() == 0)
   {
     // センサが使えなかった
@@ -126,15 +126,19 @@ int main()
     simple.selectLight(light);
     simple.selectMaterial(material);
 
-    // テクスチャ
+    // 頂点座標テクスチャ
 #if GENERATE_POSITION
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
 #endif
+
+    // 法線ベクトルテクスチャ
     glUniform1i(1, 1);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, normalTexture[0]);
+
+    // 背景テクスチャ
     glUniform1i(2, 2);
     glActiveTexture(GL_TEXTURE2);
     sensor.getColor();
