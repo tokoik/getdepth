@@ -67,10 +67,10 @@ KinectV1::KinectV1()
       position = new GLfloat[depthCount][3];
 
       // デプスマップのテクスチャ座標に対する頂点座標の拡大率
-      scale[0] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 320.0;
-      scale[1] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 240.0;
+      scale[0] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 320.0f;
+      scale[1] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 240.0f;
       scale[2] = -4.0f;
-      scale[3] = -65.535 / float(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT);
+      scale[3] = -65.535f / float(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT);
     }
   }
 }

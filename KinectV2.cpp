@@ -76,7 +76,7 @@ KinectV2::KinectV2()
     scale[0] = 1.546592f;
     scale[1] = 1.222434f;
     scale[2] = -10.0f;
-    scale[3] = -65.535;
+    scale[3] = -65.535f;
   }
 }
 

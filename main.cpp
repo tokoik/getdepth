@@ -9,9 +9,9 @@
 #include "Window.h"
 
 // センサ関連の処理
-//#include "KinectV1.h"
+#include "KinectV1.h"
 //#include "KinectV2.h"
-#include "Ds325.h"
+//#include "Ds325.h"
 
 // 描画に用いるメッシュ
 #include "Mesh.h"
@@ -54,7 +54,13 @@ int main()
   }
 
   // 深度センサを有効にする
+#if USE_KINECT_V1
+  KinectV1 sensor;
+#elif USE_LINECT_V2
+  KinectV2 sensor;
+#elif USE_DS325
   Ds325 sensor;
+#endif
   if (sensor.getActivated() == 0)
   {
     // センサが使えなかった
