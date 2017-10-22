@@ -27,33 +27,41 @@ KinectV2::KinectV2()
     hr = sensor->Open();
     assert(hr == S_OK);
 
-    // 座標のマッピング
-    hr = sensor->get_CoordinateMapper(&coordinateMapper);
-    assert(hr == S_OK);
-
     // デプスデータの読み込み設定
+    IDepthFrameSource *depthSource;
     hr = sensor->get_DepthFrameSource(&depthSource);
     assert(hr == S_OK);
     hr = depthSource->OpenReader(&depthReader);
     assert(hr == S_OK);
+    IFrameDescription *depthDescription;
     hr = depthSource->get_FrameDescription(&depthDescription);
     assert(hr == S_OK);
+    depthSource->Release();
 
     // デプスデータのサイズを得る
     depthDescription->get_Width(&depthWidth);
     depthDescription->get_Height(&depthHeight);
+    depthDescription->Release();
 
     // カラーデータの読み込み設定
+    IColorFrameSource *colorSource;
     hr = sensor->get_ColorFrameSource(&colorSource);
     assert(hr == S_OK);
     hr = colorSource->OpenReader(&colorReader);
     assert(hr == S_OK);
+    IFrameDescription *colorDescription;
     hr = colorSource->get_FrameDescription(&colorDescription);
     assert(hr == S_OK);
+    colorSource->Release();
 
     // カラーデータのサイズを得る
     colorDescription->get_Width(&colorWidth);
     colorDescription->get_Height(&colorHeight);
+    colorDescription->Release();
+
+    // 座標のマッピング
+    hr = sensor->get_CoordinateMapper(&coordinateMapper);
+    assert(hr == S_OK);
 
     // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
     makeTexture();
@@ -63,6 +71,12 @@ KinectV2::KinectV2()
 
     // カラーデータを変換する用いる一時メモリを確保する
     color = new GLubyte[colorCount * 4];
+
+    // デプスマップのテクスチャ座標に対する頂点座標の拡大率
+    scale[0] = 1.546592f;
+    scale[1] = 1.222434f;
+    scale[2] = -10.0f;
+    scale[3] = -65.535;
   }
 }
 
@@ -76,12 +90,8 @@ KinectV2::~KinectV2()
     delete[] color;
 
     // センサを開放する
-    colorDescription->Release();
     colorReader->Release();
-    colorSource->Release();
-    depthDescription->Release();
     depthReader->Release();
-    depthSource->Release();
     coordinateMapper->Release();
     sensor->Close();
     sensor->Release();
@@ -106,7 +116,7 @@ GLuint KinectV2::getDepth() const
     UINT16 *depthBuffer;
     depthFrame->AccessUnderlyingBuffer(&depthSize, &depthBuffer);
 
-    // カラーのテクスチャ座標を求めて転送する
+    // カラーのテクスチャ座標を求めてバッファオブジェクトに転送する
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
     ColorSpacePoint *const texcoord(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
     coordinateMapper->MapDepthFrameToColorSpace(depthCount, depthBuffer, depthCount, texcoord);
@@ -137,6 +147,12 @@ GLuint KinectV2::getPoint() const
     UINT16 *depthBuffer;
     depthFrame->AccessUnderlyingBuffer(&depthSize, &depthBuffer);
 
+    // カラーのテクスチャ座標を求めてバッファオブジェクトに転送する
+    glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+    ColorSpacePoint *const texcoord(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
+    coordinateMapper->MapDepthFrameToColorSpace(depthCount, depthBuffer, depthCount, texcoord);
+    glUnmapBuffer(GL_ARRAY_BUFFER);
+
     // カメラ座標への変換テーブルを得る
     UINT32 entry;
     PointF *table;
@@ -164,17 +180,14 @@ GLuint KinectV2::getPoint() const
       position[i][2] = z;
     }
 
-    // カラーのテクスチャ座標を求めてバッファオブジェクトに転送する
-    glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-    ColorSpacePoint *const texcoord(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
-    coordinateMapper->MapDepthFrameToColorSpace(depthCount, depthBuffer, depthCount, texcoord);
-    glUnmapBuffer(GL_ARRAY_BUFFER);
+    // カメラ座標を転送する
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, position);
+
+    // テーブルに使ったメモリを開放する
+    CoTaskMemFree(table);
 
     // デプスフレームを開放する
     depthFrame->Release();
-
-    // カメラ座標を転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, position);
   }
 
   return pointTexture;
@@ -203,7 +216,6 @@ GLuint KinectV2::getColor() const
 
   return colorTexture;
 }
-
 
 // センサの識別子
 IKinectSensor *KinectV2::sensor(NULL);

@@ -23,24 +23,20 @@ class KinectV2 : public DepthCamera
   // センサの識別子
   static IKinectSensor *sensor;
 
-  // 座標のマッピング
-  ICoordinateMapper *coordinateMapper;
-
   // デプスデータ
-  IDepthFrameSource *depthSource;
   IDepthFrameReader *depthReader;
-  IFrameDescription *depthDescription;
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
   GLfloat (*position)[3];
 
   // カラーデータ
-  IColorFrameSource *colorSource;
   IColorFrameReader *colorReader;
-  IFrameDescription *colorDescription;
 
   // カラーデータの変換に用いる一時メモリ
   GLubyte *color;
+
+  // 座標のマッピング
+  ICoordinateMapper *coordinateMapper;
 
   // コピーコンストラクタ (コピー禁止)
   KinectV2(const KinectV2 &w);

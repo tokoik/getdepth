@@ -10,8 +10,8 @@
 
 // センサ関連の処理
 //#include "KinectV1.h"
-#include "KinectV2.h"
-//#include "Ds325.h"
+//#include "KinectV2.h"
+#include "Ds325.h"
 
 // 描画に用いるメッシュ
 #include "Mesh.h"
@@ -20,7 +20,7 @@
 #include "Calculate.h"
 
 // 頂点位置の生成をシェーダ (position.frag) で行うなら 1
-#define GENERATE_POSITION 0
+#define GENERATE_POSITION 1
 
 //
 // メインプログラム
@@ -54,7 +54,7 @@ int main()
   }
 
   // 深度センサを有効にする
-  KinectV2 sensor;
+  Ds325 sensor;
   if (sensor.getActivated() == 0)
   {
     // センサが使えなかった
@@ -80,6 +80,9 @@ int main()
 
   // デプスデータから頂点位置を計算するシェーダ
   const Calculate position(width, height, "position.frag");
+  const GLuint scaleLoc(glGetUniformLocation(position.get(), "scale"));
+  const GLuint depthMaxLoc(glGetUniformLocation(position.get(), "depthMax"));
+  const GLuint depthScaleLoc(glGetUniformLocation(position.get(), "depthScale"));
 
   // 頂点位置から法線ベクトルを計算するシェーダ
   const Calculate normal(width, height, "normal.frag");
@@ -97,6 +100,7 @@ int main()
 #if GENERATE_POSITION
     // 頂点位置の計算
     position.use();
+    glUniform4fv(scaleLoc, 1, sensor.getScale());
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
     sensor.getDepth();
@@ -126,8 +130,8 @@ int main()
     simple.selectLight(light);
     simple.selectMaterial(material);
 
-    // 頂点座標テクスチャ
 #if GENERATE_POSITION
+    // 頂点座標テクスチャ
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, positionTexture[0]);

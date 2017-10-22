@@ -9,7 +9,7 @@
 using namespace gg;
 
 // カメラに対するオブジェクトの中心位置
-const GLfloat objectCenter[] = { 0.0f, 0.0f, -5.0f };
+const GLfloat objectCenter[] = { 0.0f, 0.0f, -0.0f };
 
 // カメラパラメータ
 const GLfloat cameraFovy(1.0f);                         // 画角
