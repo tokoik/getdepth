@@ -1,64 +1,64 @@
-#pragma once
+ï»¿#pragma once
 
 //
-// [“xƒZƒ“ƒTŠÖ˜A‚Ìˆ—
+// æ·±åº¦ã‚»ãƒ³ã‚µé–¢é€£ã®å‡¦ç†
 //
 
-// Kinect V2 ‚ğg‚¤
+// Kinect V2 ã‚’ä½¿ã†
 #if !defined(USE_KINECT_V2)
 #  define USE_KINECT_V2 1
 #endif
 
 #if USE_KINECT_V2
 
-// Kinect ŠÖ˜A
+// Kinect é–¢é€£
 #include <Windows.h>
 #include <Kinect.h>
 
-// [“xƒZƒ“ƒTŠÖ˜A‚ÌŠî’êƒNƒ‰ƒX
+// æ·±åº¦ã‚»ãƒ³ã‚µé–¢é€£ã®åŸºåº•ã‚¯ãƒ©ã‚¹
 #include "DepthCamera.h"
 
 class KinectV2 : public DepthCamera
 {
-  // ƒZƒ“ƒT‚Ì¯•Êq
+  // ã‚»ãƒ³ã‚µã®è­˜åˆ¥å­
   static IKinectSensor *sensor;
 
-  // ƒfƒvƒXƒf[ƒ^
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿
   IDepthFrameReader *depthReader;
 
-  // ƒfƒvƒXƒf[ƒ^‚©‚çƒJƒƒ‰À•W‚ğ‹‚ß‚é‚Æ‚«‚É—p‚¢‚éˆêƒƒ‚ƒŠ
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’æ±‚ã‚ã‚‹ã¨ãã«ç”¨ã„ã‚‹ä¸€æ™‚ãƒ¡ãƒ¢ãƒª
   GLfloat (*position)[3];
 
-  // ƒJƒ‰[ƒf[ƒ^
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿
   IColorFrameReader *colorReader;
 
-  // ƒJƒ‰[ƒf[ƒ^‚Ì•ÏŠ·‚É—p‚¢‚éˆêƒƒ‚ƒŠ
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®å¤‰æ›ã«ç”¨ã„ã‚‹ä¸€æ™‚ãƒ¡ãƒ¢ãƒª
   GLubyte *color;
 
-  // À•W‚Ìƒ}ƒbƒsƒ“ƒO
+  // åº§æ¨™ã®ãƒãƒƒãƒ”ãƒ³ã‚°
   ICoordinateMapper *coordinateMapper;
 
-  // ƒRƒs[ƒRƒ“ƒXƒgƒ‰ƒNƒ^ (ƒRƒs[‹Ö~)
+  // ã‚³ãƒ”ãƒ¼ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ (ã‚³ãƒ”ãƒ¼ç¦æ­¢)
   KinectV2(const KinectV2 &w);
 
-  // ‘ã“ü (‘ã“ü‹Ö~)
+  // ä»£å…¥ (ä»£å…¥ç¦æ­¢)
   KinectV2 &operator=(const KinectV2 &w);
 
 public:
 
-  // ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+  // ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   KinectV2();
 
-  // ƒfƒXƒgƒ‰ƒNƒ^
+  // ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   virtual ~KinectV2();
 
-  // ƒfƒvƒXƒf[ƒ^‚ğæ“¾‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
   GLuint getDepth() const;
 
-  // ƒJƒƒ‰À•W‚ğæ“¾‚·‚é
+  // ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’å–å¾—ã™ã‚‹
   GLuint getPoint() const;
 
-  // ƒJƒ‰[ƒf[ƒ^‚ğæ“¾‚·‚é
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
   GLuint getColor() const;
 };
 

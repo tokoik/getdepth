@@ -1,33 +1,33 @@
-#include "Ds325.h"
+﻿#include "Ds325.h"
 
 //
-// DepthSense �֘A�̏���
+// DepthSense 関連の処理
 //
 
 #if USE_DEPTH_SENSE
 
-// �W�����C�u����
+// 標準ライブラリ
 #include <iostream>
 
-// DepthSense �֘A
+// DepthSense 関連
 #pragma comment (lib, "DepthSense.lib")
 
-// �v���s�\�_�̃f�t�H���g����
+// 計測不能点のデフォルト距離
 #if CAPTURE_CAMERA == DS325
 const GLfloat maxDepth(3.0f);
 #else
 const GLfloat maxDepth(6.0f);
 #endif
 
-// �R���X�g���N�^
+// コンストラクタ
 Ds325::Ds325(
-  FrameFormat depth_format,           // �f�v�X�J�����̉𑜓x
-  unsigned int depth_fps,             // �f�v�X�J�����̃t���[�����[�g
-  DepthNode::CameraMode depth_mode,   // �f�v�X�J�����̃��[�h
-  FrameFormat color_format,           // �J���[�J�����̉𑜓x
-  unsigned int color_fps,             // �J���[�J�����̃t���[�����[�g
-  CompressionType color_compression,  // �J���[�J�����̈��k����
-  PowerLineFrequency frequency        // �d�����g��
+  FrameFormat depth_format,           // デプスカメラの解像度
+  unsigned int depth_fps,             // デプスカメラのフレームレート
+  DepthNode::CameraMode depth_mode,   // デプスカメラのモード
+  FrameFormat color_format,           // カラーカメラの解像度
+  unsigned int color_fps,             // カラーカメラのフレームレート
+  CompressionType color_compression,  // カラーカメラの圧縮方式
+  PowerLineFrequency frequency        // 電源周波数
   )
   : depth_format(depth_format)
   , depth_fps(depth_fps)
@@ -37,187 +37,187 @@ Ds325::Ds325(
   , color_compression(color_compression)
   , power_line_frequency(frequency)
 {
-  // �C�x���g���[�v���J�n���Đڑ�����Ă��� DepthSense �̐������߂�
+  // イベントループを開始して接続されている DepthSense の数を求める
   startLoop();
 
-  // DepthSense ���ڑ�����Ă���g�p�䐔���ڑ��䐔�ɒB���Ă��Ȃ����
+  // DepthSense が接続されており使用台数が接続台数に達していなければ
   if (getActivated() < connected)
   {
-    // ���g�p�� DepthSense �����o��
+    // 未使用の DepthSense を取り出す
     Device device(context.getDevices()[getActivated()]);
 
-    // DepthSense �̃m�[�h�̃C�x���g�n���h����o�^����
+    // DepthSense のノードのイベントハンドラを登録する
     device.nodeAddedEvent().connect(&onNodeConnected, this);
     device.nodeRemovedEvent().connect(&onNodeDisconnected, this);
 
-    // DepthSense �̃t���[���t�H�[�}�b�g����𑜓x�����߂�
+    // DepthSense のフレームフォーマットから解像度を求める
     FrameFormat_toResolution(depth_format, &depthWidth, &depthHeight);
     FrameFormat_toResolution(color_format, &colorWidth, &colorHeight);
 
-    // depthCount �� colorCount ���v�Z���ăe�N�X�`���ƃo�b�t�@�I�u�W�F�N�g���쐬����
+    // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
     makeTexture();
 
-    // �f�[�^�]���p�̃��������m�ۂ���
+    // データ転送用のメモリを確保する
     depthBuffer = new GLshort[depthCount];
     point = new GLfloat[depthCount * 3];
     uvmap = new GLfloat[depthCount * 2];
     colorBuffer = new GLubyte[colorCount * 3];
 
-    // �f�v�X�}�b�v�̃e�N�X�`�����W�ɑ΂��钸�_���W�̊g�嗦
+    // デプスマップのテクスチャ座標に対する頂点座標の拡大率
     scale[0] = -0.753554f * 2.0f;
     scale[1] = -0.554309f * 2.0f;
     scale[2] = -5.0f;
     scale[3] = -32.767f;
 
-    // DepthSense �̊e�m�[�h������������
+    // DepthSense の各ノードを初期化する
     for (Node &node : device.getNodes()) configureNode(node);
   }
 }
 
-// �f�X�g���N�^
+// デストラクタ
 Ds325::~Ds325()
 {
-  // DepthSense ���L���ɂȂ��Ă�����
+  // DepthSense が有効になっていたら
   if (getActivated() > 0)
   {
-    // �m�[�h�̓o�^����
+    // ノードの登録解除
     unregisterNode(colorNode);
     unregisterNode(depthNode);
 
-    // �f�[�^�]���p�̃������̊J��
+    // データ転送用のメモリの開放
     delete[] depthBuffer;
     delete[] point;
     delete[] uvmap;
     delete[] colorBuffer;
   }
 
-  // �Ō�� DepthSense ���폜����Ƃ��̓C�x���g���[�v���~����
+  // 最後の DepthSense を削除するときはイベントループを停止する
   if (getActivated() <= 1 && worker.joinable())
   {
-    // �C�x���g���[�v���~����
+    // イベントループを停止する
     context.quit();
 
-    // �C�x���g���[�v�̃X���b�h���I������̂�҂�
+    // イベントループのスレッドが終了するのを待つ
     worker.join();
 
-    // �X�g���[�~���O���~����
+    // ストリーミングを停止する
     context.stopNodes();
   }
 }
 
-// �C�x���g���[�v����~���Ă�����C�x���g���[�v���J�n����
+// イベントループが停止していたらイベントループを開始する
 void Ds325::startLoop()
 {
-  // �X���b�h�������Ă��Ȃ�������
+  // スレッドが走っていなかったら
   if (!worker.joinable())
   {
-    // DepthSense �̃T�[�o�ɐڑ�����
+    // DepthSense のサーバに接続する
     context = Context::create();
 
-    // DepthSense �̎��t���^���O�����̏�����o�^����
+    // DepthSense の取り付け／取り外し時の処理を登録する
     context.deviceAddedEvent().connect(&onDeviceConnected);
     context.deviceRemovedEvent().connect(&onDeviceDisconnected);
 
-    // ���ݐڑ�����Ă��� DepthSense �̐��𐔂���
+    // 現在接続されている DepthSense の数を数える
     connected = context.getDevices().size();
 
-    // �X�g���[�~���O���J�n����
+    // ストリーミングを開始する
     context.startNodes();
 
-    // �C�x���g���[�v���J�n����
+    // イベントループを開始する
     worker = std::thread([&]() { context.run(); });
   }
 }
 
-// DepthSense �̃m�[�h�̓o�^
+// DepthSense のノードの登録
 void Ds325::configureNode(Node &node)
 {
   if (node.is<DepthNode>() && !depthNode.isSet())
   {
-    // �f�v�X�f�[�^�̎擾�O�Ȃ̂Ńe�N�X�`����o�b�t�@�I�u�W�F�N�g�ւ̓]���͍s��Ȃ�
+    // デプスデータの取得前なのでテクスチャやバッファオブジェクトへの転送は行わない
     depth = nullptr;
 
-    // �f�v�X�m�[�h
+    // デプスノード
     depthNode = node.as<DepthNode>();
 
-    // �f�v�X�m�[�h�̃C�x���g�������̏����̓o�^
+    // デプスノードのイベント発生時の処理の登録
     depthNode.newSampleReceivedEvent().connect(&onNewDepthSample, this);
 
-    // �f�v�X�m�[�h�̏����ݒ�
+    // デプスノードの初期設定
     configureDepthNode(depthNode);
 
-    // �f�v�X�m�[�h�̓o�^
+    // デプスノードの登録
     context.registerNode(depthNode);
   }
   else if (node.is<ColorNode>() && !colorNode.isSet())
   {
-    // �J���[�f�[�^�̎擾�O�Ȃ̂Ńe�N�X�`���ւ̓]���͍s��Ȃ�
+    // カラーデータの取得前なのでテクスチャへの転送は行わない
     color = nullptr;
 
-    // �J���[�m�[�h
+    // カラーノード
     colorNode = node.as<ColorNode>();
 
-    // �J���[�m�[�h�̃C�x���g�������̏����̓o�^
+    // カラーノードのイベント発生時の処理の登録
     colorNode.newSampleReceivedEvent().connect(&onNewColorSample, this);
 
-    // �J���[�m�[�h�̏����ݒ�
+    // カラーノードの初期設定
     configureColorNode(colorNode);
 
-    // �J���[�m�[�h�̓o�^
+    // カラーノードの登録
     context.registerNode(colorNode);
   }
 }
 
-// �m�[�h�̍폜
+// ノードの削除
 void Ds325::unregisterNode(Node node)
 {
   if (node.is<DepthNode>() && depthNode.isSet())
   {
-    // �f�v�X�f�[�^�̎擾�I��
+    // デプスデータの取得終了
     depthNode.newSampleReceivedEvent().disconnect(&onNewDepthSample, this);
     context.unregisterNode(depthNode);
     depthNode.unset();
 
-    // �f�v�X�f�[�^�̎擾���I�������̂Ńe�N�X�`����o�b�t�@�I�u�W�F�N�g�ւ̓]���͍s��Ȃ�
+    // デプスデータの取得を終了したのでテクスチャやバッファオブジェクトへの転送は行わない
     depth = nullptr;
   }
   else if (node.is<ColorNode>() && colorNode.isSet())
   {
-    // �J���[�f�[�^�̎擾�I��
+    // カラーデータの取得終了
     colorNode.newSampleReceivedEvent().disconnect(&onNewColorSample, this);
     context.unregisterNode(colorNode);
     colorNode.unset();
 
-    // �J���[�f�[�^�̎擾���I�������̂łȂ̂Ńe�N�X�`���ւ̓]���͍s��Ȃ�
+    // カラーデータの取得を終了したのでなのでテクスチャへの転送は行わない
     color = nullptr;
   }
 }
 
-// DepthSense �����t����ꂽ���̏���
+// DepthSense が取り付けられた時の処理
 void Ds325::onDeviceConnected(Context context, Context::DeviceAddedData data)
 {
-  MessageBox(NULL, TEXT("DepthSense �����t�����܂����B"), TEXT("�����ł���"), MB_OK);
+  MessageBox(NULL, TEXT("DepthSense が取り付けられました。"), TEXT("そうですか"), MB_OK);
 
-  // �C�x���g���[�v���J�n���Đڑ�����Ă��� DepthSense �̐����X�V����
+  // イベントループを開始して接続されている DepthSense の数を更新する
   startLoop();
 }
 
-// DepthSense �����O���ꂽ�Ƃ��̏���
+// DepthSense が取り外されたときの処理
 void Ds325::onDeviceDisconnected(Context context, Context::DeviceRemovedData data)
 {
-  MessageBox(NULL, TEXT("DepthSense �����O����܂����B"), TEXT("�����ł���"), MB_OK);
+  MessageBox(NULL, TEXT("DepthSense が取り外されました。"), TEXT("そうですか"), MB_OK);
 
-  // �X���b�h�������Ă���ΐڑ�����Ă��� DepthSense �̐����X�V����
+  // スレッドが走っていれば接続されている DepthSense の数を更新する
   if (worker.joinable()) connected = context.getDevices().size();
 }
 
-// �m�[�h���ڑ����ꂽ���̏���
+// ノードが接続された時の処理
 void Ds325::onNodeConnected(Device device, Device::NodeAddedData data, Ds325 *sensor)
 {
   sensor->configureNode(data.node);
 }
 
-// �m�[�h�̐ڑ����������ꂽ���̏���
+// ノードの接続が解除された時の処理
 void Ds325::onNodeDisconnected(Device device, Device::NodeRemovedData data, Ds325 *sensor)
 {
   if (data.node.is<DepthNode>() && (data.node.as<DepthNode>() == sensor->depthNode))
@@ -226,22 +226,22 @@ void Ds325::onNodeDisconnected(Device device, Device::NodeRemovedData data, Ds32
     sensor->colorNode.unset();
 }
 
-// DepthSense �̃f�v�X�m�[�h�̏�����
+// DepthSense のデプスノードの初期化
 void Ds325::configureDepthNode(DepthNode &dnode)
 {
-  // �f�v�X�m�[�h�̏����ݒ�
+  // デプスノードの初期設定
   DepthNode::Configuration config(dnode.getConfiguration());
   config.frameFormat = depth_format;
   config.framerate = depth_fps;
   config.mode = depth_mode;
   config.saturation = true;
 
-  // ���_�f�[�^�擾�̗L����
+  // 頂点データ取得の有効化
   dnode.setEnableDepthMap(true);
   dnode.setEnableVerticesFloatingPoint(true);
   dnode.setEnableUvMap(true);
 
-  // �ݒ���s
+  // 設定実行
   try
   {
     context.requestControl(dnode, 0);
@@ -277,10 +277,10 @@ void Ds325::configureDepthNode(DepthNode &dnode)
   }
 }
 
-// DepthSense �̃f�v�X�m�[�h�̃C�x���g�������̏���
+// DepthSense のデプスノードのイベント発生時の処理
 void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData data, Ds325 *sensor)
 {
-  // �f�v�X�J�����̓����p�����[�^
+  // デプスカメラの内部パラメータ
   const int &dw(data.stereoCameraParameters.depthIntrinsics.width);
   const int &dh(data.stereoCameraParameters.depthIntrinsics.height);
   const float &dcx(data.stereoCameraParameters.depthIntrinsics.cx);
@@ -291,7 +291,7 @@ void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData da
   const float &dk2(data.stereoCameraParameters.depthIntrinsics.k2);
   const float &dk3(data.stereoCameraParameters.depthIntrinsics.k3);
 
-  // �J���[�J�����̓����p�����[�^
+  // カラーカメラの内部パラメータ
   const int &cw(data.stereoCameraParameters.colorIntrinsics.width);
   const int &ch(data.stereoCameraParameters.colorIntrinsics.height);
   const float &ccx(data.stereoCameraParameters.colorIntrinsics.cx);
@@ -302,54 +302,54 @@ void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData da
   const float &ck2(data.stereoCameraParameters.colorIntrinsics.k2);
   const float &ck3(data.stereoCameraParameters.colorIntrinsics.k3);
 
-  // �f�v�X�J������
+  // デプスカメラの
   const GLfloat fovx(dfx * maxDepth / dcx);
   const GLfloat fovy(dfy * maxDepth / dcy);
 
-  // �f�[�^�]��
+  // データ転送
   sensor->depthMutex.lock();
   for (int i = 0; i < sensor->depthCount; ++i)
   {
-    // �f�v�X�}�b�v�̉�f�ʒu
+    // デプスマップの画素位置
     const int u(i % dw);
     const int t(i / dw);
     const int v(dh - t - 1);
 
-    // �]����̃}�b�v�͏㉺�𔽓]����
+    // 転送先のマップは上下を反転する
     const int j(v * dw + u);
 
-    // �f�v�X�l��]������
+    // デプス値を転送する
     sensor->depthBuffer[j] = data.depthMap[i];
 
-    // ��f���v���s�\�Ȃ�
+    // 画素が計測不能なら
     if (sensor->depthBuffer[j] > 32000)
     {
-      // ��f�ʒu����f�v�X�}�b�v�̃X�N���[�����W�����߂�
+      // 画素位置からデプスマップのスクリーン座標を求める
       const GLfloat dx((static_cast<GLfloat>(u) - dcx + 0.5f) / dfx);
       const GLfloat dy((static_cast<GLfloat>(v) - dcy + 0.5f) / dfy);
 
-      // �f�v�X�J�����̘c�ݕ␳�W��
+      // デプスカメラの歪み補正係数
       const GLfloat dr(dx * dx + dy * dy);
       const GLfloat dq(1.0f + dr * (dk1 + dr * (dk2 + dr * dk3)));
 
-      // �c�݂�␳�����|�C���g�̃X�N���[�����W�l
+      // 歪みを補正したポイントのスクリーン座標値
       const GLfloat x(dx / dq);
       const GLfloat y(dy / dq);
 
-      // �v���s�\�_���ŉ��_�ɂ��ăJ�������W�����߂�
+      // 計測不能点を最遠点にしてカメラ座標を求める
       sensor->point[j * 3 + 0] = x * maxDepth;
       sensor->point[j * 3 + 1] = y * maxDepth;
       sensor->point[j * 3 + 2] = -maxDepth;
 
-      // �J���[�J�����̘c�ݕ␳�W��
+      // カラーカメラの歪み補正係数
       const GLfloat cr(x * x + y * y);
       const GLfloat cq(1.0f + cr * (ck1 + cr * (ck2 + cr * ck3)));
 
-      // �|�C���g�̃J�������W
+      // ポイントのカメラ座標
       const GLfloat cx((x + 0.0508f) / cq);
       const GLfloat cy(y / cq);
 
-      // �c�݂�␳�����|�C���g�̃e�N�X�`�����W�l
+      // 歪みを補正したポイントのテクスチャ座標値
       sensor->uvmap[j * 2 + 0] = ccx + cx * cfx;
       sensor->uvmap[j * 2 + 1] = ccy - cy * cfy;
     }
@@ -366,17 +366,17 @@ void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData da
   sensor->depthMutex.unlock();
 }
 
-// DepthSense �̃J���[�m�[�h�̏�����
+// DepthSense のカラーノードの初期化
 void Ds325::configureColorNode(ColorNode &cnode)
 {
-  // �J���[�m�[�h�̏����ݒ�
+  // カラーノードの初期設定
   ColorNode::Configuration config(cnode.getConfiguration());
   config.frameFormat = color_format;
   config.compression = color_compression;
   config.powerLineFrequency = power_line_frequency;
   config.framerate = color_fps;
 
-  // �F�f�[�^�̎擾�̗L����
+  // 色データの取得の有効化
   cnode.setEnableColorMap(true);
 
   try
@@ -414,10 +414,10 @@ void Ds325::configureColorNode(ColorNode &cnode)
   }
 }
 
-// DepthSense �̃J���[�m�[�h�̃C�x���g�������̏���
+// DepthSense のカラーノードのイベント発生時の処理
 void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData data, Ds325 *sensor)
 {
-  // �J���[�f�[�^��]������
+  // カラーデータを転送する
   sensor->colorMutex.lock();
   if (sensor->color_compression == COMPRESSION_TYPE_MJPEG)
   {
@@ -427,15 +427,15 @@ void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData da
   {
     // ITU-R BT.601 / ITU-R BT.709 (1250/50/2:1)
     //
-    //   R = Y + 1.402 �~ Cr
-    //   G = Y - 0.344136 �~ Cb - 0.714136 �~ Cr
-    //   B = Y + 1.772 �~ Cb
+    //   R = Y + 1.402 × Cr
+    //   G = Y - 0.344136 × Cb - 0.714136 × Cr
+    //   B = Y + 1.772 × Cb
 
     // ITU - R BT.709 (1125 / 60 / 2:1)
     //
-    //   R = Y + 1.5748 �~ Cr
-    //   G = Y - 0.187324 �~ Cb - 0.468124 �~ Cr
-    //   B = Y + 1.8556 �~ Cb
+    //   R = Y + 1.5748 × Cr
+    //   G = Y - 0.187324 × Cb - 0.468124 × Cr
+    //   B = Y + 1.8556 × Cb
 
     for (int i = 0; i < sensor->colorCount; ++i)
     {
@@ -455,31 +455,31 @@ void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData da
   sensor->colorMutex.unlock();
 }
 
-// �f�v�X�f�[�^���擾����
+// デプスデータを取得する
 GLuint Ds325::getDepth()
 {
-  // �f�v�X�f�[�^�̃e�N�X�`�����w�肷��
+  // デプスデータのテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, depthTexture);
 
-  // �f�v�X�f�[�^���X�V����Ă����
+  // デプスデータが更新されていれば
   if (depth)
   {
-    // DepthSense ���f�v�X�f�[�^�̎擾���łȂ����
+    // DepthSense がデプスデータの取得中でなければ
     if (depthMutex.try_lock())
     {
-      // �e�N�X�`�����W�̃o�b�t�@�I�u�W�F�N�g���w�肷��
+      // テクスチャ座標のバッファオブジェクトを指定する
       glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
-      // �e�N�X�`�����W���o�b�t�@�I�u�W�F�N�g�ɓ]������
+      // テクスチャ座標をバッファオブジェクトに転送する
       glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
 
-      // �f�v�X�f�[�^���e�N�X�`���ɓ]������
+      // デプスデータをテクスチャに転送する
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_SHORT, depth);
 
-      // ��x�����Ă��܂��΍X�V�����܂ő���K�v���Ȃ��̂Ńf�[�^�͕s�v
+      // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
       depth = nullptr;
 
-      // �f�v�X�f�[�^�̃��b�N���J������
+      // デプスデータのロックを開放する
       depthMutex.unlock();
     }
   }
@@ -487,31 +487,31 @@ GLuint Ds325::getDepth()
   return depthTexture;
 }
 
-// �J�������W���擾����
+// カメラ座標を取得する
 GLuint Ds325::getPoint()
 {
-  // �J�������W�̃e�N�X�`�����w�肷��
+  // カメラ座標のテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, pointTexture);
 
-  // �f�v�X�f�[�^���X�V����Ă����
+  // デプスデータが更新されていれば
   if (depth)
   {
-    // DepthSense ���f�v�X�f�[�^�̎擾���łȂ����
+    // DepthSense がデプスデータの取得中でなければ
     if (depthMutex.try_lock())
     {
-      // �e�N�X�`�����W�̃o�b�t�@�I�u�W�F�N�g���w�肷��
+      // テクスチャ座標のバッファオブジェクトを指定する
       glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
-      // �e�N�X�`�����W���o�b�t�@�I�u�W�F�N�g�ɓ]������
+      // テクスチャ座標をバッファオブジェクトに転送する
       glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
 
-      // �J�������W���e�N�X�`���ɓ]������
+      // カメラ座標をテクスチャに転送する
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
 
-      // ��x�����Ă��܂��΍X�V�����܂ő���K�v���Ȃ��̂Ńf�[�^�͕s�v
+      // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
       depth = nullptr;
 
-      // �f�v�X�f�[�^�̃��b�N���J������
+      // デプスデータのロックを開放する
       depthMutex.unlock();
     }
   }
@@ -519,25 +519,25 @@ GLuint Ds325::getPoint()
   return pointTexture;
 }
 
-// �J���[�f�[�^���擾����
+// カラーデータを取得する
 GLuint Ds325::getColor()
 {
-  // �J���[�f�[�^�̃e�N�X�`�����w�肷��
+  // カラーデータのテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, colorTexture);
 
-  // �J���[�f�[�^���X�V����Ă����
+  // カラーデータが更新されていれば
   if (color)
   {
-    // DepthSense ���J���[�f�[�^�̎擾���łȂ����
+    // DepthSense がカラーデータの取得中でなければ
     if (colorMutex.try_lock())
     {
-      // �J���[�f�[�^���e�N�X�`���ɓ]������
+      // カラーデータをテクスチャに転送する
       glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGR, GL_UNSIGNED_BYTE, color);
 
-      // ��x�����Ă��܂��΍X�V�����܂ő���K�v���Ȃ��̂Ńf�[�^�͕s�v
+      // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
       color = nullptr;
 
-      // �J���[�f�[�^�̃��b�N���J������
+      // カラーデータのロックを開放する
       colorMutex.unlock();
     }
   }
@@ -545,10 +545,10 @@ GLuint Ds325::getColor()
   return colorTexture;
 }
 
-// DepthSense �̃R���e�L�X�g
+// DepthSense のコンテキスト
 Context Ds325::context;
 
-// �f�[�^�擾�p�̃X���b�h
+// データ取得用のスレッド
 std::thread Ds325::worker;
 
 #endif

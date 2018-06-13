@@ -1,23 +1,23 @@
-#include "Calculate.h"
+ï»¿#include "Calculate.h"
 
 //
-// ‰æ‘œˆ—
+// ç”»åƒå‡¦ç†
 //
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 Calculate::Calculate(int width, int height, const char *source, int uniforms, int targets)
   : width(width)
   , height(height)
   , program(ggLoadShader("rectangle.vert", source))
   , uniforms(uniforms)
 {
-  // ŒvZŒ‹‰Ê‚ğŠi”[‚·‚éƒtƒŒ[ƒ€ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğì¬‚·‚é
+  // è¨ˆç®—çµæœã‚’æ ¼ç´ã™ã‚‹ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ä½œæˆã™ã‚‹
   glGenFramebuffers(1, &fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
   for (int i = 0; i < targets; ++i)
   {
-    // ƒtƒŒ[ƒ€ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚Ìƒ^[ƒQƒbƒg‚Ég‚¤ƒeƒNƒXƒ`ƒƒ‚ğì¬‚·‚é
+    // ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã«ä½¿ã†ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’ä½œæˆã™ã‚‹
     GLuint tex;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
@@ -27,61 +27,61 @@ Calculate::Calculate(int width, int height, const char *source, int uniforms, in
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    // ƒtƒŒ[ƒ€ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ÉƒeƒNƒXƒ`ƒƒ‚ğ’Ç‰Á‚·‚é
+    // ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’è¿½åŠ ã™ã‚‹
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, tex, 0);
 
-    // ƒŒƒ“ƒ_ƒŠƒ“ƒOƒ^[ƒQƒbƒg‚ğİ’è‚·‚é
+    // ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã‚’è¨­å®šã™ã‚‹
     texture.push_back(tex);
     bufs.push_back(GL_COLOR_ATTACHMENT0 + i);
   }
 
-  // ƒtƒŒ[ƒ€ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚Ö‚Ì•`‰æ‚Ég‚¤‹éŒ`‚ğì¬‚·‚é
+  // ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¸ã®æç”»ã«ä½¿ã†çŸ©å½¢ã‚’ä½œæˆã™ã‚‹
   if (count++ == 0) rectangle = new Rect;
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 Calculate::~Calculate()
 {
-  // ƒVƒF[ƒ_ƒvƒƒOƒ‰ƒ€‚ğíœ‚·‚é
+  // ã‚·ã‚§ãƒ¼ãƒ€ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’å‰Šé™¤ã™ã‚‹
   glDeleteShader(program);
 
-  // ƒtƒŒ[ƒ€ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğíœ‚·‚é
+  // ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å‰Šé™¤ã™ã‚‹
   glDeleteFramebuffers(1, &fbo);
 
-  // ƒtƒŒ[ƒ€ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚Ö‚Ì•`‰æ‚Ég‚¤‹éŒ`‚ğíœ‚·‚é
+  // ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã¸ã®æç”»ã«ä½¿ã†çŸ©å½¢ã‚’å‰Šé™¤ã™ã‚‹
   if (--count == 0) delete rectangle;
 }
 
-// ŒvZ‚ğÀs‚·‚é
+// è¨ˆç®—ã‚’å®Ÿè¡Œã™ã‚‹
 const std::vector<GLuint> &Calculate::calculate() const
 {
-  // ƒtƒŒ[ƒ€ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ÉƒŒƒ“ƒ_ƒŠƒ“ƒO
+  // ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
   glDrawBuffers(GLsizei(bufs.size()), bufs.data());
 
-  // ‰B–ÊÁ‹‚ğ–³Œø‚É‚·‚é
+  // éš é¢æ¶ˆå»ã‚’ç„¡åŠ¹ã«ã™ã‚‹
   glDisable(GL_DEPTH_TEST);
   glDepthMask(GL_FALSE);
 
-  // ƒrƒ…[ƒ|[ƒg‚ğƒtƒŒ[ƒ€ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ÌƒTƒCƒY‚Éİ’è‚·‚é
+  // ãƒ“ãƒ¥ãƒ¼ãƒãƒ¼ãƒˆã‚’ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ã‚µã‚¤ã‚ºã«è¨­å®šã™ã‚‹
   glViewport(0, 0, width, height);
 
-  // ƒNƒŠƒbƒsƒ“ƒO‹óŠÔ‚¢‚Á‚Ï‚¢‚Ì‹éŒ`‚ğƒŒƒ“ƒ_ƒŠƒ“ƒO‚·‚é
+  // ã‚¯ãƒªãƒƒãƒ”ãƒ³ã‚°ç©ºé–“ã„ã£ã±ã„ã®çŸ©å½¢ã‚’ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã™ã‚‹
   rectangle->draw();
 
-  // Œ³‚ÌƒŒƒ“ƒ_ƒŠƒ“ƒOæ‚É–ß‚·
+  // å…ƒã®ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°å…ˆã«æˆ»ã™
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glDrawBuffer(GL_BACK);
 
-  // ‰B–ÊÁ‹‚ğ—LŒø‚É‚·‚é
+  // éš é¢æ¶ˆå»ã‚’æœ‰åŠ¹ã«ã™ã‚‹
   glEnable(GL_DEPTH_TEST);
   glDepthMask(GL_TRUE);
 
   return texture;
 }
 
-// ŒvZ‚Ég‚¤‹éŒ`
+// è¨ˆç®—ã«ä½¿ã†çŸ©å½¢
 const Rect *Calculate::rectangle;
 
-// ƒŠƒtƒ@ƒŒƒ“ƒXƒJƒEƒ“ƒg
+// ãƒªãƒ•ã‚¡ãƒ¬ãƒ³ã‚¹ã‚«ã‚¦ãƒ³ãƒˆ
 unsigned int Calculate::count(0);

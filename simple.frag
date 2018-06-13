@@ -2,20 +2,20 @@
 #extension GL_ARB_explicit_attrib_location : enable
 #extension GL_ARB_explicit_uniform_location : enable
 
-// ƒeƒNƒXƒ`ƒƒ
-layout (location = 2) uniform sampler2D color;        // ƒJƒ‰[‚ÌƒeƒNƒXƒ`ƒƒ
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£
+layout (location = 2) uniform sampler2D color;        // ã‚«ãƒ©ãƒ¼ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£
 
-// ƒ‰ƒXƒ^ƒ‰ƒCƒU‚©‚çó‚¯æ‚é’¸“_‘®«‚Ì•âŠÔ’l
-in vec4 idiff;                                        // ŠgU”½ËŒõ‹­“x
-in vec4 ispec;                                        // ‹¾–Ê”½ËŒõ‹­“x
-in vec2 texcoord;                                     // ƒeƒNƒXƒ`ƒƒÀ•W
+// ãƒ©ã‚¹ã‚¿ãƒ©ã‚¤ã‚¶ã‹ã‚‰å—ã‘å–ã‚‹é ‚ç‚¹å±æ€§ã®è£œé–“å€¤
+in vec4 idiff;                                        // æ‹¡æ•£åå°„å…‰å¼·åº¦
+in vec4 ispec;                                        // é¡é¢åå°„å…‰å¼·åº¦
+in vec2 texcoord;                                     // ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
 
-// ƒtƒŒ[ƒ€ƒoƒbƒtƒ@‚Éo—Í‚·‚éƒf[ƒ^
-layout (location = 0) out vec4 fc;                    // ƒtƒ‰ƒOƒƒ“ƒg‚ÌF
+// ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã«å‡ºåŠ›ã™ã‚‹ãƒ‡ãƒ¼ã‚¿
+layout (location = 0) out vec4 fc;                    // ãƒ•ãƒ©ã‚°ãƒ¡ãƒ³ãƒˆã®è‰²
 
 void main(void)
 {
-  // ƒeƒNƒXƒ`ƒƒƒ}ƒbƒsƒ“ƒO‚ğs‚Á‚Ä‰A‰e‚ğ‹‚ß‚é
+  // ãƒ†ã‚¯ã‚¹ãƒãƒ£ãƒãƒƒãƒ”ãƒ³ã‚°ã‚’è¡Œã£ã¦é™°å½±ã‚’æ±‚ã‚ã‚‹
   //fc = idiff + ispec;
   fc = texture(color, texcoord);
   //fc = texture(color, texcoord) * idiff + ispec;

@@ -1,162 +1,38 @@
+ï»¿//
+// ãƒ¡ã‚¤ãƒ³ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
 //
-// Kinect (v2) ‚ÌƒfƒvƒXƒ}ƒbƒvæ“¾
-//
 
-// •W€ƒ‰ƒCƒuƒ‰ƒŠ
-#include <Windows.h>
+// ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒœãƒƒã‚¯ã‚¹ã®è¡¨ç¤ºã®æº–å‚™
+#if defined(_WIN32)
+#  include <Windows.h>
+#  include <atlstr.h>  
+#endif
 
-// ƒEƒBƒ“ƒhƒEŠÖ˜A‚Ìˆ—
-#include "Window.h"
-
-// ƒZƒ“ƒTŠÖ˜A‚Ìˆ—
-#include "KinectV1.h"
-//#include "KinectV2.h"
-//#include "Ds325.h"
-
-// •`‰æ‚É—p‚¢‚éƒƒbƒVƒ…
-#include "Mesh.h"
-
-// ŒvZ‚É—p‚¢‚éƒVƒF[ƒ_
-#include "Calculate.h"
-
-// ’¸“_ˆÊ’u‚Ì¶¬‚ğƒVƒF[ƒ_ (position.frag) ‚Ås‚¤‚È‚ç 1
-#define GENERATE_POSITION 1
+// ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³æœ¬ä½“
+#include "GgApplication.h"
 
 //
-// ƒƒCƒ“ƒvƒƒOƒ‰ƒ€
+// ãƒ¡ã‚¤ãƒ³ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
 //
-int main()
+int main() try
 {
-  // GLFW ‚ğ‰Šú‰»‚·‚é
-  if (glfwInit() == GL_FALSE)
-  {
-    // GLFW ‚Ì‰Šú‰»‚É¸”s‚µ‚½
-    MessageBox(NULL, TEXT("GLFW ‚Ì‰Šú‰»‚É¸”s‚µ‚Ü‚µ‚½B"), TEXT("‚·‚Ü‚ñ‚Ì‚¤"), MB_OK);
-    return EXIT_FAILURE;
-  }
+  // ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³æœ¬ä½“
+  GgApplication app;
 
-  // ƒvƒƒOƒ‰ƒ€I—¹‚É‚Í GLFW ‚ğI—¹‚·‚é
-  atexit(glfwTerminate);
-
-  // OpenGL Version 3.2 Core Profile ‚ğ‘I‘ğ‚·‚é
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
-  glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-  // ƒEƒBƒ“ƒhƒE‚ğŠJ‚­
-  Window window(640, 480, "Depth Map Viewer");
-  if (!window.get())
-  {
-    // ƒEƒBƒ“ƒhƒE‚ªì¬‚Å‚«‚È‚©‚Á‚½
-    MessageBox(NULL, TEXT("GLFW ‚ÌƒEƒBƒ“ƒhƒE‚ªŠJ‚¯‚Ü‚¹‚ñ‚Å‚µ‚½B"), TEXT("‚·‚Ü‚ñ‚Ì‚¤"), MB_OK);
-    return EXIT_FAILURE;
-  }
-
-  // [“xƒZƒ“ƒT‚ğ—LŒø‚É‚·‚é
-#if USE_KINECT_V1
-  KinectV1 sensor;
-#elif USE_LINECT_V2
-  KinectV2 sensor;
-#elif USE_DS325
-  Ds325 sensor;
-#endif
-  if (sensor.getActivated() == 0)
-  {
-    // ƒZƒ“ƒT‚ªg‚¦‚È‚©‚Á‚½
-    MessageBox(NULL, TEXT("[“xƒZƒ“ƒT‚ğ—LŒø‚É‚Å‚«‚Ü‚¹‚ñ‚Å‚µ‚½B"), TEXT("‚·‚Ü‚ñ‚Ì‚¤"), MB_OK);
-    return EXIT_FAILURE;
-  }
-
-  // [“xƒZƒ“ƒT‚Ì‰ğ‘œ“x
-  int width, height;
-  sensor.getDepthResolution(&width, &height);
-
-  // •`‰æ‚Ég‚¤ƒƒbƒVƒ…
-  const Mesh mesh(width, height, sensor.getCoordBuffer());
-
-  // •`‰æ—p‚ÌƒVƒF[ƒ_
-  const GgSimpleShader simple("simple.vert", "simple.frag");
-
-  // ŒõŒ¹ƒf[ƒ^
-  const GgSimpleLightBuffer light(lightData);
-
-  // Ş¿ƒf[ƒ^
-  const GgSimpleMaterialBuffer material(materialData);
-
-  // ƒfƒvƒXƒf[ƒ^‚©‚ç’¸“_ˆÊ’u‚ğŒvZ‚·‚éƒVƒF[ƒ_
-  const Calculate position(width, height, "position.frag");
-  const GLuint scaleLoc(glGetUniformLocation(position.get(), "scale"));
-  const GLuint depthMaxLoc(glGetUniformLocation(position.get(), "depthMax"));
-  const GLuint depthScaleLoc(glGetUniformLocation(position.get(), "depthScale"));
-
-  // ’¸“_ˆÊ’u‚©‚ç–@üƒxƒNƒgƒ‹‚ğŒvZ‚·‚éƒVƒF[ƒ_
-  const Calculate normal(width, height, "normal.frag");
-
-  // ”wŒiF‚ğİ’è‚·‚é
-  glClearColor(background[0], background[1], background[2], background[3]);
-
-  // ‰B–ÊÁ‹ˆ—‚ğ—LŒø‚É‚·‚é
-  glEnable(GL_DEPTH_TEST);
-  glEnable(GL_CULL_FACE);
-
-  // ƒEƒBƒ“ƒhƒE‚ªŠJ‚¢‚Ä‚¢‚éŠÔ‚­‚è•Ô‚µ•`‰æ‚·‚é
-  while (!window.shouldClose())
-  {
-#if GENERATE_POSITION
-    // ’¸“_ˆÊ’u‚ÌŒvZ
-    position.use();
-    glUniform4fv(scaleLoc, 1, sensor.getScale());
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-    sensor.getDepth();
-    const std::vector<GLuint> &positionTexture(position.calculate());
-
-    // –@üƒxƒNƒgƒ‹‚ÌŒvZ
-    normal.use();
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
-    const std::vector<GLuint> &normalTexture(normal.calculate());
+  // ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã‚’å®Ÿè¡Œã™ã‚‹
+  app.run();
+}
+catch (const std::exception &e)
+{
+  // ã‚¨ãƒ©ãƒ¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¡¨ç¤ºã™ã‚‹
+#if defined(_WIN32)
+  const CStringW message(e.what());
+  MessageBox(NULL, LPCWSTR(message), TEXT("ã‚²ãƒ¼ãƒ ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯ã‚¹ç‰¹è«–"), MB_OK | MB_ICONERROR);
 #else
-    // –@üƒxƒNƒgƒ‹‚ÌŒvZ
-    normal.use();
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-    sensor.getPoint();
-    const std::vector<GLuint> &normalTexture(normal.calculate());
+  std::cerr << e.what() << "\n\n[Type enter key] ";
+  std::cin.get();
 #endif
 
-    // ‰æ–ÊÁ‹
-    window.clear();
-
-    // •`‰æ—p‚ÌƒVƒF[ƒ_ƒvƒƒOƒ‰ƒ€‚Ìg—pŠJn
-    simple.use();
-    simple.loadMatrix(window.getMp(), window.getMw());
-    simple.selectLight(light);
-    simple.selectMaterial(material);
-
-#if GENERATE_POSITION
-    // ’¸“_À•WƒeƒNƒXƒ`ƒƒ
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
-#endif
-
-    // –@üƒxƒNƒgƒ‹ƒeƒNƒXƒ`ƒƒ
-    glUniform1i(1, 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normalTexture[0]);
-
-    // ”wŒiƒeƒNƒXƒ`ƒƒ
-    glUniform1i(2, 2);
-    glActiveTexture(GL_TEXTURE2);
-    sensor.getColor();
-
-    // }Œ`•`‰æ
-    mesh.draw();
-
-    // ƒoƒbƒtƒ@‚ğ“ü‚ê‘Ö‚¦‚é
-    window.swapBuffers();
-  }
+  // ãƒ–ãƒ­ã‚°ãƒ©ãƒ ã‚’çµ‚äº†ã™ã‚‹
+  return EXIT_FAILURE;
 }

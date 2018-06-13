@@ -1,43 +1,43 @@
-#pragma once
+ï»¿#pragma once
 
 //
-// ƒƒbƒVƒ…
+// ãƒ¡ãƒƒã‚·ãƒ¥
 //
 
-// }Œ`•`‰æ
+// å›³å½¢æç”»
 #include "Shape.h"
 
 class Mesh : public Shape
 {
-  // ƒƒbƒVƒ…‚Ì•
+  // ãƒ¡ãƒƒã‚·ãƒ¥ã®å¹…
   const GLsizei slices;
 
-  // ƒƒbƒVƒ…‚Ì‚‚³
+  // ãƒ¡ãƒƒã‚·ãƒ¥ã®é«˜ã•
   const GLsizei stacks;
 
-  // ƒf[ƒ^‚Æ‚µ‚Ä•ÛŽ‚·‚é’¸“_”
+  // ãƒ‡ãƒ¼ã‚¿ã¨ã—ã¦ä¿æŒã™ã‚‹é ‚ç‚¹æ•°
   const GLsizei vertices;
 
-  // ŽÀÛ‚É•`‰æ‚·‚é’¸“_”
+  // å®Ÿéš›ã«æç”»ã™ã‚‹é ‚ç‚¹æ•°
   const GLsizei indexes;
 
-  // ƒfƒvƒXƒf[ƒ^‚ÌƒTƒ“ƒvƒŠƒ“ƒO‚ÉŽg‚¤ƒeƒNƒXƒ`ƒƒÀ•W‚ðŠi”[‚·‚éƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ã«ä½¿ã†ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’æ ¼ç´ã™ã‚‹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
   GLuint depthCoord;
 
-  // ’¸“_‚ÌƒCƒ“ƒfƒbƒNƒX‚ðŠi”[‚·‚éƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg
+  // é ‚ç‚¹ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’æ ¼ç´ã™ã‚‹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
   GLuint indexBuffer;
 
-  // ƒeƒNƒXƒ`ƒƒÀ•W‚ð¶¬‚µ‚ÄƒoƒCƒ“ƒh‚³‚ê‚Ä‚¢‚éƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚É“]‘—‚·‚é
+  // ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’ç”Ÿæˆã—ã¦ãƒã‚¤ãƒ³ãƒ‰ã•ã‚Œã¦ã„ã‚‹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«è»¢é€ã™ã‚‹
   void genCoord();
 
 public:
 
-  // ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+  // ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   Mesh(int stacks, int slices, GLuint coordBuffer = 0);
 
-  // ƒfƒXƒgƒ‰ƒNƒ^
+  // ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   virtual ~Mesh();
 
-  // •`‰æ
+  // æç”»
   virtual void draw() const;
 };

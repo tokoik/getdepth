@@ -2,21 +2,21 @@
 #extension GL_ARB_explicit_attrib_location : enable
 #extension GL_ARB_explicit_uniform_location : enable
 
-// ƒeƒNƒXƒ`ƒƒ
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£
 layout (location = 0) uniform sampler2D position;
 
-// ƒeƒNƒXƒ`ƒƒÀ•W
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
 in vec2 texcoord;
 
-// ƒtƒŒ[ƒ€ƒoƒbƒtƒ@‚Éo—Í‚·‚éƒf[ƒ^
+// ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã«å‡ºåŠ›ã™ã‚‹ãƒ‡ãƒ¼ã‚¿
 layout (location = 0) out vec3 normal;
 
 void main(void)
 {
-  // ‹ß–T‚ÌŒù”z‚ğ‹‚ß‚é
+  // è¿‘å‚ã®å‹¾é…ã‚’æ±‚ã‚ã‚‹
   vec3 vx = vec3(textureOffset(position, texcoord, ivec2(1, 0)) - textureOffset(position, texcoord, ivec2(-1, 0)));
   vec3 vy = vec3(textureOffset(position, texcoord, ivec2(0, 1)) - textureOffset(position, texcoord, ivec2(0, -1)));
 
-  // Œù”z‚©‚ç‚©‚ç–@üƒxƒNƒgƒ‹‚ğ‹‚ß‚é
+  // å‹¾é…ã‹ã‚‰ã‹ã‚‰æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã‚’æ±‚ã‚ã‚‹
   normal = normalize(cross(vx, vy));
 }

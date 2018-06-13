@@ -1,10 +1,10 @@
-#include "Mesh.h"
+ï»¿#include "Mesh.h"
 
 //
-// ƒƒbƒVƒ…
+// ãƒ¡ãƒƒã‚·ãƒ¥
 //
 
-// ƒeƒNƒXƒ`ƒƒÀ•W‚Ì¶¬‚µ‚Äƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚É“]‘—‚·‚é
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã®ç”Ÿæˆã—ã¦ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«è»¢é€ã™ã‚‹
 void Mesh::genCoord()
 {
   GLfloat (*const coord)[2](static_cast<GLfloat(*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
@@ -16,45 +16,45 @@ void Mesh::genCoord()
   glUnmapBuffer(GL_ARRAY_BUFFER);
 }
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 Mesh::Mesh(int slices, int stacks, GLuint coordBuffer)
   : slices(slices)
   , stacks(stacks)
   , vertices(slices * stacks)
   , indexes((slices - 1) * (stacks - 1) * 3 * 2)
 {
-  // ƒfƒvƒXƒf[ƒ^‚ÌƒTƒ“ƒvƒŠƒ“ƒO—p‚Ìƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ð€”õ‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®ã‚µãƒ³ãƒ—ãƒªãƒ³ã‚°ç”¨ã®ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æº–å‚™ã™ã‚‹
   glGenBuffers(1, &depthCoord);
   glBindBuffer(GL_ARRAY_BUFFER, depthCoord);
   glBufferData(GL_ARRAY_BUFFER, vertices * 2 * sizeof (GLfloat), NULL, GL_STATIC_DRAW);
 
-  // ƒfƒvƒXƒf[ƒ^‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚ð‹‚ß‚Äƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚É“]‘—‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’æ±‚ã‚ã¦ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«è»¢é€ã™ã‚‹
   genCoord();
 
-  // ƒCƒ“ƒfƒbƒNƒX‚ª 0 ‚Ì varying •Ï”‚ÉŠ„‚è“–‚Ä‚é
+  // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãŒ 0 ã® varying å¤‰æ•°ã«å‰²ã‚Šå½“ã¦ã‚‹
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(0);
 
-  // ƒJƒ‰[ƒf[ƒ^‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚ðŠi”[‚·‚éƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ªŽw’è‚³‚ê‚Ä‚¢‚½‚ç
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’æ ¼ç´ã™ã‚‹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆãŒæŒ‡å®šã•ã‚Œã¦ã„ãŸã‚‰
   if (coordBuffer > 0)
   {
-    // ƒJƒ‰[ƒf[ƒ^‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚ðŠi”[‚·‚éƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ðŒ‹‡‚·‚é
+    // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’æ ¼ç´ã™ã‚‹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’çµåˆã™ã‚‹
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
-    // ƒJƒ‰[ƒf[ƒ^‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚Ì‰Šú’l‚ð‹‚ß‚Äƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚É“]‘—‚·‚é
+    // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã®åˆæœŸå€¤ã‚’æ±‚ã‚ã¦ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«è»¢é€ã™ã‚‹
     genCoord();
 
-    // ƒCƒ“ƒfƒbƒNƒX‚ª 1 ‚Ì varying •Ï”‚ÉŠ„‚è“–‚Ä‚é
+    // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ãŒ 1 ã® varying å¤‰æ•°ã«å‰²ã‚Šå½“ã¦ã‚‹
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, NULL);
     glEnableVertexAttribArray(1);
   }
 
-  // ƒCƒ“ƒfƒbƒNƒX—p‚Ìƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg
+  // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ç”¨ã®ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
   glGenBuffers(1, &indexBuffer);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexes * sizeof (GLuint), NULL, GL_STATIC_DRAW);
 
-  // ƒCƒ“ƒfƒbƒNƒX‚ð‹‚ß‚Äƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚É“]‘—‚·‚é
+  // ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’æ±‚ã‚ã¦ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«è»¢é€ã™ã‚‹
   GLuint *index(static_cast<GLuint *>(glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY)));
   for (int j = 0; j < stacks - 1; ++j)
   {
@@ -70,18 +70,18 @@ Mesh::Mesh(int slices, int stacks, GLuint coordBuffer)
   glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 Mesh::~Mesh()
 {
-  // ’¸“_ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ðíœ‚·‚é
+  // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å‰Šé™¤ã™ã‚‹
   glDeleteBuffers(1, &depthCoord);
   glDeleteBuffers(1, &indexBuffer);
 }
 
-// •`‰æ
+// æç”»
 void Mesh::draw() const
 {
-  // ’¸“_”z—ñƒIƒuƒWƒFƒNƒg‚ðŽw’è‚µ‚Ä•`‰æ‚·‚é
+  // é ‚ç‚¹é…åˆ—ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æŒ‡å®šã—ã¦æç”»ã™ã‚‹
   Shape::draw();
   glDrawElements(GL_TRIANGLES, indexes, GL_UNSIGNED_INT, NULL);
 }

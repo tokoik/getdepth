@@ -2,19 +2,19 @@
 #extension GL_ARB_explicit_attrib_location : enable
 #extension GL_ARB_explicit_uniform_location : enable
 
-// ƒeƒNƒXƒ`ƒƒ
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£
 layout (location = 0) uniform sampler2D depth;
 
-// ƒXƒP[ƒ‹
+// ã‚¹ã‚±ãƒ¼ãƒ«
 uniform vec4 scale;
 
-// ƒeƒNƒXƒ`ƒƒÀ•W
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
 in vec2 texcoord;
 
-// ƒtƒŒ[ƒ€ƒoƒbƒtƒ@‚Éo—Í‚·‚éƒf[ƒ^
+// ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã«å‡ºåŠ›ã™ã‚‹ãƒ‡ãƒ¼ã‚¿
 layout (location = 0) out vec3 position;
 
-// ƒfƒvƒX’l‚ğƒXƒP[ƒŠƒ“ƒO‚·‚é
+// ãƒ‡ãƒ—ã‚¹å€¤ã‚’ã‚¹ã‚±ãƒ¼ãƒªãƒ³ã‚°ã™ã‚‹
 float s(in float z)
 {
   return z == 0.0 ? scale.z : z * scale.w;
@@ -22,9 +22,9 @@ float s(in float z)
 
 void main(void)
 {
-  // ƒfƒvƒX’l‚ğæ‚èo‚·
+  // ãƒ‡ãƒ—ã‚¹å€¤ã‚’å–ã‚Šå‡ºã™
   float z = s(texture(depth, texcoord).r);
 
-  // ƒfƒvƒX’l‚©‚çƒJƒƒ‰À•W’l‚ğ‹‚ß‚é
+  // ãƒ‡ãƒ—ã‚¹å€¤ã‹ã‚‰ã‚«ãƒ¡ãƒ©åº§æ¨™å€¤ã‚’æ±‚ã‚ã‚‹
   position = vec3((texcoord - 0.5) * scale.xy * z, z);
 }

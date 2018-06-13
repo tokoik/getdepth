@@ -1,27 +1,27 @@
-#include "Shape.h"
+ï»¿#include "Shape.h"
 
 //
-// }Œ`•`‰æ
+// å›³å½¢æç”»
 //
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 Shape::Shape()
 {
-  // ’¸“_”z—ñƒIƒuƒWƒFƒNƒg‚ğì¬‚·‚é
+  // é ‚ç‚¹é…åˆ—ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ä½œæˆã™ã‚‹
   glGenVertexArrays(1, &vao);
   glBindVertexArray(vao);
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 Shape::~Shape()
 {
-  // ’¸“_”z—ñƒIƒuƒWƒFƒNƒg‚ğíœ‚·‚é
+  // é ‚ç‚¹é…åˆ—ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å‰Šé™¤ã™ã‚‹
   glDeleteVertexArrays(1, &vao);
 }
 
-// •`‰æ
+// æç”»
 void Shape::draw() const
 {
-  // ’¸“_”z—ñƒIƒuƒWƒFƒNƒg‚ğw’è‚·‚é
+  // é ‚ç‚¹é…åˆ—ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æŒ‡å®šã™ã‚‹
   glBindVertexArray(vao);
 }

@@ -1,41 +1,41 @@
-#pragma once
+ï»¿#pragma once
 
 //
-// Šeíİ’è
+// å„ç¨®è¨­å®š
 //
 
-// •â•ƒvƒƒOƒ‰ƒ€
+// è£œåŠ©ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
 #include "gg.h"
 using namespace gg;
 
-// ƒJƒƒ‰‚É‘Î‚·‚éƒIƒuƒWƒFƒNƒg‚Ì’†SˆÊ’u
-const GLfloat objectCenter[] = { 0.0f, 0.0f, -0.0f };
+// ã‚«ãƒ¡ãƒ©ã«å¯¾ã™ã‚‹ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ä¸­å¿ƒä½ç½®
+const GLfloat objectCenter[] = { 0.0f, 0.0f, 0.0f };
 
-// ƒJƒƒ‰ƒpƒ‰ƒ[ƒ^
-const GLfloat cameraFovy(1.0f);                         // ‰æŠp
-const GLfloat cameraNear(0.1f);                         // ‘O•û–Ê‚Ü‚Å‚Ì‹——£
-const GLfloat cameraFar(50.0f);                         // Œã•û–Ê‚Ü‚Å‚Ì‹——£
+// ã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+const GLfloat cameraFovy(1.0f);                         // ç”»è§’
+const GLfloat cameraNear(0.1f);                         // å‰æ–¹é¢ã¾ã§ã®è·é›¢
+const GLfloat cameraFar(50.0f);                         // å¾Œæ–¹é¢ã¾ã§ã®è·é›¢
 
-// ƒ}ƒEƒX‘€ì‚ÌŒW”
+// ãƒã‚¦ã‚¹æ“ä½œã®ä¿‚æ•°
 const double motionFactor[] = { 1.0, 1.0, 0.05 };
 
-// ŒõŒ¹
-const GgSimpleLight lightData =
+// å…‰æº
+const GgSimpleShader::Light lightData =
 {
-  { 0.2f, 0.2f, 0.2f, 1.0f },                           // ŠÂ‹«Œõ¬•ª
-  { 1.0f, 1.0f, 1.0f, 1.0f },                           // ŠgU”½ËŒõ¬•ª
-  { 1.0f, 1.0f, 1.0f, 1.0f },                           // ‹¾–ÊŒõ¬•ª
-  { 0.0f, 0.0f, 5.0f, 1.0f }                            // ˆÊ’u
+  { 0.2f, 0.2f, 0.2f, 1.0f },                           // ç’°å¢ƒå…‰æˆåˆ†
+  { 1.0f, 1.0f, 1.0f, 1.0f },                           // æ‹¡æ•£åå°„å…‰æˆåˆ†
+  { 1.0f, 1.0f, 1.0f, 1.0f },                           // é¡é¢å…‰æˆåˆ†
+  { 0.0f, 0.0f, 5.0f, 1.0f }                            // ä½ç½®
 };
 
-// Ş¿
-const GgSimpleMaterial materialData =
+// æè³ª
+const GgSimpleShader::Material materialData =
 {
-  { 0.8f, 0.8f, 0.8f, 1.0f },                           // ŠÂ‹«Œõ‚Ì”½ËŒW”
-  { 0.8f, 0.8f, 0.8f, 1.0f },                           // ŠgU”½ËŒW”
-  { 0.2f, 0.2f, 0.2f, 1.0f },                           // ‹¾–Ê”½ËŒW”
-  50.0f                                                 // ‹P‚«ŒW”
+  { 0.8f, 0.8f, 0.8f, 1.0f },                           // ç’°å¢ƒå…‰ã®åå°„ä¿‚æ•°
+  { 0.8f, 0.8f, 0.8f, 1.0f },                           // æ‹¡æ•£åå°„ä¿‚æ•°
+  { 0.2f, 0.2f, 0.2f, 1.0f },                           // é¡é¢åå°„ä¿‚æ•°
+  50.0f                                                 // è¼ãä¿‚æ•°
 };
 
-// ”wŒiF
+// èƒŒæ™¯è‰²
 const GLfloat background[] = { 0.2f, 0.3f, 0.4f, 0.0f };

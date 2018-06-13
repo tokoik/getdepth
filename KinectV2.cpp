@@ -1,33 +1,33 @@
-#include "KinectV2.h"
+ï»¿#include "KinectV2.h"
 
 //
-// Kinect V2 ŠÖ˜A‚Ìˆ—
+// Kinect V2 é–¢é€£ã®å‡¦ç†
 //
 
 #if USE_KINECT_V2
 
-// •W€ƒ‰ƒCƒuƒ‰ƒŠ
+// æ¨™æº–ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
 #include <cassert>
 
-// Kinect V2 ŠÖ˜A
+// Kinect V2 é–¢é€£
 #pragma comment(lib, "Kinect20.lib")
 
-// Œv‘ª•s”\“_‚ÌƒfƒtƒHƒ‹ƒg‹——£
+// è¨ˆæ¸¬ä¸èƒ½ç‚¹ã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆè·é›¢
 const GLfloat maxDepth(10.0f);
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 KinectV2::KinectV2()
 {
-  // ƒZƒ“ƒT‚ğæ“¾‚·‚é
+  // ã‚»ãƒ³ã‚µã‚’å–å¾—ã™ã‚‹
   if (sensor == NULL && GetDefaultKinectSensor(&sensor) == S_OK)
   {
     HRESULT hr;
 
-    // ƒZƒ“ƒT‚Ìg—p‚ğŠJn‚·‚é
+    // ã‚»ãƒ³ã‚µã®ä½¿ç”¨ã‚’é–‹å§‹ã™ã‚‹
     hr = sensor->Open();
     assert(hr == S_OK);
 
-    // ƒfƒvƒXƒf[ƒ^‚Ì“Ç‚İ‚İİ’è
+    // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®èª­ã¿è¾¼ã¿è¨­å®š
     IDepthFrameSource *depthSource;
     hr = sensor->get_DepthFrameSource(&depthSource);
     assert(hr == S_OK);
@@ -38,12 +38,12 @@ KinectV2::KinectV2()
     assert(hr == S_OK);
     depthSource->Release();
 
-    // ƒfƒvƒXƒf[ƒ^‚ÌƒTƒCƒY‚ğ“¾‚é
+    // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®ã‚µã‚¤ã‚ºã‚’å¾—ã‚‹
     depthDescription->get_Width(&depthWidth);
     depthDescription->get_Height(&depthHeight);
     depthDescription->Release();
 
-    // ƒJƒ‰[ƒf[ƒ^‚Ì“Ç‚İ‚İİ’è
+    // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®èª­ã¿è¾¼ã¿è¨­å®š
     IColorFrameSource *colorSource;
     hr = sensor->get_ColorFrameSource(&colorSource);
     assert(hr == S_OK);
@@ -54,25 +54,25 @@ KinectV2::KinectV2()
     assert(hr == S_OK);
     colorSource->Release();
 
-    // ƒJƒ‰[ƒf[ƒ^‚ÌƒTƒCƒY‚ğ“¾‚é
+    // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ã‚µã‚¤ã‚ºã‚’å¾—ã‚‹
     colorDescription->get_Width(&colorWidth);
     colorDescription->get_Height(&colorHeight);
     colorDescription->Release();
 
-    // À•W‚Ìƒ}ƒbƒsƒ“ƒO
+    // åº§æ¨™ã®ãƒãƒƒãƒ”ãƒ³ã‚°
     hr = sensor->get_CoordinateMapper(&coordinateMapper);
     assert(hr == S_OK);
 
-    // depthCount ‚Æ colorCount ‚ğŒvZ‚µ‚ÄƒeƒNƒXƒ`ƒƒ‚Æƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğì¬‚·‚é
+    // depthCount ã¨ colorCount ã‚’è¨ˆç®—ã—ã¦ãƒ†ã‚¯ã‚¹ãƒãƒ£ã¨ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ä½œæˆã™ã‚‹
     makeTexture();
 
-    // ƒfƒvƒXƒf[ƒ^‚©‚çƒJƒƒ‰À•W‚ğ‹‚ß‚é‚Æ‚«‚É—p‚¢‚éˆêƒƒ‚ƒŠ‚ğŠm•Û‚·‚é
+    // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’æ±‚ã‚ã‚‹ã¨ãã«ç”¨ã„ã‚‹ä¸€æ™‚ãƒ¡ãƒ¢ãƒªã‚’ç¢ºä¿ã™ã‚‹
     position = new GLfloat[depthCount][3];
 
-    // ƒJƒ‰[ƒf[ƒ^‚ğ•ÏŠ·‚·‚é—p‚¢‚éˆêƒƒ‚ƒŠ‚ğŠm•Û‚·‚é
+    // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã‚’å¤‰æ›ã™ã‚‹ç”¨ã„ã‚‹ä¸€æ™‚ãƒ¡ãƒ¢ãƒªã‚’ç¢ºä¿ã™ã‚‹
     color = new GLubyte[colorCount * 4];
 
-    // ƒfƒvƒXƒ}ƒbƒv‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚É‘Î‚·‚é’¸“_À•W‚ÌŠg‘å—¦
+    // ãƒ‡ãƒ—ã‚¹ãƒãƒƒãƒ—ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã«å¯¾ã™ã‚‹é ‚ç‚¹åº§æ¨™ã®æ‹¡å¤§ç‡
     scale[0] = 1.546592f;
     scale[1] = 1.222434f;
     scale[2] = -10.0f;
@@ -80,144 +80,144 @@ KinectV2::KinectV2()
   }
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 KinectV2::~KinectV2()
 {
   if (getActivated() > 0)
   {
-    // ƒf[ƒ^•ÏŠ·—p‚Ìƒƒ‚ƒŠ‚ğíœ‚·‚é
+    // ãƒ‡ãƒ¼ã‚¿å¤‰æ›ç”¨ã®ãƒ¡ãƒ¢ãƒªã‚’å‰Šé™¤ã™ã‚‹
     delete[] position;
     delete[] color;
 
-    // ƒZƒ“ƒT‚ğŠJ•ú‚·‚é
+    // ã‚»ãƒ³ã‚µã‚’é–‹æ”¾ã™ã‚‹
     colorReader->Release();
     depthReader->Release();
     coordinateMapper->Release();
     sensor->Close();
     sensor->Release();
 
-    // ƒZƒ“ƒT‚ğŠJ•ú‚µ‚½‚±‚Æ‚ğ‹L˜^‚·‚é
+    // ã‚»ãƒ³ã‚µã‚’é–‹æ”¾ã—ãŸã“ã¨ã‚’è¨˜éŒ²ã™ã‚‹
     sensor = NULL;
   }
 }
 
-// ƒfƒvƒXƒf[ƒ^‚ğæ“¾‚·‚é
+// ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
 GLuint KinectV2::getDepth() const
 {
-  // ƒfƒvƒX‚ÌƒeƒNƒXƒ`ƒƒ‚ğw’è‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æŒ‡å®šã™ã‚‹
   glBindTexture(GL_TEXTURE_2D, depthTexture);
 
-  // Ÿ‚ÌƒfƒvƒX‚ÌƒtƒŒ[ƒ€ƒf[ƒ^‚ª“’…‚µ‚Ä‚¢‚ê‚Î
+  // æ¬¡ã®ãƒ‡ãƒ—ã‚¹ã®ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿ãŒåˆ°ç€ã—ã¦ã„ã‚Œã°
   IDepthFrame *depthFrame;
   if (depthReader->AcquireLatestFrame(&depthFrame) == S_OK)
   {
-    // ƒfƒvƒXƒf[ƒ^‚ÌƒTƒCƒY‚ÆŠi”[êŠ‚ğ“¾‚é
+    // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®ã‚µã‚¤ã‚ºã¨æ ¼ç´å ´æ‰€ã‚’å¾—ã‚‹
     UINT depthSize;
     UINT16 *depthBuffer;
     depthFrame->AccessUnderlyingBuffer(&depthSize, &depthBuffer);
 
-    // ƒJƒ‰[‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚ğ‹‚ß‚Äƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚É“]‘—‚·‚é
+    // ã‚«ãƒ©ãƒ¼ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’æ±‚ã‚ã¦ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«è»¢é€ã™ã‚‹
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
     ColorSpacePoint *const texcoord(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
     coordinateMapper->MapDepthFrameToColorSpace(depthCount, depthBuffer, depthCount, texcoord);
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
-    // ƒfƒvƒXƒf[ƒ^‚ğƒeƒNƒXƒ`ƒƒ‚É“]‘—‚·‚é
+    // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’ãƒ†ã‚¯ã‚¹ãƒãƒ£ã«è»¢é€ã™ã‚‹
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_UNSIGNED_SHORT, depthBuffer);
 
-    // ƒfƒvƒXƒtƒŒ[ƒ€‚ğŠJ•ú‚·‚é
+    // ãƒ‡ãƒ—ã‚¹ãƒ•ãƒ¬ãƒ¼ãƒ ã‚’é–‹æ”¾ã™ã‚‹
     depthFrame->Release();
   }
 
   return depthTexture;
 }
 
-// ƒJƒƒ‰À•W‚ğæ“¾‚·‚é
+// ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’å–å¾—ã™ã‚‹
 GLuint KinectV2::getPoint() const
 {
-  // ƒJƒƒ‰À•W‚ÌƒeƒNƒXƒ`ƒƒ‚ğw’è‚·‚é
+  // ã‚«ãƒ¡ãƒ©åº§æ¨™ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æŒ‡å®šã™ã‚‹
   glBindTexture(GL_TEXTURE_2D, pointTexture);
 
-  // Ÿ‚ÌƒfƒvƒX‚ÌƒtƒŒ[ƒ€ƒf[ƒ^‚ª“’…‚µ‚Ä‚¢‚ê‚Î
+  // æ¬¡ã®ãƒ‡ãƒ—ã‚¹ã®ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿ãŒåˆ°ç€ã—ã¦ã„ã‚Œã°
   IDepthFrame *depthFrame;
   if (depthReader->AcquireLatestFrame(&depthFrame) == S_OK)
   {
-    // ƒfƒvƒXƒf[ƒ^‚ÌƒTƒCƒY‚ÆŠi”[êŠ‚ğ“¾‚é
+    // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®ã‚µã‚¤ã‚ºã¨æ ¼ç´å ´æ‰€ã‚’å¾—ã‚‹
     UINT depthSize;
     UINT16 *depthBuffer;
     depthFrame->AccessUnderlyingBuffer(&depthSize, &depthBuffer);
 
-    // ƒJƒ‰[‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚ğ‹‚ß‚Äƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚É“]‘—‚·‚é
+    // ã‚«ãƒ©ãƒ¼ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’æ±‚ã‚ã¦ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«è»¢é€ã™ã‚‹
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
     ColorSpacePoint *const texcoord(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
     coordinateMapper->MapDepthFrameToColorSpace(depthCount, depthBuffer, depthCount, texcoord);
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
-    // ƒJƒƒ‰À•W‚Ö‚Ì•ÏŠ·ƒe[ƒuƒ‹‚ğ“¾‚é
+    // ã‚«ãƒ¡ãƒ©åº§æ¨™ã¸ã®å¤‰æ›ãƒ†ãƒ¼ãƒ–ãƒ«ã‚’å¾—ã‚‹
     UINT32 entry;
     PointF *table;
     coordinateMapper->GetDepthFrameToCameraSpaceTable(&entry, &table);
 
-    // ‚·‚×‚Ä‚Ì“_‚É‚Â‚¢‚Ä
+    // ã™ã¹ã¦ã®ç‚¹ã«ã¤ã„ã¦
     for (unsigned int i = 0; i < entry; ++i)
     {
-      // ƒfƒvƒX’l‚Ì’PˆÊ‚ğƒ[ƒgƒ‹‚ÉŠ·Z‚·‚éŒW”
+      // ãƒ‡ãƒ—ã‚¹å€¤ã®å˜ä½ã‚’ãƒ¡ãƒ¼ãƒˆãƒ«ã«æ›ç®—ã™ã‚‹ä¿‚æ•°
       static const GLfloat zScale(-0.001f);
 
-      // ‚»‚Ì“_‚ÌƒfƒvƒX’l‚ğ“¾‚é
+      // ãã®ç‚¹ã®ãƒ‡ãƒ—ã‚¹å€¤ã‚’å¾—ã‚‹
       const unsigned short d(depthBuffer[i]);
 
-      // ƒfƒvƒX’l‚Ì’PˆÊ‚ğƒ[ƒgƒ‹‚ÉŠ·Z‚·‚é (Œv‘ª•s”\“_‚Í maxDepth ‚É‚·‚é)
+      // ãƒ‡ãƒ—ã‚¹å€¤ã®å˜ä½ã‚’ãƒ¡ãƒ¼ãƒˆãƒ«ã«æ›ç®—ã™ã‚‹ (è¨ˆæ¸¬ä¸èƒ½ç‚¹ã¯ maxDepth ã«ã™ã‚‹)
       const GLfloat z(d == 0 ? -maxDepth : GLfloat(d) * zScale);
 
-      // ‚»‚Ì“_‚ÌƒXƒNƒŠ[ƒ“ã‚ÌˆÊ’u‚ğ‹‚ß‚é
+      // ãã®ç‚¹ã®ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ä¸Šã®ä½ç½®ã‚’æ±‚ã‚ã‚‹
       const GLfloat x(table[i].X);
       const GLfloat y(-table[i].Y);
 
-      // ‚»‚Ì“_‚ÌƒJƒƒ‰À•W‚ğ‹‚ß‚é
+      // ãã®ç‚¹ã®ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’æ±‚ã‚ã‚‹
       position[i][0] = x * z;
       position[i][1] = y * z;
       position[i][2] = z;
     }
 
-    // ƒJƒƒ‰À•W‚ğ“]‘—‚·‚é
+    // ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’è»¢é€ã™ã‚‹
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, position);
 
-    // ƒe[ƒuƒ‹‚Ég‚Á‚½ƒƒ‚ƒŠ‚ğŠJ•ú‚·‚é
+    // ãƒ†ãƒ¼ãƒ–ãƒ«ã«ä½¿ã£ãŸãƒ¡ãƒ¢ãƒªã‚’é–‹æ”¾ã™ã‚‹
     CoTaskMemFree(table);
 
-    // ƒfƒvƒXƒtƒŒ[ƒ€‚ğŠJ•ú‚·‚é
+    // ãƒ‡ãƒ—ã‚¹ãƒ•ãƒ¬ãƒ¼ãƒ ã‚’é–‹æ”¾ã™ã‚‹
     depthFrame->Release();
   }
 
   return pointTexture;
 }
 
-// ƒJƒ‰[ƒf[ƒ^‚ğæ“¾‚·‚é
+// ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
 GLuint KinectV2::getColor() const
 {
-  // ƒJƒ‰[‚ÌƒeƒNƒXƒ`ƒƒ‚ğw’è‚·‚é
+  // ã‚«ãƒ©ãƒ¼ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æŒ‡å®šã™ã‚‹
   glBindTexture(GL_TEXTURE_2D, colorTexture);
 
-  // Ÿ‚ÌƒJƒ‰[‚ÌƒtƒŒ[ƒ€ƒf[ƒ^‚ª“’…‚µ‚Ä‚¢‚ê‚Î
+  // æ¬¡ã®ã‚«ãƒ©ãƒ¼ã®ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿ãŒåˆ°ç€ã—ã¦ã„ã‚Œã°
   IColorFrame *colorFrame;
   if (colorReader->AcquireLatestFrame(&colorFrame) == S_OK)
   {
-    // ƒJƒ‰[ƒf[ƒ^‚ğæ“¾‚µ‚Ä RGBA Œ`®‚É•ÏŠ·‚·‚é
+    // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã—ã¦ RGBA å½¢å¼ã«å¤‰æ›ã™ã‚‹
     colorFrame->CopyConvertedFrameDataToArray(colorCount * 4,
       static_cast<BYTE *>(color), ColorImageFormat::ColorImageFormat_Bgra);
 
-    // ƒJƒ‰[ƒtƒŒ[ƒ€‚ğŠJ•ú‚·‚é
+    // ã‚«ãƒ©ãƒ¼ãƒ•ãƒ¬ãƒ¼ãƒ ã‚’é–‹æ”¾ã™ã‚‹
     colorFrame->Release();
 
-    // ƒJƒ‰[ƒf[ƒ^‚ğƒeƒNƒXƒ`ƒƒ‚É“]‘—‚·‚é
+    // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã‚’ãƒ†ã‚¯ã‚¹ãƒãƒ£ã«è»¢é€ã™ã‚‹
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGRA, GL_UNSIGNED_BYTE, color);
   }
 
   return colorTexture;
 }
 
-// ƒZƒ“ƒT‚Ì¯•Êq
+// ã‚»ãƒ³ã‚µã®è­˜åˆ¥å­
 IKinectSensor *KinectV2::sensor(NULL);
 
 #endif

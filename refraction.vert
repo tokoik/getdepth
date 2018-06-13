@@ -2,60 +2,60 @@
 #extension GL_ARB_explicit_attrib_location : enable
 #extension GL_ARB_explicit_uniform_location : enable
 
-// ŒõŒ¹
-uniform vec4 lamb;                                  // ŠÂ‹«Œõ¬•ª
-uniform vec4 ldiff;                                 // ŠgU”½ËŒõ¬•ª
-uniform vec4 lspec;                                 // ‹¾–Ê”½ËŒõ¬•ª
-uniform vec4 pl;                                    // ˆÊ’u
+// å…‰æº
+uniform vec4 lamb;                                  // ç’°å¢ƒå…‰æˆåˆ†
+uniform vec4 ldiff;                                 // æ‹¡æ•£åå°„å…‰æˆåˆ†
+uniform vec4 lspec;                                 // é¡é¢åå°„å…‰æˆåˆ†
+uniform vec4 pl;                                    // ä½ç½®
 
-// Ş¿
-uniform vec4 kamb;                                  // ŠÂ‹«Œõ‚Ì”½ËŒW”
-uniform vec4 kdiff;                                 // ŠgU”½ËŒW”
-uniform vec4 kspec;                                 // ‹¾–Ê”½ËŒW”
-uniform float kshi;                                 // ‹P‚«ŒW”
+// æè³ª
+uniform vec4 kamb;                                  // ç’°å¢ƒå…‰ã®åå°„ä¿‚æ•°
+uniform vec4 kdiff;                                 // æ‹¡æ•£åå°„ä¿‚æ•°
+uniform vec4 kspec;                                 // é¡é¢åå°„ä¿‚æ•°
+uniform float kshi;                                 // è¼ãä¿‚æ•°
 
-// •ÏŠ·s—ñ
-uniform mat4 mw;                                    // ‹“_À•WŒn‚Ö‚Ì•ÏŠ·s—ñ
-uniform mat4 mc;                                    // ƒNƒŠƒbƒsƒ“ƒOÀ•WŒn‚Ö‚Ì•ÏŠ·s—ñ
-uniform mat4 mg;                                    // –@üƒxƒNƒgƒ‹‚Ì•ÏŠ·s—ñ
+// å¤‰æ›è¡Œåˆ—
+uniform mat4 mw;                                    // è¦–ç‚¹åº§æ¨™ç³»ã¸ã®å¤‰æ›è¡Œåˆ—
+uniform mat4 mc;                                    // ã‚¯ãƒªãƒƒãƒ”ãƒ³ã‚°åº§æ¨™ç³»ã¸ã®å¤‰æ›è¡Œåˆ—
+uniform mat4 mg;                                    // æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã®å¤‰æ›è¡Œåˆ—
 
-// ƒeƒNƒXƒ`ƒƒ
-layout (location = 0) uniform sampler2D position;   // ’¸“_ˆÊ’u‚ÌƒeƒNƒXƒ`ƒƒ
-layout (location = 1) uniform sampler2D normal;     // –@üƒxƒNƒgƒ‹‚ÌƒeƒNƒXƒ`ƒƒ
-layout (location = 3) uniform sampler2D back;       // ”wŒi‚ÌƒeƒNƒXƒ`ƒƒ
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£
+layout (location = 0) uniform sampler2D position;   // é ‚ç‚¹ä½ç½®ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£
+layout (location = 1) uniform sampler2D normal;     // æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£
+layout (location = 3) uniform sampler2D back;       // èƒŒæ™¯ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£
 
-// ’¸“_‘®«
-layout (location = 0) in vec2 pc;                   // ’¸“_‚ÌƒeƒNƒXƒ`ƒƒÀ•W
-layout (location = 1) in vec2 cc;                   // ƒJƒ‰[‚ÌƒeƒNƒXƒ`ƒƒÀ•W
+// é ‚ç‚¹å±æ€§
+layout (location = 0) in vec2 pc;                   // é ‚ç‚¹ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
+layout (location = 1) in vec2 cc;                   // ã‚«ãƒ©ãƒ¼ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
 
-// ƒ‰ƒXƒ^ƒ‰ƒCƒU‚É‘—‚é’¸“_‘®«
-out vec4 idiff;                                     // ŠgU”½ËŒõ‹­“x
-out vec4 ispec;                                     // ‹¾–Ê”½ËŒõ‹­“x
-out vec2 texcoord;                                  // ƒeƒNƒXƒ`ƒƒÀ•W
+// ãƒ©ã‚¹ã‚¿ãƒ©ã‚¤ã‚¶ã«é€ã‚‹é ‚ç‚¹å±æ€§
+out vec4 idiff;                                     // æ‹¡æ•£åå°„å…‰å¼·åº¦
+out vec4 ispec;                                     // é¡é¢åå°„å…‰å¼·åº¦
+out vec2 texcoord;                                  // ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
 
 void main(void)
 {
-  // ’¸“_ˆÊ’u
+  // é ‚ç‚¹ä½ç½®
   vec4 pv = texture(position, pc);
 
-  // –@üƒxƒNƒgƒ‹
+  // æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«
   vec4 nv = texture(normal, pc);
 
-  // À•WŒvZ
-  vec4 p = mw * pv;                                 // ‹“_À•WŒn‚Ì’¸“_‚ÌˆÊ’u
-  vec4 q = pl;                                      // ‹“_À•WŒn‚ÌŒõŒ¹‚ÌˆÊ’u
-  vec3 v = normalize(p.xyz / p.w);                  // ‹üƒxƒNƒgƒ‹
-  vec3 l = normalize((q * p.w - p * q.w).xyz);      // ŒõüƒxƒNƒgƒ‹
-  vec3 n = normalize((mg * nv).xyz);                // –@üƒxƒNƒgƒ‹
-  vec3 h = normalize(l - v);                        // ’†ŠÔƒxƒNƒgƒ‹
+  // åº§æ¨™è¨ˆç®—
+  vec4 p = mw * pv;                                 // è¦–ç‚¹åº§æ¨™ç³»ã®é ‚ç‚¹ã®ä½ç½®
+  vec4 q = pl;                                      // è¦–ç‚¹åº§æ¨™ç³»ã®å…‰æºã®ä½ç½®
+  vec3 v = normalize(p.xyz / p.w);                  // è¦–ç·šãƒ™ã‚¯ãƒˆãƒ«
+  vec3 l = normalize((q * p.w - p * q.w).xyz);      // å…‰ç·šãƒ™ã‚¯ãƒˆãƒ«
+  vec3 n = normalize((mg * nv).xyz);                // æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«
+  vec3 h = normalize(l - v);                        // ä¸­é–“ãƒ™ã‚¯ãƒˆãƒ«
 
-  // ‰A‰eŒvZ
+  // é™°å½±è¨ˆç®—
   idiff = max(dot(n, l), 0.0) * kdiff * ldiff + kamb * lamb;
   ispec = pow(max(dot(n, h), 0.0), kshi) * kspec * lspec;
 
-  // ƒeƒNƒXƒ`ƒƒÀ•W
+  // ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
   texcoord = cc / vec2(textureSize(back, 0));
 
-  // ƒNƒŠƒbƒsƒ“ƒOÀ•WŒn‚É‚¨‚¯‚éÀ•W’l
+  // ã‚¯ãƒªãƒƒãƒ”ãƒ³ã‚°åº§æ¨™ç³»ã«ãŠã‘ã‚‹åº§æ¨™å€¤
   gl_Position = mc * pv;
 }

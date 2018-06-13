@@ -1,17 +1,17 @@
 #version 150 core
 #extension GL_ARB_explicit_attrib_location : enable
 
-// ’¸“_À•W
+// é ‚ç‚¹åº§æ¨™
 layout (location = 0) in vec4 pv;
 
-// ƒeƒNƒXƒ`ƒƒÀ•W
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
 out vec2 texcoord;
 
 void main()
 {
-  // ’¸“_À•W‚ğƒeƒNƒXƒ`ƒƒÀ•W‚ÉŠ·Z
+  // é ‚ç‚¹åº§æ¨™ã‚’ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã«æ›ç®—
   texcoord = pv.xy * 0.5 + 0.5;
 
-  // ’¸“_À•W‚ğ‚»‚Ì‚Ü‚Üo—Í
+  // é ‚ç‚¹åº§æ¨™ã‚’ãã®ã¾ã¾å‡ºåŠ›
   gl_Position = pv;
 }

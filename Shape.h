@@ -1,25 +1,26 @@
-#pragma once
+ï»¿#pragma once
 
 //
-// •`‰æ}Œ`
+// æç”»å›³å½¢
 //
 
-// ƒEƒBƒ“ƒhƒEŠÖ˜A‚Ìˆ—
-#include "Window.h"
+// è£œåŠ©ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
+#include "gg.h"
+using namespace gg;
 
 class Shape
 {
-  // ’¸“_”z—ñƒIƒuƒWƒFƒNƒg
+  // é ‚ç‚¹é…åˆ—ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
   GLuint vao;
 
 public:
 
-  // ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+  // ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   Shape();
 
-  // ƒfƒXƒgƒ‰ƒNƒ^
+  // ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   virtual ~Shape();
 
-  // •`‰æ
+  // æç”»
   virtual void draw() const = 0;
 };

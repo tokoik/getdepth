@@ -2,27 +2,27 @@
 #extension GL_ARB_explicit_attrib_location : enable
 #extension GL_ARB_explicit_uniform_location : enable
 
-// ƒeƒNƒXƒ`ƒƒ
-layout (location = 1) uniform sampler2D normal;     // –@üƒxƒNƒgƒ‹‚ÌƒeƒNƒXƒ`ƒƒ
-layout (location = 3) uniform sampler2D back;		// ”wŒi‚ÌƒeƒNƒXƒ`ƒƒ
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£
+layout (location = 1) uniform sampler2D normal;     // æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£
+layout (location = 3) uniform sampler2D back;		// èƒŒæ™¯ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£
 
-// ƒEƒBƒ“ƒhƒEƒTƒCƒY
+// ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‚µã‚¤ã‚º
 uniform vec2 size;
 
-// ƒ‰ƒXƒ^ƒ‰ƒCƒU‚©‚çó‚¯æ‚é’¸“_‘®«‚Ì•âŠÔ’l
-in vec3 s;                                          // ‹ü‚Ì‹üÜƒxƒNƒgƒ‹
-in vec4 idiff;                                      // ŠgU”½ËŒõ‹­“x
-in vec4 ispec;                                      // ‹¾–Ê”½ËŒõ‹­“x
-in vec2 texcoord;                                   // ƒeƒNƒXƒ`ƒƒÀ•W
+// ãƒ©ã‚¹ã‚¿ãƒ©ã‚¤ã‚¶ã‹ã‚‰å—ã‘å–ã‚‹é ‚ç‚¹å±æ€§ã®è£œé–“å€¤
+in vec3 s;                                          // è¦–ç·šã®å±ˆæŠ˜ãƒ™ã‚¯ãƒˆãƒ«
+in vec4 idiff;                                      // æ‹¡æ•£åå°„å…‰å¼·åº¦
+in vec4 ispec;                                      // é¡é¢åå°„å…‰å¼·åº¦
+in vec2 texcoord;                                   // ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
 
-// ƒtƒŒ[ƒ€ƒoƒbƒtƒ@‚Éo—Í‚·‚éƒf[ƒ^
-layout (location = 0) out vec4 fc;                  // ƒtƒ‰ƒOƒƒ“ƒg‚ÌF
+// ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã«å‡ºåŠ›ã™ã‚‹ãƒ‡ãƒ¼ã‚¿
+layout (location = 0) out vec4 fc;                  // ãƒ•ãƒ©ã‚°ãƒ¡ãƒ³ãƒˆã®è‰²
 
 void main(void)
 {
-  // –@üƒxƒNƒgƒ‹
+  // æ³•ç·šãƒ™ã‚¯ãƒˆãƒ«
   vec3 nv = texture(normal, texcoord).xyz;
 
-  // ‹üÜƒ}ƒbƒsƒ“ƒO
+  // å±ˆæŠ˜ãƒãƒƒãƒ”ãƒ³ã‚°
   fc = texture(back, gl_FragCoord.xy / size + refract(vec3(0.0, 0.0, -1.0), nv, 0.67).xy * 0.2) * idiff + ispec;
 }

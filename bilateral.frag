@@ -3,22 +3,22 @@
 #extension GL_ARB_explicit_uniform_location : enable
 
 //
-// 5x5 ƒoƒCƒ‰ƒeƒ‰ƒ‹ƒtƒBƒ‹ƒ^
+// 5x5 ãƒã‚¤ãƒ©ãƒ†ãƒ©ãƒ«ãƒ•ã‚£ãƒ«ã‚¿
 //
 
-// ƒeƒNƒXƒ`ƒƒ
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£
 layout (location = 0) uniform sampler2D position;
 
-// ƒeƒNƒXƒ`ƒƒÀ•W
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
 in vec2 texcoord;
 
-// o—Í
+// å‡ºåŠ›
 layout (location = 0) out vec3 smoothed;
 
-// •ªU
+// åˆ†æ•£
 const float variance = 10.0;
 
-// d‚İ•t‚«‰æ‘f’l‚Ì‡Œv‚Æd‚İ‚Ì‡Œv‚ğ‹‚ß‚é
+// é‡ã¿ä»˜ãç”»ç´ å€¤ã®åˆè¨ˆã¨é‡ã¿ã®åˆè¨ˆã‚’æ±‚ã‚ã‚‹
 void f(inout vec3 csum, inout vec3 wsum, const in vec3 base, const in vec4 c, const in float w)
 {
   vec3 d = c.xyz - base;
@@ -27,7 +27,7 @@ void f(inout vec3 csum, inout vec3 wsum, const in vec3 base, const in vec4 c, co
   wsum += e;
 }
 
-// d‚İ•t‚«•½‹Ï‚ğ‹‚ß‚é
+// é‡ã¿ä»˜ãå¹³å‡ã‚’æ±‚ã‚ã‚‹
 void main()
 {
   vec3 csum = texture(position, texcoord).xyz;

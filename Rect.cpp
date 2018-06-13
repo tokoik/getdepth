@@ -1,36 +1,36 @@
-#include "Rect.h"
+ï»¿#include "Rect.h"
 
 //
-// ‹éŒ`
+// çŸ©å½¢
 //
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 Rect::Rect()
 {
-  // ’¸“_ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğì¬‚·‚é
+  // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ä½œæˆã™ã‚‹
   glGenBuffers(1, &vbo);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-  // ’¸“_ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚Ìƒƒ‚ƒŠ‚ğŠm•Û‚µ‚Äƒf[ƒ^‚ğ“]‘—‚·‚é
+  // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ãƒ¡ãƒ¢ãƒªã‚’ç¢ºä¿ã—ã¦ãƒ‡ãƒ¼ã‚¿ã‚’è»¢é€ã™ã‚‹
   static const GLfloat points[] = { -1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f };
   glBufferData(GL_ARRAY_BUFFER, sizeof points, points, GL_STATIC_DRAW);
 
-  // 0 ”Ô‚Ì attribute •Ï”‚©‚çƒf[ƒ^‚ğ“ü—Í‚·‚é
+  // 0 ç•ªã® attribute å¤‰æ•°ã‹ã‚‰ãƒ‡ãƒ¼ã‚¿ã‚’å…¥åŠ›ã™ã‚‹
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(0);
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 Rect::~Rect()
 {
-  // ’¸“_ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğíœ‚·‚é
+  // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å‰Šé™¤ã™ã‚‹
   glDeleteBuffers(1, &vbo);
 }
 
-// •`‰æ
+// æç”»
 void Rect::draw() const
 {
-  // ’¸“_”z—ñƒIƒuƒWƒFƒNƒg‚ğw’è‚µ‚Ä•`‰æ‚·‚é
+  // é ‚ç‚¹é…åˆ—ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æŒ‡å®šã—ã¦æç”»ã™ã‚‹
   Shape::draw();
   glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }

@@ -1,49 +1,50 @@
-#pragma once
+ï»¿#pragma once
 
 //
-// [“xƒZƒ“ƒTŠÖ˜A‚ÌŠî’êƒNƒ‰ƒX
+// æ·±åº¦ã‚»ãƒ³ã‚µé–¢é€£ã®åŸºåº•ã‚¯ãƒ©ã‚¹
 //
 
-// ƒEƒBƒ“ƒhƒEŠÖ˜A‚Ìˆ—
-#include "Window.h"
+// è£œåŠ©ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
+#include "gg.h"
+using namespace gg;
 
 class DepthCamera
 {
-  // —LŒø‰»‚³‚ê‚½ƒfƒvƒXƒJƒƒ‰‚Ì‘ä”
+  // æœ‰åŠ¹åŒ–ã•ã‚ŒãŸãƒ‡ãƒ—ã‚¹ã‚«ãƒ¡ãƒ©ã®å°æ•°
   static int activated;
 
 protected:
 
-  // Ú‘±‚µ‚Ä‚¢‚éƒZƒ“ƒT‚Ì”
+  // æ¥ç¶šã—ã¦ã„ã‚‹ã‚»ãƒ³ã‚µã®æ•°
   static int connected;
 
-  // ƒfƒvƒXƒJƒƒ‰‚ÌƒTƒCƒY‚Æ‰æ‘f”
+  // ãƒ‡ãƒ—ã‚¹ã‚«ãƒ¡ãƒ©ã®ã‚µã‚¤ã‚ºã¨ç”»ç´ æ•°
   int depthWidth, depthHeight, depthCount;
 
-  // ƒfƒvƒXƒf[ƒ^‚ğŠi”[‚·‚éƒeƒNƒXƒ`ƒƒ
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹ãƒ†ã‚¯ã‚¹ãƒãƒ£
   GLuint depthTexture;
 
-  // ƒfƒvƒXƒf[ƒ^‚©‚ç•ÏŠ·‚µ‚½ƒ|ƒCƒ“ƒg‚ÌƒJƒƒ‰À•W‚ğŠi”[‚·‚éƒeƒNƒXƒ`ƒƒ
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰å¤‰æ›ã—ãŸãƒã‚¤ãƒ³ãƒˆã®ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’æ ¼ç´ã™ã‚‹ãƒ†ã‚¯ã‚¹ãƒãƒ£
   GLuint pointTexture;
 
-  // ƒJƒ‰[ƒJƒƒ‰‚ÌƒTƒCƒY‚Æ‰æ‘f”
+  // ã‚«ãƒ©ãƒ¼ã‚«ãƒ¡ãƒ©ã®ã‚µã‚¤ã‚ºã¨ç”»ç´ æ•°
   int colorWidth, colorHeight, colorCount;
 
-  // ƒJƒ‰[ƒf[ƒ^‚ğŠi”[‚·‚éƒeƒNƒXƒ`ƒƒ
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹ãƒ†ã‚¯ã‚¹ãƒãƒ£
   GLuint colorTexture;
 
-  // ƒfƒvƒXƒf[ƒ^‚Ì‰æ‘f‚É‚¨‚¯‚éƒJƒ‰[ƒf[ƒ^‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚ğŠi”[‚·‚éƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®ç”»ç´ ã«ãŠã‘ã‚‹ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’æ ¼ç´ã™ã‚‹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
   GLuint coordBuffer;
 
-  // ƒfƒvƒXƒ}ƒbƒv‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚É‘Î‚·‚é’¸“_À•W‚ÌŠg‘å—¦
+  // ãƒ‡ãƒ—ã‚¹ãƒãƒƒãƒ—ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã«å¯¾ã™ã‚‹é ‚ç‚¹åº§æ¨™ã®æ‹¡å¤§ç‡
   GLfloat scale[4];
 
-  // depthCount ‚Æ colorCount ‚ğŒvZ‚µ‚ÄƒeƒNƒXƒ`ƒƒ‚Æƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğì¬‚·‚é
+  // depthCount ã¨ colorCount ã‚’è¨ˆç®—ã—ã¦ãƒ†ã‚¯ã‚¹ãƒãƒ£ã¨ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ä½œæˆã™ã‚‹
   void makeTexture();
 
 public:
 
-  // ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+  // ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   DepthCamera()
   {
   }
@@ -55,63 +56,63 @@ public:
   {
   }
 
-  // ƒfƒXƒgƒ‰ƒNƒ^
+  // ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   virtual ~DepthCamera();
 
-  // Ú‘±‚³‚ê‚Ä‚¢‚éƒZƒ“ƒT‚Ì”‚ğ’²‚×‚é
+  // æ¥ç¶šã•ã‚Œã¦ã„ã‚‹ã‚»ãƒ³ã‚µã®æ•°ã‚’èª¿ã¹ã‚‹
   static int getConnected()
   {
     return connected;
   }
 
-  // g—p‚µ‚Ä‚¢‚éƒZƒ“ƒT‚Ì”‚ğ’²‚×‚é
+  // ä½¿ç”¨ã—ã¦ã„ã‚‹ã‚»ãƒ³ã‚µã®æ•°ã‚’èª¿ã¹ã‚‹
   static int getActivated()
   {
     return activated;
   }
 
-  // ƒfƒvƒXƒf[ƒ^‚ğæ“¾‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
   GLuint getDepth() const
   {
     glBindTexture(GL_TEXTURE_2D, depthTexture);
     return depthTexture;
   }
 
-  // ƒJƒƒ‰À•W‚ğæ“¾‚·‚é
+  // ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’å–å¾—ã™ã‚‹
   GLuint getPoint() const
   {
     glBindTexture(GL_TEXTURE_2D, pointTexture);
     return pointTexture;
   }
 
-  // ƒJƒ‰[ƒf[ƒ^‚ğæ“¾‚·‚é
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
   GLuint getColor() const
   {
     glBindTexture(GL_TEXTURE_2D, colorTexture);
     return colorTexture;
   }
 
-  // ƒfƒvƒXƒJƒƒ‰‚ÌƒTƒCƒY‚ğ“¾‚é
+  // ãƒ‡ãƒ—ã‚¹ã‚«ãƒ¡ãƒ©ã®ã‚µã‚¤ã‚ºã‚’å¾—ã‚‹
   void getDepthResolution(int *width, int *height) const
   {
     *width = depthWidth;
     *height = depthHeight;
   }
 
-  // ƒJƒ‰[ƒJƒƒ‰‚ÌƒTƒCƒY‚ğ“¾‚é
+  // ã‚«ãƒ©ãƒ¼ã‚«ãƒ¡ãƒ©ã®ã‚µã‚¤ã‚ºã‚’å¾—ã‚‹
   void getColorResolution(int *width, int *height) const
   {
     *width = colorWidth;
     *height = colorHeight;
   }
 
-  // ƒfƒvƒXƒ}ƒbƒv‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚É‘Î‚·‚é’¸“_À•W‚ÌŠg‘å—¦‚ğ“¾‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒãƒƒãƒ—ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã«å¯¾ã™ã‚‹é ‚ç‚¹åº§æ¨™ã®æ‹¡å¤§ç‡ã‚’å¾—ã‚‹
   const GLfloat *getScale() const
   {
     return scale;
   }
 
-  // ƒJƒ‰[ƒf[ƒ^‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚ğŠi”[‚·‚éƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğ“¾‚é
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’æ ¼ç´ã™ã‚‹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å¾—ã‚‹
   GLuint getCoordBuffer() const
   {
     return coordBuffer;

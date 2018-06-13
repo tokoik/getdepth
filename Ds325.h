@@ -1,44 +1,41 @@
-#pragma once
+ï»¿#pragma once
 
 //
-// [“xƒZƒ“ƒTŠÖ˜A‚Ìˆ—
+// æ·±åº¦ã‚»ãƒ³ã‚µé–¢é€£ã®å‡¦ç†
 //
 
-// DepthSense ‚ğg‚¤
+// DepthSense ã‚’ä½¿ã†
 #if !defined(USE_DEPTH_SENSE)
 #  define USE_DEPTH_SENSE 1
 #endif
 
 #if USE_DEPTH_SENSE
 
-// DepthSense ŠÖ˜A
+// DepthSense é–¢é€£
 #include <Windows.h>
 #include <DepthSense.hxx>
 using namespace DepthSense;
 #undef INT64_C
 #undef UINT64_C
 
-// •W€ƒ‰ƒCƒuƒ‰ƒŠ
+// æ¨™æº–ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
 #include <thread>
 #include <mutex>
 
-// ƒEƒBƒ“ƒhƒEŠÖ˜A‚Ìˆ—
-#include "Window.h"
-
-// [“xƒZƒ“ƒTŠÖ˜A‚ÌŠî’êƒNƒ‰ƒX
+// æ·±åº¦ã‚»ãƒ³ã‚µé–¢é€£ã®åŸºåº•ã‚¯ãƒ©ã‚¹
 #include "DepthCamera.h"
 
-// ƒLƒƒƒvƒ`ƒƒ’†‚ÌƒƒbƒZ[ƒWo—Í
+// ã‚­ãƒ£ãƒ—ãƒãƒ£ä¸­ã®ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸å‡ºåŠ›
 #define CAPTURE_VERBOSE         0
 
-// DepthSense ‚Ìí—Ş
+// DepthSense ã®ç¨®é¡
 #define DS311                   0
 #define DS325                   1
 
-// g—p‚·‚é DepthSense 
+// ä½¿ç”¨ã™ã‚‹ DepthSense 
 #define CAPTURE_CAMERA          DS325
 
-// DepthSense ‚Ì“®ìƒ‚[ƒh
+// DepthSense ã®å‹•ä½œãƒ¢ãƒ¼ãƒ‰
 #if CAPTURE_CAMERA == DS325
 const FrameFormat capture_depth_format(FRAME_FORMAT_QVGA);
 const DepthNode::CameraMode capture_depth_mode(DepthNode::CAMERA_MODE_CLOSE_MODE);
@@ -51,131 +48,131 @@ const FrameFormat capture_color_format(FRAME_FORMAT_VGA);
 const CompressionType capture_color_compression(COMPRESSION_TYPE_YUY2);
 #endif
 
-// ƒfƒvƒXƒJƒƒ‰‚ÌƒtƒŒ[ƒ€ƒŒ[ƒg
+// ãƒ‡ãƒ—ã‚¹ã‚«ãƒ¡ãƒ©ã®ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¬ãƒ¼ãƒˆ
 const unsigned int capture_depth_fps(60);
 
-// ƒJƒ‰[ƒJƒƒ‰‚ÌƒtƒŒ[ƒ€ƒŒ[ƒg
+// ã‚«ãƒ©ãƒ¼ã‚«ãƒ¡ãƒ©ã®ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¬ãƒ¼ãƒˆ
 const unsigned int capture_color_fps(30);
 
-// “dŒ¹ü”g”
-const PowerLineFrequency color_frequency(POWER_LINE_FREQUENCY_60HZ);    // ŠÖ¼
-//const PowerLineFrequency color_frequency(POWER_LINE_FREQUENCY_50HZ);    // ŠÖ“Œ
+// é›»æºå‘¨æ³¢æ•°
+const PowerLineFrequency color_frequency(POWER_LINE_FREQUENCY_60HZ);    // é–¢è¥¿
+//const PowerLineFrequency color_frequency(POWER_LINE_FREQUENCY_50HZ);    // é–¢æ±
 
 class Ds325 : public DepthCamera
 {
-  // ƒfƒvƒXƒJƒƒ‰‚Ì‰ğ‘œ“x
+  // ãƒ‡ãƒ—ã‚¹ã‚«ãƒ¡ãƒ©ã®è§£åƒåº¦
   const FrameFormat depth_format;
 
-  // ƒfƒvƒXƒJƒƒ‰‚ÌƒtƒŒ[ƒ€ƒŒ[ƒg
+  // ãƒ‡ãƒ—ã‚¹ã‚«ãƒ¡ãƒ©ã®ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¬ãƒ¼ãƒˆ
   const unsigned int depth_fps;
 
-  // ƒfƒvƒXƒJƒƒ‰‚Ìƒ‚[ƒh
+  // ãƒ‡ãƒ—ã‚¹ã‚«ãƒ¡ãƒ©ã®ãƒ¢ãƒ¼ãƒ‰
   const DepthNode::CameraMode depth_mode;
 
-  // ƒJƒ‰[ƒJƒƒ‰‚Ì‰ğ‘œ“x
+  // ã‚«ãƒ©ãƒ¼ã‚«ãƒ¡ãƒ©ã®è§£åƒåº¦
   const FrameFormat color_format;
 
-  // ƒJƒ‰[ƒJƒƒ‰‚ÌƒtƒŒ[ƒ€ƒŒ[ƒg
+  // ã‚«ãƒ©ãƒ¼ã‚«ãƒ¡ãƒ©ã®ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¬ãƒ¼ãƒˆ
   const unsigned int color_fps;
 
-  // ƒJƒ‰[ƒJƒƒ‰‚Ìƒf[ƒ^ˆ³k•û®
+  // ã‚«ãƒ©ãƒ¼ã‚«ãƒ¡ãƒ©ã®ãƒ‡ãƒ¼ã‚¿åœ§ç¸®æ–¹å¼
   const CompressionType color_compression;
 
-  // “dŒ¹ü”g”
+  // é›»æºå‘¨æ³¢æ•°
   const PowerLineFrequency power_line_frequency;
 
-  // DepthSense ‚ÌƒRƒ“ƒeƒLƒXƒg
+  // DepthSense ã®ã‚³ãƒ³ãƒ†ã‚­ã‚¹ãƒˆ
   static Context context;
 
-  // ƒf[ƒ^æ“¾—p‚ÌƒXƒŒƒbƒh
+  // ãƒ‡ãƒ¼ã‚¿å–å¾—ç”¨ã®ã‚¹ãƒ¬ãƒƒãƒ‰
   static std::thread worker;
 
-  // ƒCƒxƒ“ƒgƒ‹[ƒv‚ª’â~‚µ‚Ä‚¢‚½‚çƒCƒxƒ“ƒgƒ‹[ƒv‚ğŠJn‚·‚é
+  // ã‚¤ãƒ™ãƒ³ãƒˆãƒ«ãƒ¼ãƒ—ãŒåœæ­¢ã—ã¦ã„ãŸã‚‰ã‚¤ãƒ™ãƒ³ãƒˆãƒ«ãƒ¼ãƒ—ã‚’é–‹å§‹ã™ã‚‹
   static void startLoop();
 
-  // ƒm[ƒh‚ğ“o˜^‚·‚é
+  // ãƒãƒ¼ãƒ‰ã‚’ç™»éŒ²ã™ã‚‹
   void configureNode(Node &node);
 
-  // ƒm[ƒh‚ğíœ‚·‚é
+  // ãƒãƒ¼ãƒ‰ã‚’å‰Šé™¤ã™ã‚‹
   void unregisterNode(Node node);
 
-  // DepthSense ‚ªæ‚è•t‚¯‚ç‚ê‚½‚Ìˆ—
+  // DepthSense ãŒå–ã‚Šä»˜ã‘ã‚‰ã‚ŒãŸæ™‚ã®å‡¦ç†
   static void Ds325::onDeviceConnected(Context context, Context::DeviceAddedData data);
 
-  // DepthSense ‚ªæ‚èŠO‚³‚ê‚½‚Æ‚«‚Ìˆ—
+  // DepthSense ãŒå–ã‚Šå¤–ã•ã‚ŒãŸã¨ãã®å‡¦ç†
   static void Ds325::onDeviceDisconnected(Context context, Context::DeviceRemovedData data);
 
-  // ƒm[ƒh‚ªÚ‘±‚³‚ê‚½‚Ìˆ—
+  // ãƒãƒ¼ãƒ‰ãŒæ¥ç¶šã•ã‚ŒãŸæ™‚ã®å‡¦ç†
   static void onNodeConnected(Device device, Device::NodeAddedData data, Ds325 *sensor);
 
-  // ƒm[ƒh‚ÌÚ‘±‚ª‰ğœ‚³‚ê‚½‚Ìˆ—
+  // ãƒãƒ¼ãƒ‰ã®æ¥ç¶šãŒè§£é™¤ã•ã‚ŒãŸæ™‚ã®å‡¦ç†
   static void onNodeDisconnected(Device device, Device::NodeRemovedData data, Ds325 *sensor);
 
-  // ƒfƒvƒXƒm[ƒh
+  // ãƒ‡ãƒ—ã‚¹ãƒãƒ¼ãƒ‰
   DepthNode depthNode;
 
-  // ƒfƒvƒXƒm[ƒh‚ğ‰Šú‰»‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒãƒ¼ãƒ‰ã‚’åˆæœŸåŒ–ã™ã‚‹
   void configureDepthNode(DepthNode &dnode);
 
-  // ƒfƒvƒXƒm[ƒh‚ÌƒCƒxƒ“ƒg”­¶‚Ìˆ—
+  // ãƒ‡ãƒ—ã‚¹ãƒãƒ¼ãƒ‰ã®ã‚¤ãƒ™ãƒ³ãƒˆç™ºç”Ÿæ™‚ã®å‡¦ç†
   static void onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData data, Ds325 *sensor);
 
-  // ƒfƒvƒXƒm[ƒh—p‚Ì mutex
+  // ãƒ‡ãƒ—ã‚¹ãƒãƒ¼ãƒ‰ç”¨ã® mutex
   std::mutex depthMutex;
 
-  // ƒJƒ‰[ƒm[ƒh
+  // ã‚«ãƒ©ãƒ¼ãƒãƒ¼ãƒ‰
   ColorNode colorNode;
 
-  // ƒJƒ‰[ƒm[ƒh‚ğ‰Šú‰»‚·‚é
+  // ã‚«ãƒ©ãƒ¼ãƒãƒ¼ãƒ‰ã‚’åˆæœŸåŒ–ã™ã‚‹
   void configureColorNode(ColorNode &cnode);
 
-  // ƒJƒ‰[ƒm[ƒh‚ÌƒCƒxƒ“ƒg”­¶‚Ìˆ—
+  // ã‚«ãƒ©ãƒ¼ãƒãƒ¼ãƒ‰ã®ã‚¤ãƒ™ãƒ³ãƒˆç™ºç”Ÿæ™‚ã®å‡¦ç†
   static void onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData data, Ds325 *sensor);
 
-  // ƒJƒ‰[ƒm[ƒh—p‚Ì mutex
+  // ã‚«ãƒ©ãƒ¼ãƒãƒ¼ãƒ‰ç”¨ã® mutex
   std::mutex colorMutex;
 
-  // ƒfƒvƒXƒf[ƒ^“]‘——p‚Ìƒƒ‚ƒŠ
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿è»¢é€ç”¨ã®ãƒ¡ãƒ¢ãƒª
   GLshort *depth, *depthBuffer;
 
-  // ƒJƒƒ‰À•W“]‘——p‚Ìƒƒ‚ƒŠ
+  // ã‚«ãƒ¡ãƒ©åº§æ¨™è»¢é€ç”¨ã®ãƒ¡ãƒ¢ãƒª
   GLfloat *point;
 
-  // ƒeƒNƒXƒ`ƒƒÀ•W“]‘——p‚Ìƒƒ‚ƒŠ
+  // ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™è»¢é€ç”¨ã®ãƒ¡ãƒ¢ãƒª
   GLfloat *uvmap;
 
-  // ƒJƒ‰[ƒf[ƒ^“]‘——p‚Ìƒƒ‚ƒŠ
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿è»¢é€ç”¨ã®ãƒ¡ãƒ¢ãƒª
   GLubyte *color, *colorBuffer;
 
-  // ƒRƒs[ƒRƒ“ƒXƒgƒ‰ƒNƒ^ (ƒRƒs[‹Ö~)
+  // ã‚³ãƒ”ãƒ¼ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ (ã‚³ãƒ”ãƒ¼ç¦æ­¢)
   Ds325(const Ds325 &w);
 
-  // ‘ã“ü (‘ã“ü‹Ö~)
+  // ä»£å…¥ (ä»£å…¥ç¦æ­¢)
   Ds325 &operator=(const Ds325 &w);
 
 public:
 
-  // ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+  // ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   Ds325(
-    FrameFormat depth_format = capture_depth_format,  // ƒfƒvƒXƒJƒƒ‰‚Ì‰ğ‘œ“x
-    unsigned int depth_fps = capture_depth_fps,       // ƒfƒvƒXƒJƒƒ‰‚ÌƒtƒŒ[ƒ€ƒŒ[ƒg
-    DepthNode::CameraMode = capture_depth_mode,       // ƒfƒvƒXƒJƒƒ‰‚Ìƒ‚[ƒh
-    FrameFormat color_format = capture_color_format,  // ƒJƒ‰[ƒJƒƒ‰‚Ì‰ğ‘œ“x
-    unsigned int color_fps = capture_color_fps,       // ƒJƒ‰[ƒJƒƒ‰‚ÌƒtƒŒ[ƒ€ƒŒ[ƒg
-    CompressionType color_compression = capture_color_compression,  // ƒJƒ‰[ƒJƒƒ‰‚Ìˆ³k•û®
-    PowerLineFrequency frequency = color_frequency    // “dŒ¹ü”g”
+    FrameFormat depth_format = capture_depth_format,  // ãƒ‡ãƒ—ã‚¹ã‚«ãƒ¡ãƒ©ã®è§£åƒåº¦
+    unsigned int depth_fps = capture_depth_fps,       // ãƒ‡ãƒ—ã‚¹ã‚«ãƒ¡ãƒ©ã®ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¬ãƒ¼ãƒˆ
+    DepthNode::CameraMode = capture_depth_mode,       // ãƒ‡ãƒ—ã‚¹ã‚«ãƒ¡ãƒ©ã®ãƒ¢ãƒ¼ãƒ‰
+    FrameFormat color_format = capture_color_format,  // ã‚«ãƒ©ãƒ¼ã‚«ãƒ¡ãƒ©ã®è§£åƒåº¦
+    unsigned int color_fps = capture_color_fps,       // ã‚«ãƒ©ãƒ¼ã‚«ãƒ¡ãƒ©ã®ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ¬ãƒ¼ãƒˆ
+    CompressionType color_compression = capture_color_compression,  // ã‚«ãƒ©ãƒ¼ã‚«ãƒ¡ãƒ©ã®åœ§ç¸®æ–¹å¼
+    PowerLineFrequency frequency = color_frequency    // é›»æºå‘¨æ³¢æ•°
     );
 
-  // ƒfƒXƒgƒ‰ƒNƒ^
+  // ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   virtual ~Ds325();
 
-  // ƒfƒvƒXƒf[ƒ^‚ğæ“¾‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
   GLuint getDepth();
 
-  // ƒJƒƒ‰À•W‚ğæ“¾‚·‚é
+  // ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’å–å¾—ã™ã‚‹
   GLuint getPoint();
 
-  // ƒJƒ‰[ƒf[ƒ^‚ğæ“¾‚·‚é
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
   GLuint getColor();
 };
 

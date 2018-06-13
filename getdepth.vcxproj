@@ -29,27 +29,27 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -75,11 +75,10 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)OpenGL\include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(Projectdir)OpenGL\$(Platform)\$(Configuration)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x86\vc14\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform)\$(Configuration);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x86\vc14\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -87,11 +86,10 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)OpenGL\include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(Projectdir)OpenGL\$(Platform)\$(Configuration)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x64\vc14\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform)\$(Configuration);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x64\vc14\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -101,13 +99,12 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)OpenGL\include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(Projectdir)OpenGL\$(Platform)\$(Configuration)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x86\vc14\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform)\$(Configuration);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x86\vc14\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -117,13 +114,12 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)OpenGL\include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(Projectdir)OpenGL\$(Platform)\$(Configuration)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x64\vc14\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform)\$(Configuration);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x64\vc14\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -132,12 +128,12 @@
     <ClInclude Include="DepthCamera.h" />
     <ClInclude Include="Ds325.h" />
     <ClInclude Include="gg.h" />
+    <ClInclude Include="GgApplication.h" />
     <ClInclude Include="KinectV1.h" />
     <ClInclude Include="KinectV2.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Rect.h" />
     <ClInclude Include="Shape.h" />
-    <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Calculate.cpp" />
@@ -146,11 +142,11 @@
     <ClCompile Include="gg.cpp" />
     <ClCompile Include="KinectV1.cpp" />
     <ClCompile Include="KinectV2.cpp" />
+    <ClCompile Include="getdepth.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Rect.cpp" />
     <ClCompile Include="Shape.cpp" />
-    <ClCompile Include="Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="bilateral.frag" />

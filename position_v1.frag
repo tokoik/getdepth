@@ -8,22 +8,22 @@
 #define DEPTH_SCALE (-65535.0 * MILLIMETER / float(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT))
 #define DEPTH_MAXIMUM (-4.0)
 
-// ƒXƒP[ƒ‹
+// ã‚¹ã‚±ãƒ¼ãƒ«
 const vec2 scale = vec2(
   NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 320.0,
   NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 240.0
 );
 
-// ƒeƒNƒXƒ`ƒƒ
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£
 layout (location = 0) uniform sampler2D depth;
 
-// ƒeƒNƒXƒ`ƒƒÀ•W
+// ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™
 in vec2 texcoord;
 
-// ƒtƒŒ[ƒ€ƒoƒbƒtƒ@‚Éo—Í‚·‚éƒf[ƒ^
+// ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã«å‡ºåŠ›ã™ã‚‹ãƒ‡ãƒ¼ã‚¿
 layout (location = 0) out vec3 position;
 
-// ƒfƒvƒX’l‚ðƒXƒP[ƒŠƒ“ƒO‚·‚é
+// ãƒ‡ãƒ—ã‚¹å€¤ã‚’ã‚¹ã‚±ãƒ¼ãƒªãƒ³ã‚°ã™ã‚‹
 float s(in float z)
 {
   return z == 0.0 ? DEPTH_MAXIMUM : z * DEPTH_SCALE;
@@ -31,9 +31,9 @@ float s(in float z)
 
 void main(void)
 {
-  // ƒfƒvƒX’l‚ðŽæ‚èo‚·
+  // ãƒ‡ãƒ—ã‚¹å€¤ã‚’å–ã‚Šå‡ºã™
   float z = s(texture(depth, texcoord).r);
 
-  // ƒfƒvƒX’l‚©‚çƒJƒƒ‰À•W’l‚ð‹‚ß‚é
+  // ãƒ‡ãƒ—ã‚¹å€¤ã‹ã‚‰ã‚«ãƒ¡ãƒ©åº§æ¨™å€¤ã‚’æ±‚ã‚ã‚‹
   position = vec3((texcoord - 0.5) * scale * z, z);
 }

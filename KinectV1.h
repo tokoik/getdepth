@@ -1,35 +1,32 @@
-#pragma once
+ï»¿#pragma once
 
 //
-// [“xƒZƒ“ƒTŠÖ˜A‚Ìˆ—
+// æ·±åº¦ã‚»ãƒ³ã‚µé–¢é€£ã®å‡¦ç†
 //
 
-// Kinect V1 ‚ğg‚¤
+// Kinect V1 ã‚’ä½¿ã†
 #if !defined(USE_KINECT_V1)
 #  define USE_KINECT_V1 1
 #endif
 
 #if USE_KINECT_V1
 
-// Kinect V1 ŠÖ˜A
+// Kinect V1 é–¢é€£
 #include <Windows.h>
 #include <NuiApi.h>
 
-// ƒEƒBƒ“ƒhƒEŠÖ˜A‚Ìˆ—
-#include "Window.h"
-
-// [“xƒZƒ“ƒTŠÖ˜A‚ÌŠî’êƒNƒ‰ƒX
+// æ·±åº¦ã‚»ãƒ³ã‚µé–¢é€£ã®åŸºåº•ã‚¯ãƒ©ã‚¹
 #include "DepthCamera.h"
 
-// ƒfƒvƒX‰æ‘œ‚ÌƒTƒCƒY
+// ãƒ‡ãƒ—ã‚¹ç”»åƒã®ã‚µã‚¤ã‚º
 #define DEPTH_W 320
 #define DEPTH_H 240
 
-// ƒJƒ‰[‰æ‘œ‚ÌƒTƒCƒY
+// ã‚«ãƒ©ãƒ¼ç”»åƒã®ã‚µã‚¤ã‚º
 #define COLOR_W 640
 #define COLOR_H 480
 
-// NUI_IMAGE_RESOLUTION ‚Ìİ’è
+// NUI_IMAGE_RESOLUTION ã®è¨­å®š
 #define EXPAND_RESOLUTION(width, height) NUI_IMAGE_RESOLUTION_##width##x##height
 #define RESOLUTION(width, height) EXPAND_RESOLUTION(width, height)
 #define DEPTH_RESOLUTION RESOLUTION(DEPTH_W, DEPTH_H)
@@ -37,43 +34,43 @@
 
 class KinectV1 : public DepthCamera
 {
-  // ƒZƒ“ƒT‚Ì¯•Êq
+  // ã‚»ãƒ³ã‚µã®è­˜åˆ¥å­
   INuiSensor *sensor;
 
-  // ƒfƒvƒXƒf[ƒ^‚ÌƒXƒgƒŠ[ƒ€ƒnƒ“ƒhƒ‹
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®ã‚¹ãƒˆãƒªãƒ¼ãƒ ãƒãƒ³ãƒ‰ãƒ«
   HANDLE depthStream;
 
-  // ƒfƒvƒXƒf[ƒ^‚ÌƒCƒxƒ“ƒgƒnƒ“ƒhƒ‹
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®ã‚¤ãƒ™ãƒ³ãƒˆãƒãƒ³ãƒ‰ãƒ«
   const HANDLE nextDepthFrameEvent;
 
-  // ƒfƒvƒXƒf[ƒ^‚©‚çƒJƒƒ‰À•W‚ğ‹‚ß‚é‚Æ‚«‚É—p‚¢‚éˆêƒƒ‚ƒŠ
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’æ±‚ã‚ã‚‹ã¨ãã«ç”¨ã„ã‚‹ä¸€æ™‚ãƒ¡ãƒ¢ãƒª
   GLfloat (*position)[3];
 
-  // ƒJƒ‰[ƒf[ƒ^‚ÌƒXƒgƒŠ[ƒ€ƒnƒ“ƒhƒ‹
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ã‚¹ãƒˆãƒªãƒ¼ãƒ ãƒãƒ³ãƒ‰ãƒ«
   HANDLE colorStream;
 
-  // ƒJƒ‰[ƒf[ƒ^‚ÌƒCƒxƒ“ƒgƒnƒ“ƒhƒ‹
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ã‚¤ãƒ™ãƒ³ãƒˆãƒãƒ³ãƒ‰ãƒ«
   const HANDLE nextColorFrameEvent;
 
-  // ƒf[ƒ^‚ğæ“¾‚·‚é
+  // ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
   void getImage(HANDLE event, HANDLE stream,
     GLuint texture, GLsizei width, GLsizei height, GLenum format, GLenum type) const;
 
-  // ƒRƒs[ƒRƒ“ƒXƒgƒ‰ƒNƒ^ (ƒRƒs[‹Ö~)
+  // ã‚³ãƒ”ãƒ¼ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿ (ã‚³ãƒ”ãƒ¼ç¦æ­¢)
   KinectV1(const KinectV1 &w);
 
-  // ‘ã“ü (‘ã“ü‹Ö~)
+  // ä»£å…¥ (ä»£å…¥ç¦æ­¢)
   KinectV1 &operator=(const KinectV1 &w);
 
 public:
 
-  // ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+  // ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   KinectV1();
 
-  // ƒfƒXƒgƒ‰ƒNƒ^
+  // ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   virtual ~KinectV1();
 
-  // ƒfƒvƒXƒf[ƒ^‚ğæ“¾‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
   GLuint getDepth() const
   {
     getImage(nextDepthFrameEvent, depthStream, depthTexture,
@@ -81,7 +78,7 @@ public:
     return depthTexture;
   }
 
-  // ƒJƒƒ‰À•W‚ğæ“¾‚·‚é
+  // ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’å–å¾—ã™ã‚‹
   GLuint getPoint() const
   {
     getImage(nextDepthFrameEvent, depthStream, pointTexture,
@@ -89,7 +86,7 @@ public:
     return pointTexture;
   }
 
-  // ƒJƒ‰[ƒf[ƒ^‚ğæ“¾‚·‚é
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
   GLuint getColor() const
   {
     getImage(nextColorFrameEvent, colorStream, colorTexture,

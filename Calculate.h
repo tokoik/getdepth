@@ -1,70 +1,71 @@
-#pragma once
+ï»¿#pragma once
 
 //
-// ‰æ‘œˆ—
+// ç”»åƒå‡¦ç†
 //
 
-// ƒEƒBƒ“ƒhƒEŠÖ˜A‚Ìˆ—
-#include "Window.h"
+// è£œåŠ©ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
+#include "gg.h"
+using namespace gg;
 
-// ‹éŒ`
+// çŸ©å½¢
 #include "Rect.h"
 
-// •W€ƒ‰ƒCƒuƒ‰ƒŠ
+// æ¨™æº–ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
 #include <vector>
 
 class Calculate
 {
-  // ‰æ‘œˆ—‚Ég‚¤ƒtƒŒ[ƒ€ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg
+  // ç”»åƒå‡¦ç†ã«ä½¿ã†ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
   GLuint fbo;
 
-  // ŒvZŒ‹‰Ê‚ğ•Û‘¶‚·‚éƒtƒŒ[ƒ€ƒoƒbƒtƒ@‚Ìƒ^[ƒQƒbƒg‚Ég‚¤ƒeƒNƒXƒ`ƒƒ
+  // è¨ˆç®—çµæœã‚’ä¿å­˜ã™ã‚‹ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã®ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã«ä½¿ã†ãƒ†ã‚¯ã‚¹ãƒãƒ£
   std::vector<GLuint> texture;
 
-  // ƒŒƒ“ƒ_ƒŠƒ“ƒOƒ^[ƒQƒbƒg
+  // ãƒ¬ãƒ³ãƒ€ãƒªãƒ³ã‚°ã‚¿ãƒ¼ã‚²ãƒƒãƒˆ
   std::vector<GLenum> bufs;
 
-  // ƒtƒŒ[ƒ€ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ÌƒTƒCƒY
+  // ãƒ•ãƒ¬ãƒ¼ãƒ ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã®ã‚µã‚¤ã‚º
   const GLsizei width, height;
 
-  // ŒvZ—p‚ÌƒVƒF[ƒ_ƒvƒƒOƒ‰ƒ€
+  // è¨ˆç®—ç”¨ã®ã‚·ã‚§ãƒ¼ãƒ€ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
   const GLuint program;
 
-  // ŒvZ—p‚ÌƒVƒF[ƒ_ƒvƒƒOƒ‰ƒ€‚Åg—p‚µ‚Ä‚¢‚éƒTƒ“ƒvƒ‰‚Ì uniform •Ï”‚Ì”
+  // è¨ˆç®—ç”¨ã®ã‚·ã‚§ãƒ¼ãƒ€ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã§ä½¿ç”¨ã—ã¦ã„ã‚‹ã‚µãƒ³ãƒ—ãƒ©ã® uniform å¤‰æ•°ã®æ•°
   const int uniforms;
 
-  // ŒvZ‚Ég‚¤‹éŒ`
+  // è¨ˆç®—ã«ä½¿ã†çŸ©å½¢
   static const Rect *rectangle;
 
-  // ƒŠƒtƒ@ƒŒƒ“ƒXƒJƒEƒ“ƒg
+  // ãƒªãƒ•ã‚¡ãƒ¬ãƒ³ã‚¹ã‚«ã‚¦ãƒ³ãƒˆ
   static unsigned int count;
 
 public:
 
-  // ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+  // ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   Calculate(int width, int height, const char *source, int uniforms = 1, int targets = 1);
 
-  // ƒfƒXƒgƒ‰ƒNƒ^
+  // ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   virtual ~Calculate();
 
-  // ƒVƒF[ƒ_ƒvƒƒOƒ‰ƒ€‚ğ“¾‚é
+  // ã‚·ã‚§ãƒ¼ãƒ€ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’å¾—ã‚‹
   GLuint get() const
   {
     return program;
   }
 
-  // ŒvZŒ‹‰Ê‚ğæ‚èo‚·ƒeƒNƒXƒ`ƒƒ–¼‚ğ“¾‚é
+  // è¨ˆç®—çµæœã‚’å–ã‚Šå‡ºã™ãƒ†ã‚¯ã‚¹ãƒãƒ£åã‚’å¾—ã‚‹
   const std::vector<GLuint> &getTexture() const
   {
     return texture;
   }
 
-  // ŒvZ—p‚ÌƒVƒF[ƒ_ƒvƒƒOƒ‰ƒ€‚Ìg—p‚ğŠJn‚·‚é
+  // è¨ˆç®—ç”¨ã®ã‚·ã‚§ãƒ¼ãƒ€ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®ä½¿ç”¨ã‚’é–‹å§‹ã™ã‚‹
   void use() const
   {
     glUseProgram(program);
   }
 
-  // ŒvZ‚ğÀs‚·‚é
+  // è¨ˆç®—ã‚’å®Ÿè¡Œã™ã‚‹
   const std::vector<GLuint> &calculate() const;
 };

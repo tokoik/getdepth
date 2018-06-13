@@ -1,17 +1,17 @@
-#include "DepthCamera.h"
+ï»¿#include "DepthCamera.h"
 
 //
-// [“xƒZƒ“ƒTŠÖ˜A‚ÌŠî’êƒNƒ‰ƒX
+// æ·±åº¦ã‚»ãƒ³ã‚µé–¢é€£ã®åŸºåº•ã‚¯ãƒ©ã‚¹
 //
 
-// depthCount ‚Æ colorCount ‚ğŒvZ‚µ‚ÄƒeƒNƒXƒ`ƒƒ‚Æƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğì¬‚·‚é
+// depthCount ã¨ colorCount ã‚’è¨ˆç®—ã—ã¦ãƒ†ã‚¯ã‚¹ãƒãƒ£ã¨ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ä½œæˆã™ã‚‹
 void DepthCamera::makeTexture()
 {
-  // ƒfƒvƒXƒf[ƒ^‚ÆƒJƒ‰[ƒf[ƒ^‚Ì‰æ‘f”‚ğ‹‚ß‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã¨ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ç”»ç´ æ•°ã‚’æ±‚ã‚ã‚‹
   depthCount = depthWidth * depthHeight;
   colorCount = colorWidth * colorHeight;
 
-  // ƒfƒvƒXƒf[ƒ^‚ğŠi”[‚·‚éƒeƒNƒXƒ`ƒƒ‚ğ€”õ‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æº–å‚™ã™ã‚‹
   glGenTextures(1, &depthTexture);
   glBindTexture(GL_TEXTURE_2D, depthTexture);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, depthWidth, depthHeight, 0, GL_RED, GL_UNSIGNED_SHORT, NULL);
@@ -20,7 +20,7 @@ void DepthCamera::makeTexture()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-  // ƒfƒvƒXƒf[ƒ^‚©‚ç‹‚ß‚½ƒJƒƒ‰À•W‚ğŠi”[‚·‚éƒeƒNƒXƒ`ƒƒ‚ğ€”õ‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰æ±‚ã‚ãŸã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’æ ¼ç´ã™ã‚‹ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æº–å‚™ã™ã‚‹
   glGenTextures(1, &pointTexture);
   glBindTexture(GL_TEXTURE_2D, pointTexture);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, depthWidth, depthHeight, 0, GL_RGB, GL_FLOAT, NULL);
@@ -29,7 +29,7 @@ void DepthCamera::makeTexture()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-  // ƒJƒ‰[ƒf[ƒ^‚ğŠi”[‚·‚éƒeƒNƒXƒ`ƒƒ‚ğ€”õ‚·‚é
+  // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã‚’æ ¼ç´ã™ã‚‹ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æº–å‚™ã™ã‚‹
   glGenTextures(1, &colorTexture);
   glBindTexture(GL_TEXTURE_2D, colorTexture);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, colorWidth, colorHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, NULL);
@@ -38,36 +38,36 @@ void DepthCamera::makeTexture()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-  // ƒfƒvƒXƒf[ƒ^‚Ì‰æ‘fˆÊ’u‚ÌƒJƒ‰[‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚ğŠi”[‚·‚éƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğ€”õ‚·‚é
+  // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã®ç”»ç´ ä½ç½®ã®ã‚«ãƒ©ãƒ¼ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’æ ¼ç´ã™ã‚‹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’æº–å‚™ã™ã‚‹
   glGenBuffers(1, &coordBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
   glBufferData(GL_ARRAY_BUFFER, depthCount * 2 * sizeof(GLfloat), nullptr, GL_DYNAMIC_DRAW);
 
-  // g—p‚µ‚Ä‚¢‚éƒZƒ“ƒT‚Ì”‚ğ”‚¦‚é
+  // ä½¿ç”¨ã—ã¦ã„ã‚‹ã‚»ãƒ³ã‚µã®æ•°ã‚’æ•°ãˆã‚‹
   ++activated;
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 DepthCamera::~DepthCamera()
 {
-  // ƒZƒ“ƒT‚ª—LŒø‚É‚È‚Á‚Ä‚¢‚½‚ç
+  // ã‚»ãƒ³ã‚µãŒæœ‰åŠ¹ã«ãªã£ã¦ã„ãŸã‚‰
   if (activated > 0)
   {
-    // ƒeƒNƒXƒ`ƒƒ‚ğíœ‚·‚é
+    // ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’å‰Šé™¤ã™ã‚‹
     glDeleteTextures(1, &depthTexture);
     glDeleteTextures(1, &colorTexture);
     glDeleteTextures(1, &pointTexture);
 
-    // ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğíœ‚·‚é
+    // ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’å‰Šé™¤ã™ã‚‹
     glDeleteBuffers(1, &coordBuffer);
 
-    // g—p‚µ‚Ä‚¢‚éƒZƒ“ƒT‚Ì”‚ğŒ¸‚ç‚·
+    // ä½¿ç”¨ã—ã¦ã„ã‚‹ã‚»ãƒ³ã‚µã®æ•°ã‚’æ¸›ã‚‰ã™
     --activated;
   }
 }
 
-// Ú‘±‚µ‚Ä‚¢‚éƒZƒ“ƒT‚Ì”
+// æ¥ç¶šã—ã¦ã„ã‚‹ã‚»ãƒ³ã‚µã®æ•°
 int DepthCamera::connected(0);
 
-// g—p‚µ‚Ä‚¢‚éƒZƒ“ƒT‚Ì”
+// ä½¿ç”¨ã—ã¦ã„ã‚‹ã‚»ãƒ³ã‚µã®æ•°
 int DepthCamera::activated(0);

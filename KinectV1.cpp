@@ -1,21 +1,21 @@
-#include "KinectV1.h"
+ï»¿#include "KinectV1.h"
 
 //
-// Kinect V1 ŠÖ˜A‚Ìˆ—
+// Kinect V1 é–¢é€£ã®å‡¦ç†
 //
 
 #if USE_KINECT_V1
 
-// •W€ƒ‰ƒCƒuƒ‰ƒŠ
+// æ¨™æº–ãƒ©ã‚¤ãƒ–ãƒ©ãƒª
 #include <cassert>
 
-// Kinect V1 ŠÖ˜A
+// Kinect V1 é–¢é€£
 #pragma comment(lib, "Kinect10.lib")
 
-// Œv‘ª•s”\“_‚ÌƒfƒtƒHƒ‹ƒg‹——£
+// è¨ˆæ¸¬ä¸èƒ½ç‚¹ã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆè·é›¢
 const GLfloat maxDepth(8.0f);
 
-// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 KinectV1::KinectV1()
   : DepthCamera(DEPTH_W, DEPTH_H, COLOR_W, COLOR_H)
   , nextColorFrameEvent(CreateEvent(NULL, TRUE, FALSE, NULL))
@@ -23,50 +23,50 @@ KinectV1::KinectV1()
 {
   HRESULT hr(S_OK);
 
-  // Å‰‚ÌƒCƒ“ƒXƒ^ƒ“ƒX‚ğ¶¬‚·‚é‚Æ‚«‚¾‚¯
+  // æœ€åˆã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ç”Ÿæˆã™ã‚‹ã¨ãã ã‘
   if (getActivated() == 0)
   {
-    // Ú‘±‚³‚ê‚Ä‚¢‚éƒZƒ“ƒT‚Ì”‚ğ’²‚×‚é
+    // æ¥ç¶šã•ã‚Œã¦ã„ã‚‹ã‚»ãƒ³ã‚µã®æ•°ã‚’èª¿ã¹ã‚‹
     hr = NuiGetSensorCount(&connected);
   }
 
-  // ƒZƒ“ƒT‚ªÚ‘±‚³‚ê‚Ä‚¨‚èg—p‘ä”‚ªÚ‘±‘ä”‚É’B‚µ‚Ä‚¢‚È‚¯‚ê‚Î
+  // ã‚»ãƒ³ã‚µãŒæ¥ç¶šã•ã‚Œã¦ãŠã‚Šä½¿ç”¨å°æ•°ãŒæ¥ç¶šå°æ•°ã«é”ã—ã¦ã„ãªã‘ã‚Œã°
   if (hr == S_OK && getActivated() < connected)
   {
-    // ƒZƒ“ƒT‚Ìg—p‚ğŠJn‚·‚é
+    // ã‚»ãƒ³ã‚µã®ä½¿ç”¨ã‚’é–‹å§‹ã™ã‚‹
     hr = NuiCreateSensorByIndex(getActivated(), &sensor);
 
-    // ƒZƒ“ƒT‚ªg—p‰Â”\‚Å‚ ‚ê‚Î
+    // ã‚»ãƒ³ã‚µãŒä½¿ç”¨å¯èƒ½ã§ã‚ã‚Œã°
     if (hr == S_OK && sensor->NuiStatus() == S_OK)
     {
-      // ƒZƒ“ƒT‚ğ‰Šú‰»‚·‚é (ƒJƒ‰[‚ÆƒfƒvƒX‚ğæ“¾‚·‚é)
+      // ã‚»ãƒ³ã‚µã‚’åˆæœŸåŒ–ã™ã‚‹ (ã‚«ãƒ©ãƒ¼ã¨ãƒ‡ãƒ—ã‚¹ã‚’å–å¾—ã™ã‚‹)
       hr = sensor->NuiInitialize(
         NUI_INITIALIZE_FLAG_USES_COLOR |
         NUI_INITIALIZE_FLAG_USES_DEPTH |
         0);
       assert(hr == S_OK);
 
-      // ƒZƒ“ƒT‚Ì‹ÂŠp‚ğ‰Šú‰»‚·‚é
+      // ã‚»ãƒ³ã‚µã®ä»°è§’ã‚’åˆæœŸåŒ–ã™ã‚‹
       hr = sensor->NuiCameraElevationSetAngle(0L);
       assert(hr == S_OK);
 
-      // ƒfƒvƒXƒXƒgƒŠ[ƒ€‚Ìæ“¾İ’è
+      // ãƒ‡ãƒ—ã‚¹ã‚¹ãƒˆãƒªãƒ¼ãƒ ã®å–å¾—è¨­å®š
       hr = sensor->NuiImageStreamOpen(NUI_IMAGE_TYPE_DEPTH, DEPTH_RESOLUTION,
         0, 2, nextDepthFrameEvent, &depthStream);
       assert(hr == S_OK);
 
-      // ƒJƒ‰[ƒXƒgƒŠ[ƒ€‚Ìæ“¾İ’è
+      // ã‚«ãƒ©ãƒ¼ã‚¹ãƒˆãƒªãƒ¼ãƒ ã®å–å¾—è¨­å®š
       hr = sensor->NuiImageStreamOpen(NUI_IMAGE_TYPE_COLOR, COLOR_RESOLUTION,
         0, 2, nextColorFrameEvent, &colorStream);
       assert(hr == S_OK);
 
-      // depthCount ‚Æ colorCount ‚ğŒvZ‚µ‚ÄƒeƒNƒXƒ`ƒƒ‚Æƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚ğì¬‚·‚é
+      // depthCount ã¨ colorCount ã‚’è¨ˆç®—ã—ã¦ãƒ†ã‚¯ã‚¹ãƒãƒ£ã¨ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã‚’ä½œæˆã™ã‚‹
       makeTexture();
 
-      // ƒfƒvƒXƒf[ƒ^‚©‚çƒJƒƒ‰À•W‚ğ‹‚ß‚é‚Æ‚«‚É—p‚¢‚éˆêƒƒ‚ƒŠ‚ğŠm•Û‚·‚é
+      // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‹ã‚‰ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’æ±‚ã‚ã‚‹ã¨ãã«ç”¨ã„ã‚‹ä¸€æ™‚ãƒ¡ãƒ¢ãƒªã‚’ç¢ºä¿ã™ã‚‹
       position = new GLfloat[depthCount][3];
 
-      // ƒfƒvƒXƒ}ƒbƒv‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚É‘Î‚·‚é’¸“_À•W‚ÌŠg‘å—¦
+      // ãƒ‡ãƒ—ã‚¹ãƒãƒƒãƒ—ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã«å¯¾ã™ã‚‹é ‚ç‚¹åº§æ¨™ã®æ‹¡å¤§ç‡
       scale[0] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 320.0f;
       scale[1] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 240.0f;
       scale[2] = -4.0f;
@@ -75,107 +75,107 @@ KinectV1::KinectV1()
   }
 }
 
-// ƒfƒXƒgƒ‰ƒNƒ^
+// ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
 KinectV1::~KinectV1()
 {
-  // ƒCƒxƒ“ƒgƒnƒ“ƒhƒ‹‚ğ•Â‚¶‚é
+  // ã‚¤ãƒ™ãƒ³ãƒˆãƒãƒ³ãƒ‰ãƒ«ã‚’é–‰ã˜ã‚‹
   CloseHandle(nextDepthFrameEvent);
   CloseHandle(nextColorFrameEvent);
 
-  // ƒZƒ“ƒT‚ª—LŒø‚É‚È‚Á‚Ä‚¢‚½‚ç
+  // ã‚»ãƒ³ã‚µãŒæœ‰åŠ¹ã«ãªã£ã¦ã„ãŸã‚‰
   if (getActivated() > 0)
   {
-    // ƒf[ƒ^•ÏŠ·—p‚Ìƒƒ‚ƒŠ‚ğíœ‚·‚é
+    // ãƒ‡ãƒ¼ã‚¿å¤‰æ›ç”¨ã®ãƒ¡ãƒ¢ãƒªã‚’å‰Šé™¤ã™ã‚‹
     delete[] position;
 
-    // ƒZƒ“ƒT‚ğƒVƒƒƒbƒgƒ_ƒEƒ“‚·‚é
+    // ã‚»ãƒ³ã‚µã‚’ã‚·ãƒ£ãƒƒãƒˆãƒ€ã‚¦ãƒ³ã™ã‚‹
     sensor->NuiShutdown();
   }
 }
 
-// ƒf[ƒ^‚ğæ“¾‚·‚é
+// ãƒ‡ãƒ¼ã‚¿ã‚’å–å¾—ã™ã‚‹
 void KinectV1::getImage(HANDLE event, HANDLE stream,
   GLuint texture, GLsizei width, GLsizei height, GLenum format, GLenum type) const
 {
-  // ƒJƒ‰[‚ÌƒeƒNƒXƒ`ƒƒ‚ğw’è‚·‚é
+  // ã‚«ãƒ©ãƒ¼ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’æŒ‡å®šã™ã‚‹
   glBindTexture(GL_TEXTURE_2D, texture);
 
-  // Ÿ‚ÌƒtƒŒ[ƒ€ƒf[ƒ^‚ª“’…‚µ‚Ä‚¢‚ê‚Î
+  // æ¬¡ã®ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿ãŒåˆ°ç€ã—ã¦ã„ã‚Œã°
   if (WaitForSingleObject(event, 0) != WAIT_TIMEOUT)
   {
-    // æ“¾‚µ‚½ƒtƒŒ[ƒ€ƒf[ƒ^‚ÌŠi”[êŠ
+    // å–å¾—ã—ãŸãƒ•ãƒ¬ãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿ã®æ ¼ç´å ´æ‰€
     NUI_IMAGE_FRAME frame;
 
-    // ƒtƒŒ[ƒ€ƒf[ƒ^‚ÌŠi”[êŠ‚ğ frame ‚Éæ“¾‚·‚é
+    // ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿ã®æ ¼ç´å ´æ‰€ã‚’ frame ã«å–å¾—ã™ã‚‹
     if (sensor->NuiImageStreamGetNextFrame(stream, 0, &frame) == S_OK)
     {
-      // ‚±‚ê‚©‚çˆ—Š®—¹‚Ü‚Åƒf[ƒ^‚ª•ÏX‚³‚ê‚È‚¢‚æ‚¤‚ÉƒƒbƒN‚·‚é
+      // ã“ã‚Œã‹ã‚‰å‡¦ç†å®Œäº†ã¾ã§ãƒ‡ãƒ¼ã‚¿ãŒå¤‰æ›´ã•ã‚Œãªã„ã‚ˆã†ã«ãƒ­ãƒƒã‚¯ã™ã‚‹
       NUI_LOCKED_RECT rect;
       frame.pFrameTexture->LockRect(0, &rect, NULL, 0);
 
-      // ƒƒbƒN‚É¬Œ÷‚µ‚½‚ç
+      // ãƒ­ãƒƒã‚¯ã«æˆåŠŸã—ãŸã‚‰
       if (rect.Pitch)
       {
-        // æ“¾‚µ‚½‚Ì‚ªƒfƒvƒXƒf[ƒ^‚©ƒJƒ‰[ƒf[ƒ^‚Å‚ ‚ê‚Î
+        // å–å¾—ã—ãŸã®ãŒãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‹ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã§ã‚ã‚Œã°
         if (texture == depthTexture || texture == colorTexture)
         {
-          // pBits ‚É“ü‚Á‚Ä‚¢‚éƒf[ƒ^‚ğƒeƒNƒXƒ`ƒƒ‚É“]‘—‚·‚é
+          // pBits ã«å…¥ã£ã¦ã„ã‚‹ãƒ‡ãƒ¼ã‚¿ã‚’ãƒ†ã‚¯ã‚¹ãƒãƒ£ã«è»¢é€ã™ã‚‹
           glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, type, rect.pBits);
         }
 
-        // ƒfƒvƒXƒf[ƒ^‚©ƒJƒƒ‰À•W‚ğæ“¾‚·‚é‚Æ‚«‚Í
+        // ãƒ‡ãƒ—ã‚¹ãƒ‡ãƒ¼ã‚¿ã‹ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’å–å¾—ã™ã‚‹ã¨ãã¯
         if (texture == depthTexture || texture == pointTexture)
         {
-          // ƒJƒ‰[ƒf[ƒ^‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚ğ‹‚ß‚Äƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg‚É“]‘—‚·‚é
+          // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã‚’æ±‚ã‚ã¦ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆã«è»¢é€ã™ã‚‹
           glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
           GLfloat (*const texcoord)[2](static_cast<GLfloat (*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
           for (int i = 0; i < depthCount; ++i)
           {
-            // ƒfƒvƒX‚Ì‰æ‘fˆÊ’u‚©‚çƒJƒ‰[‚Ì‰æ‘fˆÊ’u‚ğ‹‚ß‚é
+            // ãƒ‡ãƒ—ã‚¹ã®ç”»ç´ ä½ç½®ã‹ã‚‰ã‚«ãƒ©ãƒ¼ã®ç”»ç´ ä½ç½®ã‚’æ±‚ã‚ã‚‹
             LONG x, y;
             sensor->NuiImageGetColorPixelCoordinatesFromDepthPixel(COLOR_RESOLUTION,
               NULL, i % depthWidth, i / depthWidth, reinterpret_cast<USHORT *>(rect.pBits)[i], &x, &y);
 
-            // ƒJƒ‰[ƒf[ƒ^‚ÌƒeƒNƒXƒ`ƒƒÀ•W‚É•ÏŠ·‚·‚é
+            // ã‚«ãƒ©ãƒ¼ãƒ‡ãƒ¼ã‚¿ã®ãƒ†ã‚¯ã‚¹ãƒãƒ£åº§æ¨™ã«å¤‰æ›ã™ã‚‹
             texcoord[i][0] = GLfloat(x) + 0.5f;
             texcoord[i][1] = GLfloat(y) + 0.5f;
           }
           glUnmapBuffer(GL_ARRAY_BUFFER);
 
-          // ƒJƒƒ‰À•W‚ğæ“¾‚·‚é‚Æ‚«‚Í
+          // ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’å–å¾—ã™ã‚‹ã¨ãã¯
           if (texture == pointTexture)
           {
-            // ‚·‚×‚Ä‚Ì“_‚É‚Â‚¢‚Ä
+            // ã™ã¹ã¦ã®ç‚¹ã«ã¤ã„ã¦
             for (int i = 0; i < depthCount; ++i)
             {
-              // ƒfƒvƒX’l‚Ì’PˆÊ‚ğƒ[ƒgƒ‹‚ÉŠ·Z‚·‚éŒW”
+              // ãƒ‡ãƒ—ã‚¹å€¤ã®å˜ä½ã‚’ãƒ¡ãƒ¼ãƒˆãƒ«ã«æ›ç®—ã™ã‚‹ä¿‚æ•°
               static const GLfloat zScale(-0.001f / GLfloat(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT));
 
-              // ‚»‚Ì“_‚ÌƒfƒvƒX’l‚ğ“¾‚é
+              // ãã®ç‚¹ã®ãƒ‡ãƒ—ã‚¹å€¤ã‚’å¾—ã‚‹
               const unsigned short d(reinterpret_cast<USHORT *>(rect.pBits)[i]);
 
-              // ƒfƒvƒX’l‚Ì’PˆÊ‚ğƒ[ƒgƒ‹‚ÉŠ·Z‚·‚é (Œv‘ª•s”\“_‚Í maxDepth ‚É‚·‚é)
+              // ãƒ‡ãƒ—ã‚¹å€¤ã®å˜ä½ã‚’ãƒ¡ãƒ¼ãƒˆãƒ«ã«æ›ç®—ã™ã‚‹ (è¨ˆæ¸¬ä¸èƒ½ç‚¹ã¯ maxDepth ã«ã™ã‚‹)
               const GLfloat z(d == 0 ? -maxDepth : GLfloat(d) * zScale);
 
-              // ƒŒƒ“ƒY‚Ì‰æŠp‚É‚à‚Æ‚Ã‚­ƒXƒP[ƒ‹‚ğ‹‚ß‚é
+              // ãƒ¬ãƒ³ã‚ºã®ç”»è§’ã«ã‚‚ã¨ã¥ãã‚¹ã‚±ãƒ¼ãƒ«ã‚’æ±‚ã‚ã‚‹
               const GLfloat s(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * z);
 
-              // ‚»‚Ì“_‚ÌƒXƒNƒŠ[ƒ“ã‚ÌˆÊ’u‚ğ‹‚ß‚é
+              // ãã®ç‚¹ã®ã‚¹ã‚¯ãƒªãƒ¼ãƒ³ä¸Šã®ä½ç½®ã‚’æ±‚ã‚ã‚‹
               const GLfloat x(float(i % depthWidth - depthWidth / 2) + 0.5f);
               const GLfloat y(float(i / depthWidth - depthHeight / 2) + 0.5f);
 
-              // ‚»‚Ì“_‚ÌƒJƒƒ‰À•W‚ğ‹‚ß‚é
+              // ãã®ç‚¹ã®ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’æ±‚ã‚ã‚‹
               position[i][0] = x * s;
               position[i][1] = y * s;
               position[i][2] = z;
             }
 
-            // ƒJƒƒ‰À•W‚ğƒeƒNƒXƒ`ƒƒ‚É“]‘—‚·‚é
+            // ã‚«ãƒ¡ãƒ©åº§æ¨™ã‚’ãƒ†ã‚¯ã‚¹ãƒãƒ£ã«è»¢é€ã™ã‚‹
             glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, position);
           }
         }
 
-        // ƒƒbƒN‚µ‚½ƒf[ƒ^‚ğŠJ•ú‚·‚é
+        // ãƒ­ãƒƒã‚¯ã—ãŸãƒ‡ãƒ¼ã‚¿ã‚’é–‹æ”¾ã™ã‚‹
         const HRESULT hr(sensor->NuiImageStreamReleaseFrame(stream, &frame));
         assert(hr == S_OK);
       }

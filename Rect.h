@@ -1,25 +1,25 @@
-#pragma once
+ï»¿#pragma once
 
 //
-// ‹éŒ`
+// çŸ©å½¢
 //
 
-// }Œ`•`‰æ
+// å›³å½¢æç”»
 #include "Shape.h"
 
 class Rect : public Shape
 {
-  // ’¸“_ƒoƒbƒtƒ@ƒIƒuƒWƒFƒNƒg
+  // é ‚ç‚¹ãƒãƒƒãƒ•ã‚¡ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆ
   GLuint vbo;
 
 public:
 
-  // ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+  // ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   Rect();
 
-  // ƒfƒXƒgƒ‰ƒNƒ^
+  // ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿
   virtual ~Rect();
 
-  // •`‰æ
+  // æç”»
   virtual void draw() const;
 };
