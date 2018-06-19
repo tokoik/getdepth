@@ -470,7 +470,7 @@ typedef void (APIENTRYP PFNGLTEXIMAGE3DPROC) (GLenum target, GLint level, GLint 
 typedef void (APIENTRYP PFNGLTEXSUBIMAGE3DPROC) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels);
 typedef void (APIENTRYP PFNGLCOPYTEXSUBIMAGE3DPROC) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
 #ifdef GL_GLEXT_PROTOTYPES
-GLAPI void APIENTRY glDrawRangeElements (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices);
+GLAPI void APIENTRY glDrawRangeElements (GLenum mode, GLuint begin, GLuint end, GLsizei count, GLenum type, const void *indices);
 GLAPI void APIENTRY glTexImage3D (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const void *pixels);
 GLAPI void APIENTRY glTexSubImage3D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels);
 GLAPI void APIENTRY glCopyTexSubImage3D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
@@ -1618,7 +1618,7 @@ typedef void (APIENTRYP PFNGLGETMULTISAMPLEFVPROC) (GLenum pname, GLuint index, 
 typedef void (APIENTRYP PFNGLSAMPLEMASKIPROC) (GLuint maskNumber, GLbitfield mask);
 #ifdef GL_GLEXT_PROTOTYPES
 GLAPI void APIENTRY glDrawElementsBaseVertex (GLenum mode, GLsizei count, GLenum type, const void *indices, GLint basevertex);
-GLAPI void APIENTRY glDrawRangeElementsBaseVertex (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices, GLint basevertex);
+GLAPI void APIENTRY glDrawRangeElementsBaseVertex (GLenum mode, GLuint begin, GLuint end, GLsizei count, GLenum type, const void *indices, GLint basevertex);
 GLAPI void APIENTRY glDrawElementsInstancedBaseVertex (GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount, GLint basevertex);
 GLAPI void APIENTRY glMultiDrawElementsBaseVertex (GLenum mode, const GLsizei *count, GLenum type, const void *const*indices, GLsizei drawcount, const GLint *basevertex);
 GLAPI void APIENTRY glProvokingVertex (GLenum mode);
@@ -3463,8 +3463,8 @@ typedef void (APIENTRYP PFNGLFRAMEBUFFERSAMPLELOCATIONSFVARBPROC) (GLenum target
 typedef void (APIENTRYP PFNGLNAMEDFRAMEBUFFERSAMPLELOCATIONSFVARBPROC) (GLuint framebuffer, GLuint start, GLsizei count, const GLfloat *v);
 typedef void (APIENTRYP PFNGLEVALUATEDEPTHVALUESARBPROC) (void);
 #ifdef GL_GLEXT_PROTOTYPES
-GLAPI void APIENTRY glFramebufferSampleLocationsfvARB (GLenum target, GLuint start, GLsizei count, const GLfloat *v);
-GLAPI void APIENTRY glNamedFramebufferSampleLocationsfvARB (GLuint framebuffer, GLuint start, GLsizei count, const GLfloat *v);
+GLAPI void APIENTRY glFramebufferSampleLocationsfvARB (GLenum target, GLuint begin, GLsizei count, const GLfloat *v);
+GLAPI void APIENTRY glNamedFramebufferSampleLocationsfvARB (GLuint framebuffer, GLuint begin, GLsizei count, const GLfloat *v);
 GLAPI void APIENTRY glEvaluateDepthValuesARB (void);
 #endif
 #endif /* GL_ARB_sample_locations */
@@ -4495,7 +4495,7 @@ GLAPI void APIENTRY glVertexArrayVertexAttribDivisorEXT (GLuint vaobj, GLuint in
 typedef void (APIENTRYP PFNGLDRAWARRAYSINSTANCEDEXTPROC) (GLenum mode, GLint start, GLsizei count, GLsizei primcount);
 typedef void (APIENTRYP PFNGLDRAWELEMENTSINSTANCEDEXTPROC) (GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei primcount);
 #ifdef GL_GLEXT_PROTOTYPES
-GLAPI void APIENTRY glDrawArraysInstancedEXT (GLenum mode, GLint start, GLsizei count, GLsizei primcount);
+GLAPI void APIENTRY glDrawArraysInstancedEXT (GLenum mode, GLint begin, GLsizei count, GLsizei primcount);
 GLAPI void APIENTRY glDrawElementsInstancedEXT (GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei primcount);
 #endif
 #endif /* GL_EXT_draw_instanced */
@@ -5347,8 +5347,8 @@ typedef void (APIENTRYP PFNGLFRAMEBUFFERSAMPLELOCATIONSFVNVPROC) (GLenum target,
 typedef void (APIENTRYP PFNGLNAMEDFRAMEBUFFERSAMPLELOCATIONSFVNVPROC) (GLuint framebuffer, GLuint start, GLsizei count, const GLfloat *v);
 typedef void (APIENTRYP PFNGLRESOLVEDEPTHVALUESNVPROC) (void);
 #ifdef GL_GLEXT_PROTOTYPES
-GLAPI void APIENTRY glFramebufferSampleLocationsfvNV (GLenum target, GLuint start, GLsizei count, const GLfloat *v);
-GLAPI void APIENTRY glNamedFramebufferSampleLocationsfvNV (GLuint framebuffer, GLuint start, GLsizei count, const GLfloat *v);
+GLAPI void APIENTRY glFramebufferSampleLocationsfvNV (GLenum target, GLuint begin, GLsizei count, const GLfloat *v);
+GLAPI void APIENTRY glNamedFramebufferSampleLocationsfvNV (GLuint framebuffer, GLuint begin, GLsizei count, const GLfloat *v);
 GLAPI void APIENTRY glResolveDepthValuesNV (void);
 #endif
 #endif /* GL_NV_sample_locations */

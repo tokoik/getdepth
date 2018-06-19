@@ -21,58 +21,49 @@ KinectV1::KinectV1()
   , nextColorFrameEvent(CreateEvent(NULL, TRUE, FALSE, NULL))
   , nextDepthFrameEvent(CreateEvent(NULL, TRUE, FALSE, NULL))
 {
-  HRESULT hr(S_OK);
-
   // 最初のインスタンスを生成するときだけ
   if (getActivated() == 0)
   {
     // 接続されているセンサの数を調べる
-    hr = NuiGetSensorCount(&connected);
+    if (NuiGetSensorCount(&connected) != S_OK)
+      throw "Kinect (v1) センサが接続されていません";
   }
 
   // センサが接続されており使用台数が接続台数に達していなければ
-  if (hr == S_OK && getActivated() < connected)
-  {
-    // センサの使用を開始する
-    hr = NuiCreateSensorByIndex(getActivated(), &sensor);
+  if (getActivated() >= connected)
+    throw "Kinect (v1) センサの数が足りません";
 
-    // センサが使用可能であれば
-    if (hr == S_OK && sensor->NuiStatus() == S_OK)
-    {
-      // センサを初期化する (カラーとデプスを取得する)
-      hr = sensor->NuiInitialize(
-        NUI_INITIALIZE_FLAG_USES_COLOR |
-        NUI_INITIALIZE_FLAG_USES_DEPTH |
-        0);
-      assert(hr == S_OK);
+  // センサの使用を開始する
+  if (NuiCreateSensorByIndex(getActivated(), &sensor) != S_OK || sensor->NuiStatus() != S_OK)
+    throw "Kinect (v1) センサが使用できません";
 
-      // センサの仰角を初期化する
-      hr = sensor->NuiCameraElevationSetAngle(0L);
-      assert(hr == S_OK);
+  // センサを初期化する (カラーとデプスを取得する)
+  if (sensor->NuiInitialize(NUI_INITIALIZE_FLAG_USES_COLOR | NUI_INITIALIZE_FLAG_USES_DEPTH) != S_OK)
+    throw "Kinect (v1) センサを初期化できません";
 
-      // デプスストリームの取得設定
-      hr = sensor->NuiImageStreamOpen(NUI_IMAGE_TYPE_DEPTH, DEPTH_RESOLUTION,
-        0, 2, nextDepthFrameEvent, &depthStream);
-      assert(hr == S_OK);
+  // センサの仰角を初期化する
+  if (sensor->NuiCameraElevationSetAngle(0L) != S_OK)
+    throw "Kinect (v1) センサの仰角を設定できません";
 
-      // カラーストリームの取得設定
-      hr = sensor->NuiImageStreamOpen(NUI_IMAGE_TYPE_COLOR, COLOR_RESOLUTION,
-        0, 2, nextColorFrameEvent, &colorStream);
-      assert(hr == S_OK);
+  // デプスストリームの取得設定
+  if (sensor->NuiImageStreamOpen(NUI_IMAGE_TYPE_DEPTH, DEPTH_RESOLUTION, 0, 2, nextDepthFrameEvent, &depthStream) != S_OK)
+    throw "Kinect (v1) センサのデプスストリームが取得できません";
 
-      // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-      makeTexture();
+  // カラーストリームの取得設定
+  if (sensor->NuiImageStreamOpen(NUI_IMAGE_TYPE_COLOR, COLOR_RESOLUTION, 0, 2, nextColorFrameEvent, &colorStream) != S_OK)
+    throw "Kinect (v1) センサのカラーストリームが取得できません";
 
-      // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
-      position = new GLfloat[depthCount][3];
+  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
+  makeTexture();
 
-      // デプスマップのテクスチャ座標に対する頂点座標の拡大率
-      scale[0] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 320.0f;
-      scale[1] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 240.0f;
-      scale[2] = -4.0f;
-      scale[3] = -65.535f / float(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT);
-    }
-  }
+  // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
+  position = new GLfloat[depthCount][3];
+
+  // デプスマップのテクスチャ座標に対する頂点座標の拡大率
+  scale[0] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 320.0f;
+  scale[1] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 240.0f;
+  scale[2] = -4.0f;
+  scale[3] = -65.535f / float(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT);
 }
 
 // デストラクタ

@@ -2569,7 +2569,7 @@ void gg::ggInit()
 **
 **   msg エラー発生時に標準エラー出力に出力する文字列. nullptr なら何も出力しない
 */
-void gg::ggError(const char *name, unsigned int line)
+void gg::_ggError(const char *name, unsigned int line)
 {
   const GLenum error(glGetError());
 
@@ -2613,7 +2613,7 @@ void gg::ggError(const char *name, unsigned int line)
 **
 **   msg エラー発生時に標準エラー出力に出力する文字列. nullptr なら何も出力しない
 */
-void gg::ggFBOError(const char *name, unsigned int line)
+void gg::_ggFBOError(const char *name, unsigned int line)
 {
   const GLenum status(glCheckFramebufferStatus(GL_FRAMEBUFFER));
 
@@ -2667,11 +2667,7 @@ bool gg::ggSaveTga(const char *name, const void *buffer,
   std::ofstream file(name, std::ios::binary);
 
   // ファイルが開けなかったら戻る
-  if (!file)
-  {
-    std::cerr << "Error: Can't open file: " << name << std::endl;
-    return false;
-  }
+  if (!file) throw "TGA ファイルが作成できませんでした";
 
   // 画像のヘッダ
   const unsigned char type(depth == 0 ? 0 : depth < 3 ? 3 : 2);
@@ -2700,9 +2696,8 @@ bool gg::ggSaveTga(const char *name, const void *buffer,
   // ヘッダの書き込みに失敗したら戻る
   if (file.bad())
   {
-    std::cerr << "Error: Can't write file header: " << name << std::endl;
     file.close();
-    return false;
+    throw "TGA ファイルのヘッダが書き込めませんでした";
   }
 
   // データを書き込む
@@ -2733,9 +2728,8 @@ bool gg::ggSaveTga(const char *name, const void *buffer,
   // データの書き込みに失敗したら戻る
   if (file.bad())
   {
-    std::cerr << "Error: Can't write image data: " << name << std::endl;
     file.close();
-    return false;
+    throw "TGA ファイルに画像データが書き込めませんでした";
   }
 
   // ファイルを閉じる
@@ -2802,19 +2796,16 @@ bool gg::ggSaveDepth(const char *name)
 **   pWidth 読み込んだファイルの横の画素数の格納先のポインタ (nullptr なら格納しない)
 **   pHeight 読み込んだファイルの縦の画素数の格納先のポインタ (nullptr なら格納しない)
 **   pFormat 読み込んだファイルのフォーマットの格納先のポインタ (nullptr なら格納しない)
-**   戻り値 読み込んだ画像データのポインタ (要 delete, 読み込めなければ nullptr)
+**   image 読み込んだ画像を格納する vector
+**   戻り値 読み込み成功したら true
 */
-GLubyte *gg::ggReadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GLenum *pFormat)
+void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWidth, GLsizei *pHeight, GLenum *pFormat)
 {
   // ファイルを開く
   std::ifstream file(name, std::ios::binary);
 
   // ファイルが開けなかったら戻る
-  if (!file)
-  {
-    std::cerr << "Error: Can't open file: " << name << std::endl;
-    return nullptr;
-  }
+  if (!file) throw "TGA ファイルが開けませんでした";
 
   // ヘッダを読み込む
   unsigned char header[18];
@@ -2823,9 +2814,8 @@ GLubyte *gg::ggReadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GL
   // ヘッダの読み込みに失敗したら戻る
   if (file.bad())
   {
-    std::cerr << "Error: Can't read file header: " << name << std::endl;
     file.close();
-    return nullptr;
+    throw "TGA ファイルのヘッダが読み込めませんでした";
   }
 
   // 深度
@@ -2846,9 +2836,8 @@ GLubyte *gg::ggReadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GL
     break;
   default:
     // 取り扱えないフォーマットだったら戻る
-    std::cerr << "Error: Unusable format: " << depth << std::endl;
     file.close();
-    return nullptr;
+    throw "ファイルが取り扱うことのできないフォーマットでした";
   }
 
   // 画像の縦横の画素数
@@ -2857,18 +2846,10 @@ GLubyte *gg::ggReadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GL
 
   // データサイズ
   const int size(*pWidth * *pHeight * depth);
-  if (size < 2) return nullptr;
+  if (size < 2) throw "TGA ファイルのサイズが小さすぎます";
 
   // 読み込みに使うメモリを確保する
-  GLubyte *const buffer(new(std::nothrow) GLubyte[size]);
-
-  // メモリが確保できなければ戻る
-  if (buffer == nullptr)
-  {
-    std::cerr << "Error: Too large file: " << name << std::endl;
-    file.close();
-    return nullptr;
-  }
+  image.resize(size);
 
   // データを読み込む
   if (header[2] & 8)
@@ -2887,7 +2868,7 @@ GLubyte *gg::ggReadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GL
         file.read(temp, depth);
         for (int i = 0; i < count; ++i)
         {
-          for (int j = 0; j < depth;) buffer[p++] = temp[j++];
+          for (int j = 0; j < depth;) image[p++] = temp[j++];
         }
       }
       else
@@ -2895,7 +2876,7 @@ GLubyte *gg::ggReadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GL
         // raw packet
         const int count((c + 1) * depth);
         if (p + count > size) break;
-        file.read(reinterpret_cast<char *>(buffer + p), count);
+        file.read(reinterpret_cast<char *>(&image[p]), count);
         p += count;
       }
     }
@@ -2903,17 +2884,11 @@ GLubyte *gg::ggReadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GL
   else
   {
     // 非圧縮
-    file.read(reinterpret_cast<char *>(buffer), size);
+    file.read(reinterpret_cast<char *>(image.data()), size);
   }
-
-  // 読み込みに失敗していたら警告を出す
-  if (file.bad()) std::cerr << "Waring: Can't read image data: " << name << std::endl;
 
   // ファイルを閉じる
   file.close();
-
-  // 画像を読み込んだメモリを返す
-  return buffer;
 }
 
 /*
@@ -2964,6 +2939,9 @@ GLuint gg::ggLoadTexture(const GLvoid *image, GLsizei width, GLsizei height,
 */
 GLuint gg::ggLoadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GLenum internal, GLenum wrap)
 {
+  // 画像データ
+  std::vector<GLubyte> image;
+
   // 画像サイズ
   GLsizei width, height;
 
@@ -2971,10 +2949,10 @@ GLuint gg::ggLoadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GLen
   GLenum format;
 
   // 画像を読み込む
-  const std::unique_ptr<const GLubyte> image(ggReadImage(name, &width, &height, &format));
+  ggReadImage(name, image, &width, &height, &format);
 
   // 画像が読み込めなかったら戻る
-  if (image == nullptr) return 0;
+  if (image.empty()) return 0;
 
   // internal == 0 なら内部フォーマットを読み込んだファイルに合わせる
   if (internal == 0)
@@ -2994,7 +2972,7 @@ GLuint gg::ggLoadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GLen
   }
 
   // テクスチャメモリに読み込む
-  const GLuint tex(ggLoadTexture(image.get(), width, height, format, GL_UNSIGNED_BYTE, internal, wrap));
+  const GLuint tex(ggLoadTexture(image.data(), width, height, format, GL_UNSIGNED_BYTE, internal, wrap));
 
   // 画像サイズを返す
   if (pWidth) *pWidth = width;
@@ -3011,18 +2989,39 @@ GLuint gg::ggLoadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GLen
 **   height 高さマップのグレースケール画像のデータ hmap の縦の画素数
 **   stride データの間隔
 **   hmap グレースケール画像のデータ
-**   nz 法線の z 成分の割合.
-**   internal テクスチャの内部フォーマット.
-**   戻り値 テクスチャの作成に成功すればデータのポインタ, 失敗すれば nullptr, 要 delete
+**   nz 法線の z 成分の割合
+**   internal テクスチャの内部フォーマット
+**   nmap 法線マップを格納する vector
 */
-gg::GgVector *gg::ggCreateNormalMap(const GLubyte *hmap, GLsizei width, GLsizei height, GLint stride,
-  GLfloat nz, GLenum internal)
+void gg::ggCreateNormalMap(const GLubyte *hmap, GLsizei width, GLsizei height, GLenum format, GLfloat nz,
+  GLenum internal, std::vector<GgVector> &nmap)
 {
   // メモリサイズ
   const GLsizei size(width * height);
 
   // 法線マップのメモリを確保する
-  GgVector *const nmap(new(std::nothrow) GgVector[size]);
+  nmap.resize(size);
+
+  // 画素のバイト数
+  GLint stride;
+  switch (format)
+  {
+  case GL_RED:
+    stride = 1;
+    break;
+  case GL_RG:
+    stride = 2;
+    break;
+  case GL_BGR:
+    stride = 3;
+    break;
+  case GL_BGRA:
+    stride = 4;
+    break;
+  default:
+    stride = 1;
+    break;
+  }
 
   // 法線マップの作成
   for (GLsizei i = 0; i < size; ++i)
@@ -3060,9 +3059,6 @@ gg::GgVector *gg::ggCreateNormalMap(const GLubyte *hmap, GLsizei width, GLsizei 
       nmap[i][3] *= 0.0039215686f; // == 1/255
     }
   }
-
-  // 作成した法線マップの格納先を返す
-  return nmap;
 }
 
 /*
@@ -3077,6 +3073,9 @@ gg::GgVector *gg::ggCreateNormalMap(const GLubyte *hmap, GLsizei width, GLsizei 
 */
 GLuint gg::ggLoadHeight(const char *name, float nz, GLsizei *pWidth, GLsizei *pHeight, GLenum internal)
 {
+  // 画像データ
+  std::vector<GLubyte> hmap;
+
   // 画像サイズ
   GLsizei width, height;
 
@@ -3084,42 +3083,96 @@ GLuint gg::ggLoadHeight(const char *name, float nz, GLsizei *pWidth, GLsizei *pH
   GLenum format;
 
   // 高さマップの画像を読み込む
-  const GLubyte *const hmap(ggReadImage(name, &width, &height, &format));
+  ggReadImage(name, hmap, &width, &height, &format);
 
   // 画像が読み込めなかったら戻る
-  if (hmap == nullptr) return 0;
+  if (hmap.empty()) return 0;
 
-  // 画素のバイト数
-  GLint stride;
-  switch (format)
-  {
-  case GL_RED:
-    stride = 1;
-    break;
-  case GL_RG:
-    stride = 2;
-    break;
-  case GL_BGR:
-    stride = 3;
-    break;
-  case GL_BGRA:
-    stride = 4;
-    break;
-  default:
-    stride = 1;
-    break;
-  }
+  // 法線マップ
+  std::vector<GgVector> nmap;
 
   // 法線マップを作成する
-  const std::unique_ptr<GgVector[]>
-    nmap(ggCreateNormalMap(hmap, width, height, stride, nz, internal));
+  ggCreateNormalMap(hmap.data(), width, height, format, nz, internal, nmap);
 
   // 画像サイズを返す
   if (pWidth) *pWidth = width;
   if (pHeight) *pHeight = height;
 
   // テクスチャを作成して返す
-  return ggLoadTexture(nmap.get(), width, height, GL_RGBA, GL_FLOAT, internal, GL_REPEAT);
+  return ggLoadTexture(nmap.data(), width, height, GL_RGBA, GL_FLOAT, internal, GL_REPEAT);
+}
+
+/*
+** テクスチャを作成してファイルからデータを読み込む
+**
+**   name 読み込むファイル名
+**   internal glTexImage2D() に指定するテクスチャの内部フォーマット. 0 なら外部フォーマットに合わせる
+**   戻り値 テクスチャの作成に成功すれば true, 失敗すれば false
+*/
+void gg::GgColorTexture::load(const char *name, GLenum internal, GLenum wrap)
+{
+  // 画像データ
+  std::vector<GLubyte> image;
+
+  // 画像サイズ
+  GLsizei width, height;
+
+  // 画像フォーマット
+  GLenum format;
+
+  // 画像を読み込む
+  ggReadImage(name, image, &width, &height, &format);
+
+  // internal == 0 なら内部フォーマットを読み込んだファイルに合わせる
+  if (internal == 0)
+  {
+    switch (format)
+    {
+    case GL_BGR:
+      internal = GL_RGB;
+      break;
+    case GL_BGRA:
+      internal = GL_RGBA;
+      break;
+    default:
+      internal = format;
+      break;
+    }
+  }
+
+  // テクスチャを作成する
+  texture.reset(new GgTexture(image.data(), width, height, format, GL_UNSIGNED_BYTE, internal, wrap));
+}
+
+/*
+** ファイルからデータを読み込んで法線マップのテクスチャを作成する
+**
+**   name 画像ファイル名
+**   width テクスチャとして用いる画像データの横幅
+**   height テクスチャとして用いる画像データの高さ
+**   format テクスチャとして用いる画像データのフォーマット (GL_RED, GL_RG, GL_RGB, GL_RGBA)
+**   nz 法線マップの z 成分の値
+**   internal テクスチャの内部フォーマット
+*/
+void gg::GgNormalTexture::load(const char *name, float nz, GLenum internal)
+{
+  // 高さマップ
+  std::vector<GLubyte> hmap;
+
+  // 画像サイズ
+  GLsizei width, height;
+
+  // 画像フォーマット
+  GLenum format;
+
+  // 高さマップの画像を読み込む
+  ggReadImage(name, hmap, &width, &height, &format);
+
+  // 法線マップ
+  std::vector<GgVector> nmap;
+
+  // 法線マップを作成する
+  ggCreateNormalMap(hmap.data(), width, height, format, nz, internal, nmap);
 }
 
 // \cond
@@ -3181,7 +3234,9 @@ namespace gg
     std::ifstream mtlfile(mtlpath.c_str(), std::ios::binary);
     if (!mtlfile)
     {
+#if defined(DEBUG)
       std::cerr << "Warning: Can't open MTL file: " << mtlpath << std::endl;
+#endif
       return false;
     }
 
@@ -3276,7 +3331,9 @@ namespace gg
     // MTL ファイルの読み込みに失敗したら戻る
     if (mtlfile.bad())
     {
+#if defined(DEBUG)
       std::cerr << "Warning: Can't read MTL file: " << mtlpath << std::endl;
+#endif
       mtlfile.close();
       return false;
     }
@@ -3314,7 +3371,9 @@ namespace gg
     // 読み込みに失敗したら戻る
     if (!file)
     {
+#if defined(DEBUG)
       std::cerr << "Error: Can't open OBJ file: " << path << std::endl;
+#endif
       return false;
     }
 
@@ -3469,7 +3528,9 @@ namespace gg
         // 材質の存在チェック
         if (mtl.find(mtlname) == mtl.end())
         {
+#if defined(DEBUG)
           std::cerr << "Warning: Undefined material: " << mtlname << std::endl;
+#endif
 
           // デフォルトの材質を割り当てておく
           mtlname = defaultMaterialName;
@@ -3493,7 +3554,9 @@ namespace gg
     // OBJ ファイルの読み込みに失敗したら戻る
     if (file.bad())
     {
+#if defined(DEBUG)
       std::cerr << "Error: Can't read OBJ file: " << path << std::endl;
+#endif
       file.close();
       return false;
     }
@@ -3832,7 +3895,9 @@ static GLboolean printShaderInfoLog(GLuint shader, const char *str)
   // コンパイル結果を取得する
   GLint status;
   glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+#if defined(DEBUG)
   if (status == GL_FALSE) std::cerr << "Compile Error in " << str << std::endl;
+#endif
 
   // シェーダのコンパイル時のログの長さを取得する
   GLsizei bufSize;
@@ -3844,7 +3909,9 @@ static GLboolean printShaderInfoLog(GLuint shader, const char *str)
     std::vector<GLchar> infoLog(bufSize);
     GLsizei length;
     glGetShaderInfoLog(shader, bufSize, &length, &infoLog[0]);
+#if defined(DEBUG)
     std::cerr << &infoLog[0] << std::endl;
+#endif
   }
 
   // コンパイル結果を返す
@@ -3859,7 +3926,9 @@ static GLboolean printProgramInfoLog(GLuint program)
   // リンク結果を取得する
   GLint status;
   glGetProgramiv(program, GL_LINK_STATUS, &status);
+#if defined(DEBUG)
   if (status == GL_FALSE) std::cerr << "Link Error." << std::endl;
+#endif
 
   // シェーダのリンク時のログの長さを取得する
   GLsizei bufSize;
@@ -3871,7 +3940,9 @@ static GLboolean printProgramInfoLog(GLuint program)
     std::vector<GLchar> infoLog(bufSize);
     GLsizei length;
     glGetProgramInfoLog(program, bufSize, &length, &infoLog[0]);
+#if defined(DEBUG)
     std::cerr << &infoLog[0] << std::endl;
+#endif
   }
 
   // リンク結果を返す
@@ -3889,7 +3960,7 @@ static GLboolean printProgramInfoLog(GLuint program)
 **   vtext バーテックスシェーダのコンパイル時のメッセージに追加する文字列
 **   ftext フラグメントシェーダのコンパイル時のメッセージに追加する文字列
 **   gtext ジオメトリシェーダのコンパイル時のメッセージに追加する文字列
-**   戻り値 シェーダプログラムのプログラム名 (作成できなければ 0)
+**   戻り値 プログラムオブジェクトのプログラム名 (作成できなければ 0)
 */
 GLuint gg::ggCreateShader(const char *vsrc, const char *fsrc, const char *gsrc,
   GLint nvarying, const char *const varyings[],
@@ -3959,7 +4030,52 @@ GLuint gg::ggCreateShader(const char *vsrc, const char *fsrc, const char *gsrc,
 }
 
 /*
-** シェーダのソースファイルを読み込んだメモリを返す
+** コンピュートシェーダのソースプログラムの文字列を読み込んでプログラムオブジェクトを作成する
+**
+**   csrc コンピュートシェーダのソースプログラムの文字列
+**   戻り値 プログラムオブジェクトのプログラム名 (作成できなければ 0)
+*/
+GLuint gg::ggCreateComputeShader(const char *csrc, const char *ctext)
+{
+  // シェーダプログラムの作成
+  const GLuint program(glCreateProgram());
+
+  if (program > 0)
+  {
+    if (csrc)
+    {
+      // コンピュートシェーダのシェーダオブジェクトを作成する
+      const GLuint compShader(glCreateShader(GL_COMPUTE_SHADER));
+      glShaderSource(compShader, 1, &csrc, nullptr);
+      glCompileShader(compShader);
+
+      // コンピュートシェーダのシェーダオブジェクトをプログラムオブジェクトに組み込む
+      if (printShaderInfoLog(compShader, ctext))
+        glAttachShader(program, compShader);
+      glDeleteShader(compShader);
+    }
+
+    // シェーダプログラムをリンクする
+    glLinkProgram(program);
+
+    // プログラムオブジェクトが作成できなければ 0 を返す
+    if (printProgramInfoLog(program) == GL_FALSE)
+    {
+      glDeleteProgram(program);
+      return 0;
+    }
+  }
+
+  // プログラムオブジェクトを返す
+  return program;
+}
+
+/*
+** シェーダのソースファイルを読み込んだ vector を返す
+**
+**   name ソースファイル名
+**   src 読み込んだソースファイルの文字列
+**   戻り値 読み込みの成功すれば true, 失敗したら false
 */
 static bool readShaderSource(const char *name, std::vector<GLchar> &src)
 {
@@ -3971,7 +4087,9 @@ static bool readShaderSource(const char *name, std::vector<GLchar> &src)
   if (!file)
   {
     // ファイルが開けなければエラーで戻る
+#if defined(DEBUG)
     std::cerr << "Error: Can't open source file: " << name << std::endl;
+#endif
     return false;
   }
 
@@ -3989,7 +4107,9 @@ static bool readShaderSource(const char *name, std::vector<GLchar> &src)
   // ファイルがうまく読み込めなければ戻る
   if (file.bad())
   {
+#if defined(DEBUG)
     std::cerr << "Error: Could not read souce file: " << name << std::endl;
+#endif
     file.close();
     return false;
   }
@@ -4002,11 +4122,11 @@ static bool readShaderSource(const char *name, std::vector<GLchar> &src)
 /*
 ** シェーダのソースファイルを読み込んでプログラムオブジェクトを作成する
 **
-**    vert バーテックスシェーダのソースファイル名
-**    frag フラグメントシェーダのソースファイル名 (nullptr なら不使用)
-**    geom ジオメトリシェーダのソースファイル名 (nullptr なら不使用)
-**    nvarying フィードバックする varying 変数の数 (0 なら不使用)
-**    varyings フィードバックする varying 変数のリスト (nullptr なら不使用)
+**   vert バーテックスシェーダのソースファイル名
+**   frag フラグメントシェーダのソースファイル名 (nullptr なら不使用)
+**   geom ジオメトリシェーダのソースファイル名 (nullptr なら不使用)
+**   nvarying フィードバックする varying 変数の数 (0 なら不使用)
+**   varyings フィードバックする varying 変数のリスト (nullptr なら不使用)
 **   戻り値 シェーダプログラムのプログラム名 (作成できなければ 0)
 */
 GLuint gg::ggLoadShader(const char *vert, const char *frag, const char *geom,
@@ -4018,6 +4138,26 @@ GLuint gg::ggLoadShader(const char *vert, const char *frag, const char *geom,
   {
     // プログラムオブジェクトを作成する
     return ggCreateShader(vsrc.data(), fsrc.data(), gsrc.data(), nvarying, varyings, vert, frag, geom);
+  }
+
+  // プログラムオブジェクト作成失敗
+  return 0;
+}
+
+/*
+** コンピュートシェーダのソースファイルを読み込んでプログラムオブジェクトを作成する
+**
+**   comp コンピュートシェーダのソースファイル名
+**   戻り値 プログラムオブジェクトのプログラム名 (作成できなければ 0)
+*/
+GLuint gg::ggLoadComputeShader(const char *comp)
+{
+  // シェーダのソースファイルを読み込む
+  std::vector<GLchar> csrc;
+  if (readShaderSource(comp, csrc))
+  {
+    // プログラムオブジェクトを作成する
+    return ggCreateComputeShader(csrc.data(), comp);
   }
 
   // プログラムオブジェクト作成失敗
@@ -4707,8 +4847,8 @@ void gg::GgTrackball::reset()
 void gg::GgTrackball::region(float w, float h)
 {
   // マウスポインタ位置のウィンドウ内の相対的位置への換算用
-  sx = 1.0f / w;
-  sy = 1.0f / h;
+  scale[0] = 1.0f / w;
+  scale[1] = 1.0f / h;
 }
 
 /*
@@ -4717,14 +4857,14 @@ void gg::GgTrackball::region(float w, float h)
 **   マウスボタンを押したときに実行する
 **   (x, y) 現在のマウス位置
 */
-void gg::GgTrackball::start(float x, float y)
+void gg::GgTrackball::begin(float x, float y)
 {
   // ドラッグ開始
   drag = true;
 
   // ドラッグ開始点を記録する
-  cx = x;
-  cy = y;
+  start[0] = x;
+  start[1] = y;
 }
 
 /*
@@ -4738,16 +4878,15 @@ void gg::GgTrackball::motion(float x, float y)
   if (drag)
   {
     // マウスポインタの位置のドラッグ開始位置からの変位
-    const float dx((x - cx) * sx);
-    const float dy((y - cy) * sy);
+    const float d[] = { (x - start[0]) * scale[0], (y - start[1]) * scale[1] };
 
     // マウスポインタの位置のドラッグ開始位置からの距離
-    const float a(sqrt(dx * dx + dy * dy));
+    const float a(sqrt(d[0] * d[0] + d[1] * d[1]));
 
     if (a != 0.0)
     {
       // 現在の回転の四元数に作った四元数を掛けて合成する
-      tq = ggRotateQuaternion(dy, dx, 0.0f, a * 6.283185f) * cq;
+      tq = ggRotateQuaternion(d[1], d[0], 0.0f, a * 6.283185f) * cq;
 
       // 合成した四元数から回転の変換行列を求める
       tq.getMatrix(rt);
@@ -4782,7 +4921,7 @@ void gg::GgTrackball::rotate(const GgQuaternion &q)
 **   マウスボタンを離したときに実行する
 **   (x, y) 現在のマウス位置
 */
-void gg::GgTrackball::stop(float x, float y)
+void gg::GgTrackball::end(float x, float y)
 {
   // ドラッグ終了点における回転を求める
   motion(x, y);
@@ -4881,7 +5020,7 @@ gg::GgPoints *gg::ggPointsSphere(GLsizei count, GLfloat radius,
     const float ct(cos(t));
     const float st(sin(t));
 
-    const GgVector p = { r * sp * ct + cx, r * sp * st + cy, r * cp + cz };
+    const GgVector p = { r * sp * ct + cx, r * sp * st + cy, r * cp + cz, 1.0f };
 
     pos.emplace_back(p);
   }

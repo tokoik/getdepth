@@ -17,7 +17,7 @@
 int main() try
 {
   // アプリケーション本体
-  GgApplication app;
+  GgApplication app(4, 3);
 
   // アプリケーションを実行する
   app.run();

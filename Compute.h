@@ -1,29 +1,20 @@
 ﻿#pragma once
 
 //
-// 画像処理
+// 画像処理（コンピュートシェーダ版）
 //
 
 // 補助プログラム
 #include "gg.h"
 using namespace gg;
 
-// 矩形
-#include "Rect.h"
-
 // 標準ライブラリ
 #include <vector>
 
-class Calculate
+class Compute
 {
-  // 画像処理に使うフレームバッファオブジェクト
-  GLuint fbo;
-
   // 計算結果を保存するフレームバッファのターゲットに使うテクスチャ
   std::vector<GLuint> textures;
-
-  // レンダリングターゲット
-  std::vector<GLenum> bufs;
 
   // フレームバッファオブジェクトのサイズ
   const GLsizei width, height;
@@ -31,19 +22,13 @@ class Calculate
   // 計算用のシェーダプログラム
   const GLuint program;
 
-  // 計算に使う矩形
-  static const Rect *rectangle;
-
-  // リファレンスカウント
-  static unsigned int count;
-
 public:
 
   // コンストラクタ
-  Calculate(int width, int height, const char *source, int targets = 1);
+  Compute(int width, int height, const char *source, int targets = 1);
 
   // デストラクタ
-  virtual ~Calculate();
+  virtual ~Compute();
 
   // シェーダプログラムを得る
   GLuint get() const
@@ -64,5 +49,5 @@ public:
   }
 
   // 計算を実行する
-  const std::vector<GLuint> &execute() const;
+  const std::vector<GLuint> &execute(GLuint texture, GLuint internal) const;
 };

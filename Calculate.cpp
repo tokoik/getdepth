@@ -5,11 +5,10 @@
 //
 
 // コンストラクタ
-Calculate::Calculate(int width, int height, const char *source, int uniforms, int targets)
+Calculate::Calculate(int width, int height, const char *source, int targets)
   : width(width)
   , height(height)
   , program(ggLoadShader("rectangle.vert", source))
-  , uniforms(uniforms)
 {
   // 計算結果を格納するフレームバッファオブジェクトを作成する
   glGenFramebuffers(1, &fbo);
@@ -18,9 +17,9 @@ Calculate::Calculate(int width, int height, const char *source, int uniforms, in
   for (int i = 0; i < targets; ++i)
   {
     // フレームバッファオブジェクトのターゲットに使うテクスチャを作成する
-    GLuint tex;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
+    GLuint t;
+    glGenTextures(1, &t);
+    glBindTexture(GL_TEXTURE_2D, t);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -28,10 +27,12 @@ Calculate::Calculate(int width, int height, const char *source, int uniforms, in
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
     // フレームバッファオブジェクトにテクスチャを追加する
-    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, tex, 0);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, t, 0);
 
-    // レンダリングターゲットを設定する
-    texture.push_back(tex);
+    // 作成したテクスチャを保存する
+    textures.push_back(t);
+
+    // レンダリングターゲットの設定を保存する
     bufs.push_back(GL_COLOR_ATTACHMENT0 + i);
   }
 
@@ -48,16 +49,19 @@ Calculate::~Calculate()
   // フレームバッファオブジェクトを削除する
   glDeleteFramebuffers(1, &fbo);
 
+  // フレームバッファオブジェクトのターゲットに使ったテクスチャを削除する
+  glDeleteTextures(static_cast<GLuint>(textures.size()), textures.data());
+
   // フレームバッファオブジェクトへの描画に使う矩形を削除する
   if (--count == 0) delete rectangle;
 }
 
 // 計算を実行する
-const std::vector<GLuint> &Calculate::calculate() const
+const std::vector<GLuint> &Calculate::execute() const
 {
   // フレームバッファオブジェクトにレンダリング
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-  glDrawBuffers(GLsizei(bufs.size()), bufs.data());
+  glDrawBuffers(static_cast<GLsizei>(bufs.size()), bufs.data());
 
   // 隠面消去を無効にする
   glDisable(GL_DEPTH_TEST);
@@ -77,7 +81,7 @@ const std::vector<GLuint> &Calculate::calculate() const
   glEnable(GL_DEPTH_TEST);
   glDepthMask(GL_TRUE);
 
-  return texture;
+  return textures;
 }
 
 // 計算に使う矩形

@@ -1317,7 +1317,12 @@ namespace gg
   **
   **   \param msg エラー発生時に標準エラー出力に出力する文字列. nullptr なら何も出力しない.
   */
-  extern void ggError(const char *name = nullptr, unsigned int line = 0);
+  extern void _ggError(const char *name = nullptr, unsigned int line = 0);
+#if defined(DEBUG)
+#  define ggError() gg::_ggError(__FILE__, __LINE__)
+#else
+#  define ggError()
+#endif
 
   /*!
   ** \brief FBO のエラーをチェックする.
@@ -1326,7 +1331,12 @@ namespace gg
   **
   **   \param msg エラー発生時に標準エラー出力に出力する文字列. nullptr なら何も出力しない.
   */
-  extern void ggFBOError(const char *name = nullptr, unsigned int line = 0);
+  extern void _ggFBOError(const char *name = nullptr, unsigned int line = 0);
+#if defined(DEBUG)
+#  define ggFBOError() gg::_ggFBOError(__FILE__, __LINE__)
+#else
+#  define ggFBOError()
+#endif
 
   /*!
   ** \brief 配列の内容を TGA ファイルに保存する.
@@ -1361,12 +1371,12 @@ namespace gg
   ** \brief TGA ファイル (8/16/24/32bit) をメモリに読み込む.
   **
   **   \param name 読み込むファイル名.
-  **   \param pWidth 読み込んだ画像の横の画素数の格納先のポインタ.
-  **   \param pHeight 読み込んだ画像の縦の画素数の格納先のポインタ.
-  **   \param pFormat 読み込んだファイルの書式の画素数の格納先のポインタ. GL_RED, G_RG, GL_BGR, G_BGRA.
-  **   \return 読み込みに成功すれば読み込んだデータのポインタ, 失敗すれば nullptr, 要 delete.
+  **   \param image 読み込んだデータを格納する vector.
+  **   \param pWidth 読み込んだ画像の横の画素数の格納先のポインタ. nullptr なら格納しない.
+  **   \param pHeight 読み込んだ画像の縦の画素数の格納先のポインタ. nullptr なら格納しない.
+  **   \param pFormat 読み込んだファイルの書式 (GL_RED, G_RG, GL_BGR, G_BGRA) の格納先のポインタ. nullptr なら格納しない.
   */
-  extern GLubyte *ggReadImage(const char *name, GLsizei *pWidth, GLsizei *pHeight, GLenum *pFormat);
+  extern void ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWidth, GLsizei *pHeight, GLenum *pFormat);
 
   /*!
   ** \brief テクスチャメモリを確保して画像データをテクスチャとして読み込む.
@@ -1406,10 +1416,10 @@ namespace gg
   **   \param stride データの間隔.
   **   \param nz 法線の z 成分の割合.
   **   \param 法線マップを格納するテクスチャの内部フォーマット.
-  **   \return テクスチャの作成に成功すればデータのポインタ, 失敗すれば nullptr, 要 delete.
+  **   \param nmap 法線マップを格納する vector.
   */
-  extern GgVector *ggCreateNormalMap(const GLubyte *hmap, GLsizei width, GLsizei height, GLint stride,
-    GLfloat nz, GLenum internal = GL_RGBA);
+  extern void ggCreateNormalMap(const GLubyte *hmap, GLsizei width, GLsizei height, GLenum format, GLfloat nz,
+    GLenum internal, std::vector<GgVector> &nmap);
 
   /*!
   ** \brief テクスチャメモリを確保して TGA 画像ファイルを読み込み法線マップを作成する.
@@ -1435,7 +1445,7 @@ namespace gg
   **   \param vtext バーテックスシェーダのコンパイル時のメッセージに追加する文字列.
   **   \param ftext フラグメントシェーダのコンパイル時のメッセージに追加する文字列.
   **   \param gtext ジオメトリシェーダのコンパイル時のメッセージに追加する文字列.
-  **   \return シェーダプログラムのプログラム名 (作成できなければ 0).
+  **   \return プログラムオブジェクトのプログラム名 (作成できなければ 0).
   */
   extern GLuint ggCreateShader(const char *vsrc, const char *fsrc = nullptr, const char *gsrc = nullptr,
     GLint nvarying = 0, const char *const varyings[] = nullptr,
@@ -1451,10 +1461,27 @@ namespace gg
   **   \param geom ジオメトリシェーダのソースファイル名 (nullptr なら不使用).
   **   \param nvarying フィードバックする varying 変数の数 (0 なら不使用).
   **   \param varyings フィードバックする varying 変数のリスト (nullptr なら不使用).
-  **   \return シェーダプログラムのプログラム名 (作成できなければ 0).
+  **   \return プログラムオブジェクトのプログラム名 (作成できなければ 0).
   */
   extern GLuint ggLoadShader(const char *vert, const char *frag = nullptr, const char *geom = nullptr,
     GLint nvarying = 0, const char *const varyings[] = nullptr);
+
+  /*!
+  ** \brief コンピュートシェーダのソースプログラムの文字列を読み込んでプログラムオブジェクトを作成する.
+  **
+  **   \param csrc コンピュートシェーダのソースプログラムの文字列.
+  **   \param ctext コンピュートシェーダのコンパイル時のメッセージに追加する文字列.
+  **   \return プログラムオブジェクトのプログラム名 (作成できなければ 0).
+  */
+  extern GLuint ggCreateComputeShader(const char *csrc, const char *ctext = "compute shader");
+
+  /*!
+  ** \brief コンピュートシェーダのソースファイルを読み込んでプログラムオブジェクトを作成する.
+  **
+  **   \param vert コンピュートシェーダのソースファイル名.
+  **   \returnプログラムオブジェクトのプログラム名 (作成できなければ 0).
+  */
+  extern GLuint ggLoadComputeShader(const char *comp);
 
   /*!
   ** \brief 3 要素の長さ.
@@ -3395,9 +3422,9 @@ namespace gg
   */
   class GgTrackball
   {
-    float cx, cy;     // ドラッグ開始位置
     bool drag;        // ドラッグ中か否か
-    float sx, sy;     // マウスの絶対位置→ウィンドウ内での相対位置の換算係数
+    float start[2];   // ドラッグ開始位置
+    float scale[2];   // マウスの絶対位置→ウィンドウ内での相対位置の換算係数
     GgQuaternion cq;  // 回転の初期値 (四元数)
     GgQuaternion tq;  // ドラッグ中の回転 (四元数)
     GgMatrix rt;      // 回転の変換行列
@@ -3432,7 +3459,7 @@ namespace gg
     //!   \brief マウスのドラッグ開始時 (マウスボタンを押したとき) に呼び出す.
     //!   \param x 現在のマウスの x 座標.
     //!   \param y 現在のマウスの y 座標.
-    void start(float x, float y);
+    void begin(float x, float y);
 
     //! \brief 回転の変換行列を計算する.
     //!   \brief マウスのドラッグ中に呼び出す.
@@ -3448,16 +3475,60 @@ namespace gg
     //!   \brief マウスのドラッグ終了時 (マウスボタンを離したとき) に呼び出す.
     //!   \param x 現在のマウスの x 座標.
     //!   \param y 現在のマウスの y 座標.
-    void stop(float x, float y);
+    void end(float x, float y);
 
     //! \brief トラックボールをリセットする
     void reset();
 
-    //! \brief 現在の回転の変換行列を取り出す.
-    //!   \return 回転の変換を表す GLfloat 型の 16 要素の配列.
-    const GLfloat *get() const
+    //! \brief トラックボール処理の開始位置を取り出す.
+    //!   \return トラックボールの開始位置のポインタ.
+    const GLfloat *getStart() const
     {
-      return rt.get();
+      return static_cast<const GLfloat *>(start);
+    }
+
+    //! \brief トラックボール処理の開始位置を取り出す.
+    //!   \param direction 0 なら x 方向, 1 なら y 方向.
+    GLfloat getStart(int direction) const
+    {
+      return static_cast<GLfloat>(start[direction]);
+    }
+
+    //! \brief トラックボール処理の開始位置を取り出す.
+    //!   \param \position トラックボールの開始位置を格納する 2 要素の配列.
+    void getStart(GLfloat *position) const
+    {
+      position[0] = start[0];
+      position[1] = start[1];
+    }
+
+    //! \brief トラックボール処理の換算係数を取り出す.
+    //!   \return トラックボールの換算係数のポインタ.
+    const GLfloat *getScale() const
+    {
+      return static_cast<const GLfloat *>(scale);
+    }
+
+    //! \brief トラックボール処理の換算係数を取り出す.
+    //!   \param direction 0 なら x 方向, 1 なら y 方向.
+    GLfloat getScale(int direction) const
+    {
+      return static_cast<GLfloat>(scale[direction]);
+    }
+
+    //! \brief トラックボール処理の換算係数を取り出す.
+    //!   \param \factor トラックボールの換算係数を格納する 2 要素の配列.
+    void getScale(GLfloat *factor) const
+    {
+      factor[0] = scale[0];
+      factor[1] = scale[1];
+    }
+
+    //! \brief 現在の回転の四元数を取り出す.
+    //!   \return 回転の変換を表す Quaternion 型の四元数.
+    const GgQuaternion &getQuaternion() const
+    {
+      return tq;
     }
 
     //! \brief 現在の回転の変換行列を取り出す.
@@ -3467,11 +3538,11 @@ namespace gg
       return rt;
     }
 
-    //! \brief 現在の回転の四元数を取り出す.
-    //!   \return 回転の変換を表す Quaternion 型の四元数.
-    const GgQuaternion &getQuaternion() const
+    //! \brief 現在の回転の変換行列を取り出す.
+    //!   \return 回転の変換を表す GLfloat 型の 16 要素の配列.
+    const GLfloat *get() const
     {
-      return tq;
+      return rt.get();
     }
   };
 
@@ -3628,40 +3699,7 @@ namespace gg
     //!   \param name 読み込むファイル名.
     //!   \param internal glTexImage2D() に指定するテクスチャの内部フォーマット. 0 なら外部フォーマットに合わせる.
     //!   \return テクスチャの作成に成功すれば true, 失敗すれば false.
-    void load(const char *name, GLenum internal = 0, GLenum wrap = GL_CLAMP_TO_EDGE)
-    {
-      // 画像サイズ
-      GLsizei width, height;
-
-      // 画像フォーマット
-      GLenum format;
-
-      // 画像を読み込む
-      const std::unique_ptr<const GLubyte> image(ggReadImage(name, &width, &height, &format));
-
-      // 画像が読み込めなかったら戻る
-      if (image == nullptr) return;
-
-      // internal == 0 なら内部フォーマットを読み込んだファイルに合わせる
-      if (internal == 0)
-      {
-        switch (format)
-        {
-        case GL_BGR:
-          internal = GL_RGB;
-          break;
-        case GL_BGRA:
-          internal = GL_RGBA;
-          break;
-        default:
-          internal = format;
-          break;
-        }
-      }
-
-      // テクスチャを作成する
-      texture.reset(new GgTexture(image.get(), width, height, format, GL_UNSIGNED_BYTE, internal, wrap));
-    }
+    void load(const char *name, GLenum internal = 0, GLenum wrap = GL_CLAMP_TO_EDGE);
   };
 
   /*!
@@ -3684,16 +3722,20 @@ namespace gg
 
     //! \brief メモリ上のデータから法線マップのテクスチャを作成するコンストラクタ.
     //!   \param image テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
+    //!   \param width テクスチャとして用いる画像データの横幅.
+    //!   \param height テクスチャとして用いる画像データの高さ.
+    //!   \param format テクスチャとして用いる画像データのフォーマット (GL_RED, GL_RG, GL_RGB, GL_RGBA).
     //!   \param nz 法線マップの z 成分の値.
     //!   \param internal テクスチャの内部フォーマット.
-    GgNormalTexture(const GLubyte *image, GLsizei width, GLsizei height, float nz = 1.0f, GLenum internal = GL_RGBA)
+    GgNormalTexture(const GLubyte *image, GLsizei width, GLsizei height, GLenum format = GL_RED, float nz = 1.0f,
+      GLenum internal = GL_RGBA)
     {
       // 法線マップのテクスチャを作成する
-      load(image, width, height, nz, internal);
+      load(image, width, height, format, nz, internal);
     }
 
     //! \brief ファイルからデータを読み込んで法線マップのテクスチャを作成するコンストラクタ.
-    //!   \param name 画像ファイル名 (1 チャネルの TGA 画像).
+    //!   \param name 画像ファイル名.
     //!   \param nz 法線マップの z 成分の値.
     //!   \param internal テクスチャの内部フォーマット.
     GgNormalTexture(const char *name, float nz = 1.0f, GLenum internal = GL_RGBA)
@@ -3704,77 +3746,29 @@ namespace gg
 
     //! \brief メモリ上のデータから法線マップのテクスチャを作成する.
     //!   \param hmap テクスチャとして用いる画像データ, nullptr ならデータを読み込まない.
+    //!   \param width テクスチャとして用いる画像データの横幅.
+    //!   \param height テクスチャとして用いる画像データの高さ.
+    //!   \param format テクスチャとして用いる画像データのフォーマット (GL_RED, GL_RG, GL_RGB, GL_RGBA).
     //!   \param nz 法線マップの z 成分の値.
     //!   \param internal テクスチャの内部フォーマット.
-    void load(const GLubyte *hmap, GLsizei width, GLsizei height, float nz = 1.0f, GLenum internal = GL_RGBA)
+    void load(const GLubyte *hmap, GLsizei width, GLsizei height, GLenum format = GL_RED, float nz = 1.0f,
+      GLenum internal = GL_RGBA)
     {
+      // 法線マップ
+      std::vector<GgVector> nmap;
+
       // 法線マップを作成する
-      const std::unique_ptr<GgVector[]> nmap(ggCreateNormalMap(hmap, width, height, 1, nz, internal));
+      ggCreateNormalMap(hmap, width, height, format, nz, internal, nmap);
 
       // テクスチャを作成する
-      texture.reset(new GgTexture(nmap.get(), width, height, GL_RGBA, GL_FLOAT, internal, GL_REPEAT));
+      texture.reset(new GgTexture(nmap.data(), width, height, GL_RGBA, GL_FLOAT, internal, GL_REPEAT));
     }
 
     //! \brief ファイルからデータを読み込んで法線マップのテクスチャを作成する.
     //!   \param name 画像ファイル名 (1 チャネルの TGA 画像).
     //!   \param nz 法線マップの z 成分の値.
     //!   \param internal テクスチャの内部フォーマット.
-    void load(const char *name, float nz = 1.0f, GLenum internal = GL_RGBA)
-    {
-      // 画像サイズ
-      GLsizei width, height;
-
-      // 画像フォーマット
-      GLenum format;
-
-      // 高さマップの画像を読み込む
-      const GLubyte *const hmap(ggReadImage(name, &width, &height, &format));
-
-      // 画像が読み込めなかったら戻る
-      if (hmap == nullptr) return;
-
-      // 画素のバイト数
-      GLint stride;
-      switch (format)
-      {
-      case GL_RED:
-        stride = 1;
-        break;
-      case GL_RG:
-        stride = 2;
-        break;
-      case GL_BGR:
-        stride = 3;
-        break;
-      case GL_BGRA:
-        stride = 4;
-        break;
-      default:
-        stride = 1;
-        break;
-      }
-
-      // 法線マップを作成する
-      const std::unique_ptr<GgVector[]> nmap(ggCreateNormalMap(hmap, width, height, stride, nz));
-
-      // 内部フォーマットが浮動小数点テクスチャでなければ [0,1] に正規化する
-      if (
-        internal != GL_RGB16F &&
-        internal != GL_RGBA16F &&
-        internal != GL_RGB32F &&
-        internal != GL_RGBA32F
-        )
-      {
-        const GLsizei size(width * height);
-        for (GLsizei i = 0; i < size; ++i)
-        {
-          nmap[i][0] = nmap[i][0] * 0.5f + 0.5f;
-          nmap[i][1] = nmap[i][1] * 0.5f + 0.5f;
-          nmap[i][2] = nmap[i][2] * 0.5f + 0.5f;
-          nmap[i][3] *= 0.0039215686f; // == 1/255
-        }
-      }
-    }
+    void load(const char *name, float nz = 1.0f, GLenum internal = GL_RGBA);
   };
 
   /*!

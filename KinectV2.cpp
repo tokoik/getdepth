@@ -18,66 +18,68 @@ const GLfloat maxDepth(10.0f);
 // コンストラクタ
 KinectV2::KinectV2()
 {
+  // センサが既に使用されていたら戻る
+  if (sensor)
+    throw "Kinect (v2) センサが既に使用されています";
+
   // センサを取得する
-  if (sensor == NULL && GetDefaultKinectSensor(&sensor) == S_OK)
-  {
-    HRESULT hr;
+  if (GetDefaultKinectSensor(&sensor) != S_OK)
+    throw "Kinect (v2) センサが接続されていません";
 
-    // センサの使用を開始する
-    hr = sensor->Open();
-    assert(hr == S_OK);
+  // センサの使用を開始する
+  if (sensor->Open() != S_OK)
+    throw "Kinect (v2) センサが使用できません";
 
-    // デプスデータの読み込み設定
-    IDepthFrameSource *depthSource;
-    hr = sensor->get_DepthFrameSource(&depthSource);
-    assert(hr == S_OK);
-    hr = depthSource->OpenReader(&depthReader);
-    assert(hr == S_OK);
-    IFrameDescription *depthDescription;
-    hr = depthSource->get_FrameDescription(&depthDescription);
-    assert(hr == S_OK);
-    depthSource->Release();
+  // デプスデータの読み込み設定
+  IDepthFrameSource *depthSource;
+  if (sensor->get_DepthFrameSource(&depthSource) != S_OK)
+    throw "Kinect (v2) センサのデプスフレームのソースが取得できません";
+  if (depthSource->OpenReader(&depthReader) != S_OK)
+    throw "Kinect (v2) センサのデプスフレームのリーダが使用できません";
+  IFrameDescription *depthDescription;
+  if (depthSource->get_FrameDescription(&depthDescription) != S_OK)
+    throw "Kinect (v2) センサのデプスフレームの詳細が取得できません";
+  depthSource->Release();
 
-    // デプスデータのサイズを得る
-    depthDescription->get_Width(&depthWidth);
-    depthDescription->get_Height(&depthHeight);
-    depthDescription->Release();
+  // デプスデータのサイズを得る
+  depthDescription->get_Width(&depthWidth);
+  depthDescription->get_Height(&depthHeight);
+  depthDescription->Release();
 
-    // カラーデータの読み込み設定
-    IColorFrameSource *colorSource;
-    hr = sensor->get_ColorFrameSource(&colorSource);
-    assert(hr == S_OK);
-    hr = colorSource->OpenReader(&colorReader);
-    assert(hr == S_OK);
-    IFrameDescription *colorDescription;
-    hr = colorSource->get_FrameDescription(&colorDescription);
-    assert(hr == S_OK);
-    colorSource->Release();
+  // カラーデータの読み込み設定
+  IColorFrameSource *colorSource;
+  if (sensor->get_ColorFrameSource(&colorSource) != S_OK)
+    throw "Kinect (v2) センサのカラーフレームのソースが取得できません";
+  if (colorSource->OpenReader(&colorReader) != S_OK)
+    throw "Kinect (v2) センサのカラーフレームのリーダが使用できません";
+  IFrameDescription *colorDescription;
+  if (colorSource->get_FrameDescription(&colorDescription) != S_OK)
+    throw "Kinect (v2) センサのカラーフレームの詳細が取得できません";
+  colorSource->Release();
 
-    // カラーデータのサイズを得る
-    colorDescription->get_Width(&colorWidth);
-    colorDescription->get_Height(&colorHeight);
-    colorDescription->Release();
+  // カラーデータのサイズを得る
+  colorDescription->get_Width(&colorWidth);
+  colorDescription->get_Height(&colorHeight);
+  colorDescription->Release();
 
-    // 座標のマッピング
-    hr = sensor->get_CoordinateMapper(&coordinateMapper);
-    assert(hr == S_OK);
+  // 座標のマッピング
+  if (sensor->get_CoordinateMapper(&coordinateMapper) != S_OK)
+    throw "Kinect (v2) センサのコーディネートマッパーが取得できません";
 
-    // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-    makeTexture();
+  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
+  makeTexture();
 
-    // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
-    position = new GLfloat[depthCount][3];
+  // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
+  position = new GLfloat[depthCount][3];
 
-    // カラーデータを変換する用いる一時メモリを確保する
-    color = new GLubyte[colorCount * 4];
+  // カラーデータを変換する用いる一時メモリを確保する
+  color = new GLubyte[colorCount * 4];
 
-    // デプスマップのテクスチャ座標に対する頂点座標の拡大率
-    scale[0] = 1.546592f;
-    scale[1] = 1.222434f;
-    scale[2] = -10.0f;
-    scale[3] = -65.535f;
-  }
+  // デプスマップのテクスチャ座標に対する頂点座標の拡大率
+  scale[0] = 1.546592f;
+  scale[1] = 1.222434f;
+  scale[2] = -10.0f;
+  scale[3] = -65.535f;
 }
 
 // デストラクタ

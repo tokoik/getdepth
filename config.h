@@ -8,16 +8,10 @@
 #include "gg.h"
 using namespace gg;
 
-// カメラに対するオブジェクトの中心位置
-const GLfloat objectCenter[] = { 0.0f, 0.0f, 0.0f };
-
 // カメラパラメータ
 const GLfloat cameraFovy(1.0f);                         // 画角
 const GLfloat cameraNear(0.1f);                         // 前方面までの距離
 const GLfloat cameraFar(50.0f);                         // 後方面までの距離
-
-// マウス操作の係数
-const double motionFactor[] = { 1.0, 1.0, 0.05 };
 
 // 光源
 const GgSimpleShader::Light lightData =
