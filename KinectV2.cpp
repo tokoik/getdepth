@@ -20,25 +20,25 @@ KinectV2::KinectV2()
 {
   // センサが既に使用されていたら戻る
   if (sensor)
-    throw "Kinect (v2) センサが既に使用されています";
+    throw std::runtime_error("Kinect (v2) センサが既に使用されています");
 
   // センサを取得する
-  if (GetDefaultKinectSensor(&sensor) != S_OK)
-    throw "Kinect (v2) センサが接続されていません";
+  if (GetDefaultKinectSensor(&sensor) != S_OK || sensor == nullptr)
+    throw std::runtime_error("Kinect (v2) センサが接続されていません");
 
   // センサの使用を開始する
   if (sensor->Open() != S_OK)
-    throw "Kinect (v2) センサが使用できません";
+    throw std::runtime_error("Kinect (v2) センサが使用できません");
 
   // デプスデータの読み込み設定
   IDepthFrameSource *depthSource;
   if (sensor->get_DepthFrameSource(&depthSource) != S_OK)
-    throw "Kinect (v2) センサのデプスフレームのソースが取得できません";
+    throw std::runtime_error("Kinect (v2) センサのデプスフレームのソースが取得できません");
   if (depthSource->OpenReader(&depthReader) != S_OK)
-    throw "Kinect (v2) センサのデプスフレームのリーダが使用できません";
+    throw std::runtime_error("Kinect (v2) センサのデプスフレームのリーダが使用できません");
   IFrameDescription *depthDescription;
   if (depthSource->get_FrameDescription(&depthDescription) != S_OK)
-    throw "Kinect (v2) センサのデプスフレームの詳細が取得できません";
+    throw std::runtime_error("Kinect (v2) センサのデプスフレームの詳細が取得できません");
   depthSource->Release();
 
   // デプスデータのサイズを得る
@@ -49,12 +49,12 @@ KinectV2::KinectV2()
   // カラーデータの読み込み設定
   IColorFrameSource *colorSource;
   if (sensor->get_ColorFrameSource(&colorSource) != S_OK)
-    throw "Kinect (v2) センサのカラーフレームのソースが取得できません";
+    throw std::runtime_error("Kinect (v2) センサのカラーフレームのソースが取得できません");
   if (colorSource->OpenReader(&colorReader) != S_OK)
-    throw "Kinect (v2) センサのカラーフレームのリーダが使用できません";
+    throw std::runtime_error("Kinect (v2) センサのカラーフレームのリーダが使用できません");
   IFrameDescription *colorDescription;
   if (colorSource->get_FrameDescription(&colorDescription) != S_OK)
-    throw "Kinect (v2) センサのカラーフレームの詳細が取得できません";
+    throw std::runtime_error("Kinect (v2) センサのカラーフレームの詳細が取得できません");
   colorSource->Release();
 
   // カラーデータのサイズを得る
@@ -64,7 +64,7 @@ KinectV2::KinectV2()
 
   // 座標のマッピング
   if (sensor->get_CoordinateMapper(&coordinateMapper) != S_OK)
-    throw "Kinect (v2) センサのコーディネートマッパーが取得できません";
+    throw std::runtime_error("Kinect (v2) センサのコーディネートマッパーが取得できません");
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   makeTexture();

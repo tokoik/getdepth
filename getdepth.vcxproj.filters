@@ -21,9 +21,6 @@
     <ClInclude Include="Calculate.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="config.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="DepthCamera.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>

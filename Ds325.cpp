@@ -63,7 +63,6 @@ Ds325::Ds325(
     uvmap = new GLfloat[depthCount * 2];
     colorBuffer = new GLubyte[colorCount * 3];
 
-
     // デプスマップのテクスチャ座標に対する頂点座標の拡大率
     scale[0] = -0.753554f * 2.0f;
     scale[1] = -0.554309f * 2.0f;
@@ -197,7 +196,7 @@ void Ds325::unregisterNode(Node node)
 // DepthSense が取り付けられた時の処理
 void Ds325::onDeviceConnected(Context context, Context::DeviceAddedData data)
 {
-  MessageBox(NULL, TEXT("DepthSense が取り付けられました。"), TEXT("そうですか"), MB_OK);
+  MessageBox(NULL, TEXT("DepthSense が取り付けられました"), TEXT("そうですか"), MB_OK);
 
   // イベントループを開始して接続されている DepthSense の数を更新する
   startLoop();
@@ -206,7 +205,7 @@ void Ds325::onDeviceConnected(Context context, Context::DeviceAddedData data)
 // DepthSense が取り外されたときの処理
 void Ds325::onDeviceDisconnected(Context context, Context::DeviceRemovedData data)
 {
-  MessageBox(NULL, TEXT("DepthSense が取り外されました。"), TEXT("そうですか"), MB_OK);
+  MessageBox(NULL, TEXT("DepthSense が取り外されました"), TEXT("そうですか"), MB_OK);
 
   // スレッドが走っていれば接続されている DepthSense の数を更新する
   if (worker.joinable()) connected = context.getDevices().size();
@@ -248,34 +247,41 @@ void Ds325::configureDepthNode(DepthNode &dnode)
     context.requestControl(dnode, 0);
     dnode.setConfiguration(config);
   }
+#if defined(DEBUG)
   catch (ArgumentException &e)
   {
-    std::cout << "Argument Exception: " << e.what() << std::endl;
+    std::cerr << "Argument Exception: " << e.what() << std::endl;
   }
   catch (UnauthorizedAccessException &e)
   {
-    std::cout << "Unauthorized Access Exception: " << e.what() << std::endl;
+    std::cerr << "Unauthorized Access Exception: " << e.what() << std::endl;
   }
   catch (IOException& e)
   {
-    std::cout << "IO Exception: " << e.what() << std::endl;
+    std::cerr << "IO Exception: " << e.what() << std::endl;
   }
   catch (InvalidOperationException &e)
   {
-    std::cout << "Invalid Operation Exception: " << e.what() << std::endl;
+    std::cerr << "Invalid Operation Exception: " << e.what() << std::endl;
   }
   catch (ConfigurationException &e)
   {
-    std::cout << "Configuration Exception: " << e.what() << std::endl;
+    std::cerr << "Configuration Exception: " << e.what() << std::endl;
   }
   catch (StreamingException &e)
   {
-    std::cout << "Streaming Exception: " << e.what() << std::endl;
+    std::cerr << "Streaming Exception: " << e.what() << std::endl;
   }
   catch (TimeoutException &)
   {
-    std::cout << "TimeoutException" << std::endl;
+    std::cerr << "TimeoutException" << std::endl;
   }
+#else
+  catch (TimeoutException &)
+  {
+    MessageBox(NULL, TEXT("DepthSense のデプスノードが応答しません"), TEXT("そうですか"), MB_OK);
+  }
+#endif
 }
 
 // DepthSense のデプスノードのイベント発生時の処理
@@ -385,34 +391,41 @@ void Ds325::configureColorNode(ColorNode &cnode)
     context.requestControl(cnode, 0);
     cnode.setConfiguration(config);
   }
+#if defined(DEBUG)
   catch (ArgumentException& e)
   {
-    std::cout << "Argument Exception: " << e.what() << std::endl;
+    std::cerr << "Argument Exception: " << e.what() << std::endl;
   }
   catch (UnauthorizedAccessException &e)
   {
-    std::cout << "Unauthorized Access Exception:" << e.what() << std::endl;
+    std::cerr << "Unauthorized Access Exception:" << e.what() << std::endl;
   }
   catch (IOException &e)
   {
-    std::cout << "IO Exception: " << e.what() << std::endl;
+    std::cerr << "IO Exception: " << e.what() << std::endl;
   }
   catch (InvalidOperationException &e)
   {
-    std::cout << "Invalid Operation Exception: " << e.what() << std::endl;
+    std::cerr << "Invalid Operation Exception: " << e.what() << std::endl;
   }
   catch (ConfigurationException &e)
   {
-    std::cout << "Configuration Exception: " << e.what() << std::endl;
+    std::cerr << "Configuration Exception: " << e.what() << std::endl;
   }
   catch (StreamingException &e)
   {
-    std::cout << "Streaming Exception: " << e.what() << std::endl;
+    std::cerr << "Streaming Exception: " << e.what() << std::endl;
   }
   catch (TimeoutException &)
   {
-    std::cout << "TimeoutException" << std::endl;
+    std::cerr << "TimeoutException" << std::endl;
   }
+#else
+  catch (TimeoutException &)
+  {
+    MessageBox(NULL, TEXT("DepthSense のカラーノードが応答しません"), TEXT("そうですか"), MB_OK);
+  }
+#endif
 }
 
 // DepthSense のカラーノードのイベント発生時の処理

@@ -125,7 +125,6 @@
   <ItemGroup>
     <ClInclude Include="Calculate.h" />
     <ClInclude Include="Compute.h" />
-    <ClInclude Include="config.h" />
     <ClInclude Include="DepthCamera.h" />
     <ClInclude Include="Ds325.h" />
     <ClInclude Include="gg.h" />

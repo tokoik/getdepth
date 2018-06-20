@@ -7,6 +7,10 @@
 // DepthSense を使う
 #if !defined(USE_DEPTH_SENSE)
 #  define USE_DEPTH_SENSE 1
+#  ifdef SENSOR
+#    undef SENSOR
+#  endif
+#  define SENSOR Ds325
 #endif
 
 #if USE_DEPTH_SENSE

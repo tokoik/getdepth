@@ -1,5 +1,5 @@
 ﻿//
-// Kinect (v2) のデプスマップ取得
+// RGB-D カメラからのデプスマップ取得
 //
 
 // 標準ライブラリ
@@ -17,14 +17,6 @@
 #  pragma comment(lib, "opencv_world" CV_VERSION_STR CV_EXT_STR)
 #endif
 
-// センサ関連の処理
-//#include "KinectV1.h"
-//#include "KinectV2.h"
-#include "Ds325.h"
-
-// 各種設定
-#include "config.h"
-
 // ウィンドウ関連の処理
 #include "GgApplication.h"
 
@@ -35,40 +27,68 @@
 #include "Calculate.h"
 #include "Compute.h"
 
+// センサ関連の処理
+//#include "KinectV1.h"
+//#include "KinectV2.h"
+#include "Ds325.h"
+
+// OpenCV によるビデオキャプチャに使うカメラ
+#define CAPTURE_CAMERA 1
+
 // 頂点位置の生成をシェーダ (position.frag) で行うなら 1
-#define GENERATE_POSITION 1
+#define GENERATE_POSITION 0
+
+// カメラパラメータ
+const GLfloat cameraFovy(1.0f);                         // 画角
+const GLfloat cameraNear(0.1f);                         // 前方面までの距離
+const GLfloat cameraFar(50.0f);                         // 後方面までの距離
+
+// 光源
+const GgSimpleShader::Light lightData =
+{
+  { 0.2f, 0.2f, 0.2f, 1.0f },                           // 環境光成分
+  { 1.0f, 1.0f, 1.0f, 1.0f },                           // 拡散反射光成分
+  { 1.0f, 1.0f, 1.0f, 1.0f },                           // 鏡面光成分
+  { 0.0f, 0.0f, 5.0f, 1.0f }                            // 位置
+};
+
+// 材質
+const GgSimpleShader::Material materialData =
+{
+  { 0.8f, 0.8f, 0.8f, 1.0f },                           // 環境光の反射係数
+  { 0.8f, 0.8f, 0.8f, 1.0f },                           // 拡散反射係数
+  { 0.2f, 0.2f, 0.2f, 1.0f },                           // 鏡面反射係数
+  50.0f                                                 // 輝き係数
+};
+
+// 背景色
+const GLfloat background[] = { 0.2f, 0.3f, 0.4f, 0.0f };
 
 //
 // アプリケーションの実行
 //
 void GgApplication::run()
 {
+  // ウィンドウを開く
+  Window window("Depth Map Viewer");
+  if (!window.get()) throw std::runtime_error("GLFW のウィンドウが開けません");
+
+  // 深度センサを有効にする
+  SENSOR sensor;
+  if (sensor.getActivated() == 0) throw std::runtime_error("深度センサを有効にできません");
+
+  // 深度センサの解像度
+  int width, height;
+  sensor.getDepthResolution(&width, &height);
+
   // OpenCV によるビデオキャプチャを初期化する
-  cv::VideoCapture camera(0);
-  if (!camera.isOpened()) throw "ビデオカメラが見つかりません。";
+  cv::VideoCapture camera(CAPTURE_CAMERA);
+  if (!camera.isOpened()) throw std::runtime_error("ビデオカメラが見つかりません");
 
   // カメラの初期設定
   camera.grab();
   const GLsizei capture_env_width(GLsizei(camera.get(CV_CAP_PROP_FRAME_WIDTH)));
   const GLsizei capture_env_height(GLsizei(camera.get(CV_CAP_PROP_FRAME_HEIGHT)));
-
-  // ウィンドウを開く
-  Window window("Depth Map Viewer");
-  if (!window.get()) throw "GLFW のウィンドウが開けませんでした。";
-
-  // 深度センサを有効にする
-#if USE_KINECT_V1
-  KinectV1 sensor;
-#elif USE_KINECT_V2
-  KinectV2 sensor;
-#elif USE_DEPTH_SENSE
-  Ds325 sensor;
-#endif
-  if (sensor.getActivated() == 0) throw "深度センサを有効にできませんでした。";
-
-  // 深度センサの解像度
-  int width, height;
-  sensor.getDepthResolution(&width, &height);
 
   // 描画に使うメッシュ
   const Mesh mesh(width, height, sensor.getCoordBuffer());

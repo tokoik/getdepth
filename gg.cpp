@@ -2667,7 +2667,7 @@ bool gg::ggSaveTga(const char *name, const void *buffer,
   std::ofstream file(name, std::ios::binary);
 
   // ファイルが開けなかったら戻る
-  if (!file) throw "TGA ファイルが作成できませんでした";
+  if (!file) throw std::runtime_error("TGA ファイルが作成できませんでした");
 
   // 画像のヘッダ
   const unsigned char type(depth == 0 ? 0 : depth < 3 ? 3 : 2);
@@ -2697,7 +2697,7 @@ bool gg::ggSaveTga(const char *name, const void *buffer,
   if (file.bad())
   {
     file.close();
-    throw "TGA ファイルのヘッダが書き込めませんでした";
+    throw std::runtime_error("TGA ファイルのヘッダが書き込めませんでした");
   }
 
   // データを書き込む
@@ -2729,7 +2729,7 @@ bool gg::ggSaveTga(const char *name, const void *buffer,
   if (file.bad())
   {
     file.close();
-    throw "TGA ファイルに画像データが書き込めませんでした";
+    throw std::runtime_error("TGA ファイルに画像データが書き込めませんでした");
   }
 
   // ファイルを閉じる
@@ -2805,7 +2805,7 @@ void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWi
   std::ifstream file(name, std::ios::binary);
 
   // ファイルが開けなかったら戻る
-  if (!file) throw "TGA ファイルが開けませんでした";
+  if (!file) throw std::runtime_error("TGA ファイルが開けませんでした");
 
   // ヘッダを読み込む
   unsigned char header[18];
@@ -2815,7 +2815,7 @@ void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWi
   if (file.bad())
   {
     file.close();
-    throw "TGA ファイルのヘッダが読み込めませんでした";
+    throw std::runtime_error("TGA ファイルのヘッダが読み込めませんでした");
   }
 
   // 深度
@@ -2837,7 +2837,7 @@ void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWi
   default:
     // 取り扱えないフォーマットだったら戻る
     file.close();
-    throw "ファイルが取り扱うことのできないフォーマットでした";
+    throw std::runtime_error("ファイルが取り扱うことのできないフォーマットでした");
   }
 
   // 画像の縦横の画素数
@@ -2846,7 +2846,7 @@ void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWi
 
   // データサイズ
   const int size(*pWidth * *pHeight * depth);
-  if (size < 2) throw "TGA ファイルのサイズが小さすぎます";
+  if (size < 2) throw std::runtime_error("TGA ファイルのサイズが小さすぎます");
 
   // 読み込みに使うメモリを確保する
   image.resize(size);

@@ -7,6 +7,10 @@
 // Kinect V1 を使う
 #if !defined(USE_KINECT_V1)
 #  define USE_KINECT_V1 1
+#  ifdef SENSOR
+#    undef SENSOR
+#  endif
+#  define SENSOR KinectV1
 #endif
 
 #if USE_KINECT_V1

@@ -25,33 +25,37 @@ KinectV1::KinectV1()
   if (getActivated() == 0)
   {
     // 接続されているセンサの数を調べる
-    if (NuiGetSensorCount(&connected) != S_OK)
-      throw "Kinect (v1) センサが接続されていません";
+    if (NuiGetSensorCount(&connected) != S_OK || connected == 0)
+      throw std::runtime_error("Kinect (v1) センサが接続されていません");
   }
 
-  // センサが接続されており使用台数が接続台数に達していなければ
+  // センサが接続されており使用台数が接続台数に達していないかどうか確認する
   if (getActivated() >= connected)
-    throw "Kinect (v1) センサの数が足りません";
+    throw std::runtime_error("Kinect (v1) センサの数が足りません");
+
+  // 使用できるセンサを見つける
+  if (NuiCreateSensorByIndex(getActivated(), &sensor) != S_OK || sensor == nullptr)
+    throw std::runtime_error("Kinect (v1) センサが見つかりません");
 
   // センサの使用を開始する
-  if (NuiCreateSensorByIndex(getActivated(), &sensor) != S_OK || sensor->NuiStatus() != S_OK)
-    throw "Kinect (v1) センサが使用できません";
+  if (sensor->NuiStatus() != S_OK)
+    throw std::runtime_error("Kinect (v1) センサが使用できません");
 
   // センサを初期化する (カラーとデプスを取得する)
   if (sensor->NuiInitialize(NUI_INITIALIZE_FLAG_USES_COLOR | NUI_INITIALIZE_FLAG_USES_DEPTH) != S_OK)
-    throw "Kinect (v1) センサを初期化できません";
+    throw std::runtime_error("Kinect (v1) センサを初期化できません");
 
   // センサの仰角を初期化する
   if (sensor->NuiCameraElevationSetAngle(0L) != S_OK)
-    throw "Kinect (v1) センサの仰角を設定できません";
+    throw std::runtime_error("Kinect (v1) センサの仰角を設定できません");
 
   // デプスストリームの取得設定
   if (sensor->NuiImageStreamOpen(NUI_IMAGE_TYPE_DEPTH, DEPTH_RESOLUTION, 0, 2, nextDepthFrameEvent, &depthStream) != S_OK)
-    throw "Kinect (v1) センサのデプスストリームが取得できません";
+    throw std::runtime_error("Kinect (v1) センサのデプスストリームが取得できません");
 
   // カラーストリームの取得設定
   if (sensor->NuiImageStreamOpen(NUI_IMAGE_TYPE_COLOR, COLOR_RESOLUTION, 0, 2, nextColorFrameEvent, &colorStream) != S_OK)
-    throw "Kinect (v1) センサのカラーストリームが取得できません";
+    throw std::runtime_error("Kinect (v1) センサのカラーストリームが取得できません");
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   makeTexture();
