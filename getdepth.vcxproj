@@ -155,12 +155,8 @@
     <None Include="bilateral.frag" />
     <None Include="normal.comp" />
     <None Include="normal.frag" />
-    <None Include="position_ds.comp" />
-    <None Include="position_ds.frag" />
-    <None Include="position_v1.comp" />
-    <None Include="position_v1.frag" />
-    <None Include="position_v2.comp" />
-    <None Include="position_v2.frag" />
+    <None Include="position.comp" />
+    <None Include="position.frag" />
     <None Include="README.md" />
     <None Include="rectangle.vert" />
     <None Include="refraction.frag" />

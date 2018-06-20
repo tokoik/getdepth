@@ -58,13 +58,10 @@ void GgApplication::run()
 
   // 深度センサを有効にする
 #if USE_KINECT_V1
-#  define POSITION_SHADER "position_v1"
   KinectV1 sensor;
 #elif USE_KINECT_V2
-#  define POSITION_SHADER "position_v2"
   KinectV2 sensor;
 #elif USE_DEPTH_SENSE
-#  define POSITION_SHADER "position_ds"
   Ds325 sensor;
 #endif
   if (sensor.getActivated() == 0) throw "深度センサを有効にできませんでした。";
@@ -88,14 +85,14 @@ void GgApplication::run()
   const GgSimpleShader::MaterialBuffer material(materialData);
 
   // デプスデータから頂点位置を計算するシェーダ
-  const Calculate position(width, height, POSITION_SHADER ".frag");
+  const Calculate position(width, height, "position.frag");
   const GLuint scaleLoc(glGetUniformLocation(position.get(), "scale"));
   const GLuint depthMaxLoc(glGetUniformLocation(position.get(), "depthMax"));
   const GLuint depthScaleLoc(glGetUniformLocation(position.get(), "depthScale"));
 
   // バイラテラルフィルタのシェーダ
-  //const Calculate bilateral(width, height, "bilateral.frag");
-  const Compute bilateral(width, height, "bilateral.comp");
+  const Calculate bilateral(width, height, "bilateral.frag");
+  //const Compute bilateral(width, height, "bilateral.comp");
   const GLint varianceLoc(glGetUniformLocation(bilateral.get(), "variance"));
 
   // 頂点位置から法線ベクトルを計算するシェーダ
@@ -136,13 +133,13 @@ void GgApplication::run()
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
-    const std::vector<GLuint> &bilateralTexture(bilateral.execute(positionTexture[0], GL_RGBA32F));
+    const std::vector<GLuint> &bilateralTexture(bilateral.execute());
 
     // 法線ベクトルの計算
     normal.use();
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
+    glBindTexture(GL_TEXTURE_2D, bilateralTexture[0]);
     const std::vector<GLuint> &normalTexture(normal.execute());
 #else
     // バイラテラルフィルタ
@@ -183,7 +180,7 @@ void GgApplication::run()
     // 頂点座標テクスチャ
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
+    glBindTexture(GL_TEXTURE_2D, bilateralTexture[0]);
 #endif
 
     // 法線ベクトルテクスチャ

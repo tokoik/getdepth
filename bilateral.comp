@@ -30,6 +30,8 @@ void main()
 {
   ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
   vec3 csum = imageLoad(position, pos).xyz;
+  imageStore(smoothed, pos, vec4(csum, 1.0));
+  return;
   vec3 wsum = vec3(1.0);
   vec3 base = csum;
 

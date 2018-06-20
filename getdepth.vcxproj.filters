@@ -116,28 +116,16 @@
     <None Include="refraction.vert">
       <Filter>シェーダー ファイル</Filter>
     </None>
-    <None Include="position_v2.comp">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
     <None Include="bilateral.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
     <None Include="normal.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
-    <None Include="position_ds.comp">
+    <None Include="position.frag">
       <Filter>シェーダー ファイル</Filter>
     </None>
-    <None Include="position_v1.comp">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
-    <None Include="position_ds.frag">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
-    <None Include="position_v1.frag">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
-    <None Include="position_v2.frag">
+    <None Include="position.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
   </ItemGroup>
