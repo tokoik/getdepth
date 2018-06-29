@@ -30,6 +30,9 @@ layout (location = 0) uniform sampler2D position;     // 頂点位置のテク�
 layout (location = 1) uniform sampler2D normal;       // 法線ベクトルのテクスチャ
 layout (location = 2) uniform sampler2D color;        // カラーのテクスチャ
 
+// 疑似カラー処理
+layout (location = 3) uniform vec2 range = vec2(0.3, 6.0);
+
 // 頂点属性
 layout (location = 0) in vec2 pc;                     // 頂点のテクスチャ座標
 layout (location = 1) in vec2 cc;                     // カラーのテクスチャ座標
@@ -44,23 +47,31 @@ void main(void)
   // 頂点位置
   vec4 pv = texture(position, pc);
 
+  // 座標計算
+  vec4 p = mv * pv;                                   // 視点座標系の頂点の位置
+
+  // クリッピング座標系における座標値
+  gl_Position = mp * p;
+
+  // テクスチャ座標
+  texcoord = cc / vec2(textureSize(color, 0));
+
   // 法線ベクトル
   vec4 nv = texture(normal, pc);
 
-  // 座標計算
-  vec4 p = mv * pv;                                   // 視点座標系の頂点の位置
+  // 陰影計算
   vec3 v = normalize(p.xyz);                          // 視線ベクトル
   vec3 l = normalize((lpos * p.w - p * lpos.w).xyz);  // 光線ベクトル
   vec3 n = normalize((mn * nv).xyz);                  // 法線ベクトル
   vec3 h = normalize(l - v);                          // 中間ベクトル
 
-  // 陰影計算
-  idiff = max(dot(n, l), 0.0) * kdiff * ldiff + kamb * lamb;
+  // 疑似カラー処理
+  float z = -6.0 * (pv.z + range.s) / (range.t - range.s);
+  vec4 c = clamp(vec4(z - 2.0, 2.0 - abs(z - 2.0), 2.0 - z, 1.0), 0.0, 1.0);
+
+  // 拡散反射光強度
+  idiff = c * max(dot(n, l), 0.0) * kdiff * ldiff + kamb * lamb;
+
+  // 鏡面反射光強度
   ispec = pow(max(dot(n, h), 0.0), kshi) * kspec * lspec;
-
-  // テクスチャ座標
-  texcoord = cc / vec2(textureSize(color, 0));
-
-  // クリッピング座標系における座標値
-  gl_Position = mp * p;
 }

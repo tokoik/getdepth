@@ -123,7 +123,7 @@ struct GgApplication
     GLFWwindow *window;
 
     // ビューポートの横幅と高さ
-    GLsizei width, height;
+    GLsizei size[2];
 
     // ビューポートのアスペクト比
     GLfloat aspect;
@@ -871,8 +871,8 @@ struct GgApplication
       if (instance)
       {
         // ウィンドウのサイズを保存する
-        instance->width = width;
-        instance->height = height;
+        instance->size[0] = width;
+        instance->size[1] = height;
 
         // トラックボール処理の範囲を設定する
         instance->trackball[0].region(width, height);
@@ -1046,7 +1046,7 @@ struct GgApplication
     //
     GLsizei getWidth() const
     {
-      return width;
+      return size[0];
     }
 
     //
@@ -1054,7 +1054,15 @@ struct GgApplication
     //
     GLsizei getHeight() const
     {
-      return height;
+      return size[1];
+    }
+
+    //
+    // ウィンドウのサイズを得る
+    //
+    const GLsizei *getSize() const
+    {
+      return size;
     }
 
     //
@@ -1081,7 +1089,7 @@ struct GgApplication
     {
 #if !defined(USE_OCULUS_RIFT)
       // ウィンドウ全体に描画する
-      glViewport(0, 0, width, height);
+      glViewport(0, 0, size[0], size[1]);
 #endif
     }
 
@@ -1100,8 +1108,7 @@ struct GgApplication
     //
     GLfloat getArrowX(int mods = 0) const
     {
-      if (mods < 0 || mods > 3) throw std::out_of_range("No such modifier key.");
-      return getArrow(mods, 0);
+      return getArrow(0, mods);
     }
 
     //
@@ -1109,8 +1116,7 @@ struct GgApplication
     //
     GLfloat getArrowY(int mods = 0) const
     {
-      if (mods < 0 || mods > 3) throw std::out_of_range("No such modifier key.");
-      return getArrow(mods, 1);
+      return getArrow(1, mods);
     }
 
     //
@@ -1118,7 +1124,6 @@ struct GgApplication
     //
     void getArrow(GLfloat *arrow, int mods = 0) const
     {
-      if (mods < 0 || mods > 3) throw std::out_of_range("No such modifier key.");
       arrow[0] = getArrowX(mods);
       arrow[1] = getArrowY(mods);
     }

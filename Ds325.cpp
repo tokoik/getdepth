@@ -6,18 +6,12 @@
 
 #if USE_DEPTH_SENSE
 
-// 標準ライブラリ
-#include <iostream>
-
 // DepthSense 関連
 #pragma comment (lib, "DepthSense.lib")
 
-// 計測不能点のデフォルト距離
-#if CAPTURE_CAMERA == DS325
-const GLfloat maxDepth(3.0f);
-#else
-const GLfloat maxDepth(6.0f);
-#endif
+// 標準ライブラリ
+#include <iostream>
+#include <climits>
 
 // コンストラクタ
 Ds325::Ds325(
@@ -66,8 +60,8 @@ Ds325::Ds325(
     // デプスマップのテクスチャ座標に対する頂点座標の拡大率
     scale[0] = -0.753554f * 2.0f;
     scale[1] = -0.554309f * 2.0f;
-    scale[2] = -5.0f;
-    scale[3] = -32.767f;
+    scale[2] = -32.767f;
+    scale[3] = -maxDepth;
 
     // DepthSense の各ノードを初期化する
     for (Node &node : device.getNodes()) configureNode(node);
@@ -287,89 +281,22 @@ void Ds325::configureDepthNode(DepthNode &dnode)
 // DepthSense のデプスノードのイベント発生時の処理
 void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData data, Ds325 *sensor)
 {
-  // デプスカメラの内部パラメータ
-  const int &dw(data.stereoCameraParameters.depthIntrinsics.width);
-  const int &dh(data.stereoCameraParameters.depthIntrinsics.height);
-  const float &dcx(data.stereoCameraParameters.depthIntrinsics.cx);
-  const float &dcy(data.stereoCameraParameters.depthIntrinsics.cy);
-  const float &dfx(data.stereoCameraParameters.depthIntrinsics.fx);
-  const float &dfy(data.stereoCameraParameters.depthIntrinsics.fy);
-  const float &dk1(data.stereoCameraParameters.depthIntrinsics.k1);
-  const float &dk2(data.stereoCameraParameters.depthIntrinsics.k2);
-  const float &dk3(data.stereoCameraParameters.depthIntrinsics.k3);
+  // デプスカメラをロックする
+  sensor->depthMutex.lock();
 
-  // カラーカメラの内部パラメータ
-  const int &cw(data.stereoCameraParameters.colorIntrinsics.width);
-  const int &ch(data.stereoCameraParameters.colorIntrinsics.height);
-  const float &ccx(data.stereoCameraParameters.colorIntrinsics.cx);
-  const float &ccy(data.stereoCameraParameters.colorIntrinsics.cy);
-  const float &cfx(data.stereoCameraParameters.colorIntrinsics.fx);
-  const float &cfy(data.stereoCameraParameters.colorIntrinsics.fy);
-  const float &ck1(data.stereoCameraParameters.colorIntrinsics.k1);
-  const float &ck2(data.stereoCameraParameters.colorIntrinsics.k2);
-  const float &ck3(data.stereoCameraParameters.colorIntrinsics.k3);
+  // カラーカメラの内部パラメータを保存する
+  sensor->colorIntrinsics = data.stereoCameraParameters.colorIntrinsics;
 
-  // デプスカメラの
-  const GLfloat fovx(dfx * maxDepth / dcx);
-  const GLfloat fovy(dfy * maxDepth / dcy);
+  // デプスカメラの内部パラメータを保存する
+  sensor->depthIntrinsics = data.stereoCameraParameters.depthIntrinsics;
 
   // データ転送
-  sensor->depthMutex.lock();
-  for (int i = 0; i < sensor->depthCount; ++i)
-  {
-    // デプスマップの画素位置
-    const int u(i % dw);
-    const int t(i / dw);
-    const int v(dh - t - 1);
+  for (int i = 0; i < sensor->depthCount; ++i) sensor->depthBuffer[i] = data.depthMap[i];
 
-    // 転送先のマップは上下を反転する
-    const int j(v * dw + u);
-
-    // デプス値を転送する
-    sensor->depthBuffer[j] = data.depthMap[i];
-
-    // 画素が計測不能なら
-    if (sensor->depthBuffer[j] > 32000)
-    {
-      // 画素位置からデプスマップのスクリーン座標を求める
-      const GLfloat dx((static_cast<GLfloat>(u) - dcx + 0.5f) / dfx);
-      const GLfloat dy((static_cast<GLfloat>(v) - dcy + 0.5f) / dfy);
-
-      // デプスカメラの歪み補正係数
-      const GLfloat dr(dx * dx + dy * dy);
-      const GLfloat dq(1.0f + dr * (dk1 + dr * (dk2 + dr * dk3)));
-
-      // 歪みを補正したポイントのスクリーン座標値
-      const GLfloat x(dx / dq);
-      const GLfloat y(dy / dq);
-
-      // 計測不能点を最遠点にしてカメラ座標を求める
-      sensor->point[j * 3 + 0] = x * maxDepth;
-      sensor->point[j * 3 + 1] = y * maxDepth;
-      sensor->point[j * 3 + 2] = -maxDepth;
-
-      // カラーカメラの歪み補正係数
-      const GLfloat cr(x * x + y * y);
-      const GLfloat cq(1.0f + cr * (ck1 + cr * (ck2 + cr * ck3)));
-
-      // ポイントのカメラ座標
-      const GLfloat cx((x + 0.0508f) / cq);
-      const GLfloat cy(y / cq);
-
-      // 歪みを補正したポイントのテクスチャ座標値
-      sensor->uvmap[j * 2 + 0] = ccx + cx * cfx;
-      sensor->uvmap[j * 2 + 1] = ccy - cy * cfy;
-    }
-    else
-    {
-      sensor->point[j * 3 + 0] = data.verticesFloatingPoint[i].x;
-      sensor->point[j * 3 + 1] = data.verticesFloatingPoint[i].y;
-      sensor->point[j * 3 + 2] = -data.verticesFloatingPoint[i].z;
-      sensor->uvmap[j * 2 + 0] = data.uvMap[i].u * static_cast<GLfloat>(cw);
-      sensor->uvmap[j * 2 + 1] = data.uvMap[i].v * static_cast<GLfloat>(ch);
-    }
-  }
+  // デプスデータが更新されたことを記録する
   sensor->depth = sensor->depthBuffer;
+
+  // デプスカメラをアンロックする
   sensor->depthMutex.unlock();
 }
 
@@ -431,14 +358,19 @@ void Ds325::configureColorNode(ColorNode &cnode)
 // DepthSense のカラーノードのイベント発生時の処理
 void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData data, Ds325 *sensor)
 {
-  // カラーデータを転送する
+  // カラーカメラをロックする
   sensor->colorMutex.lock();
+
+  // カラーデータが Motion JPEG でエンコードされていれば
   if (sensor->color_compression == COMPRESSION_TYPE_MJPEG)
   {
+    // カラーデータをそのまま転送する
     memcpy(sensor->colorBuffer, data.colorMap, sensor->colorCount * 3 * sizeof(GLubyte));
   }
   else
   {
+    // カラーデータは YUY2 でエンコードされている
+
     // ITU-R BT.601 / ITU-R BT.709 (1250/50/2:1)
     //
     //   R = Y + 1.402 × Cr
@@ -465,7 +397,11 @@ void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData da
       sensor->colorBuffer[j + 2] = r > 0.0f ? static_cast<GLubyte>(r) : 0;
     }
   }
+
+  // カラーデータが更新されたことを記録する
   sensor->color = sensor->colorBuffer;
+
+  // カラーカメラをアンロックする
   sensor->colorMutex.unlock();
 }
 
@@ -475,27 +411,23 @@ GLuint Ds325::getDepth()
   // デプスデータのテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, depthTexture);
 
-  // デプスデータが更新されていれば
-  if (depth)
+  // デプスデータが更新されておりデプスデータの取得中でなければ
+  if (depth && depthMutex.try_lock())
   {
-    // DepthSense がデプスデータの取得中でなければ
-    if (depthMutex.try_lock())
-    {
-      // テクスチャ座標のバッファオブジェクトを指定する
-      glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+    // テクスチャ座標のバッファオブジェクトを指定する
+    glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
-      // テクスチャ座標をバッファオブジェクトに転送する
-      glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
+    // テクスチャ座標をバッファオブジェクトに転送する
+    glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
 
-      // デプスデータをテクスチャに転送する
-      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_SHORT, depth);
+    // デプスデータをテクスチャに転送する
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_SHORT, depth);
 
-      // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
-      depth = nullptr;
+    // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
+    depth = nullptr;
 
-      // デプスデータのロックを開放する
-      depthMutex.unlock();
-    }
+    // デプスデータをアンロックする
+    depthMutex.unlock();
   }
 
   return depthTexture;
@@ -507,27 +439,87 @@ GLuint Ds325::getPoint()
   // カメラ座標のテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, pointTexture);
 
-  // デプスデータが更新されていれば
-  if (depth)
+  // デプスデータが更新されており DepthSense がデプスデータの取得中でなければ
+  if (depth && depthMutex.try_lock())
   {
-    // DepthSense がデプスデータの取得中でなければ
-    if (depthMutex.try_lock())
+    // デプスカメラの内部パラメータ
+    const int &dw(depthIntrinsics.width);
+    const int &dh(depthIntrinsics.height);
+    const float &dcx(depthIntrinsics.cx);
+    const float &dcy(depthIntrinsics.cy);
+    const float &dfx(depthIntrinsics.fx);
+    const float &dfy(depthIntrinsics.fy);
+    const float &dk1(depthIntrinsics.k1);
+    const float &dk2(depthIntrinsics.k2);
+    const float &dk3(depthIntrinsics.k3);
+
+    // カラーカメラの内部パラメータ
+    const int &cw(colorIntrinsics.width);
+    const int &ch(colorIntrinsics.height);
+    const float &ccx(colorIntrinsics.cx);
+    const float &ccy(colorIntrinsics.cy);
+    const float &cfx(colorIntrinsics.fx);
+    const float &cfy(colorIntrinsics.fy);
+    const float &ck1(colorIntrinsics.k1);
+    const float &ck2(colorIntrinsics.k2);
+    const float &ck3(colorIntrinsics.k3);
+
+    for (int i = 0; i < depthCount; ++i)
     {
-      // テクスチャ座標のバッファオブジェクトを指定する
-      glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+      // デプスマップの画素位置
+      const int u(i % dw);
+      const int v(dh - i / dw - 1);
 
-      // テクスチャ座標をバッファオブジェクトに転送する
-      glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
+      // 転送先のマップは上下を反転する
+      const int j(v * dw + u);
 
-      // カメラ座標をテクスチャに転送する
-      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
+      // 画素位置からデプスマップのスクリーン座標を求める
+      const GLfloat dx((static_cast<GLfloat>(u) - dcx + 0.5f) / dfx);
+      const GLfloat dy((static_cast<GLfloat>(v) - dcy + 0.5f) / dfy);
 
-      // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
-      depth = nullptr;
+      // デプスカメラの歪み補正係数
+      const GLfloat dr(dx * dx + dy * dy);
+      const GLfloat dq(1.0f + dr * (dk1 + dr * (dk2 + dr * dk3)));
 
-      // デプスデータのロックを開放する
-      depthMutex.unlock();
+      // 歪みを補正したポイントのスクリーン座標値
+      const GLfloat x(dx / dq);
+      const GLfloat y(dy / dq);
+
+      // カメラ座標のデプス値を求める
+      const GLfloat z(depth[i] > 32000 ? maxDepth : depth[i] * 0.001f);
+
+      // ポイントのカメラ座標を求める
+      point[j * 3 + 0] = x * z;
+      point[j * 3 + 1] = y * z;
+      point[j * 3 + 2] = -z;
+
+      // カラーカメラの歪み補正係数
+      const GLfloat cr(x * x + y * y);
+      const GLfloat cq(1.0f + cr * (ck1 + cr * (ck2 + cr * ck3)));
+
+      // カラーのスクリーン座標
+      const GLfloat cx((x + 0.0508f) / cq);
+      const GLfloat cy(y / cq);
+
+      // 歪みを補正したポイントのテクスチャ座標値
+      uvmap[j * 2 + 0] = ccx + cx * cfx;
+      uvmap[j * 2 + 1] = ccy - cy * cfy;
     }
+
+    // カメラ座標をテクスチャに転送する
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
+
+    // テクスチャ座標のバッファオブジェクトを指定する
+    glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+
+    // テクスチャ座標をバッファオブジェクトに転送する
+    glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
+
+    // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
+    depth = nullptr;
+
+    // デプスデータをアンロックする
+    depthMutex.unlock();
   }
 
   return pointTexture;
@@ -539,21 +531,17 @@ GLuint Ds325::getColor()
   // カラーデータのテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, colorTexture);
 
-  // カラーデータが更新されていれば
-  if (color)
+  // カラーデータが更新されておりカラーデータの取得中でなければ
+  if (color && colorMutex.try_lock())
   {
-    // DepthSense がカラーデータの取得中でなければ
-    if (colorMutex.try_lock())
-    {
-      // カラーデータをテクスチャに転送する
-      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGR, GL_UNSIGNED_BYTE, color);
+    // カラーデータをテクスチャに転送する
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGR, GL_UNSIGNED_BYTE, color);
 
-      // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
-      color = nullptr;
+    // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
+    color = nullptr;
 
-      // カラーデータのロックを開放する
-      colorMutex.unlock();
-    }
+    // カラーデータをアンロックする
+    colorMutex.unlock();
   }
 
   return colorTexture;

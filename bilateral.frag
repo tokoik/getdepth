@@ -16,7 +16,7 @@ in vec2 texcoord;
 layout (location = 0) out vec3 smoothed;
 
 // 分散
-uniform float variance = 10.0;
+uniform float variance = 100.0;
 
 // 重み付き画素値の合計と重みの合計を求める
 void f(inout vec3 csum, inout vec3 wsum, const in vec3 base, const in vec4 c, const in float w)

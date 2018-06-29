@@ -6,14 +6,11 @@
 
 #if USE_KINECT_V1
 
-// 標準ライブラリ
-#include <cassert>
-
 // Kinect V1 関連
 #pragma comment(lib, "Kinect10.lib")
 
-// 計測不能点のデフォルト距離
-const GLfloat maxDepth(8.0f);
+// 標準ライブラリ
+#include <climits>
 
 // コンストラクタ
 KinectV1::KinectV1()
@@ -60,14 +57,17 @@ KinectV1::KinectV1()
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   makeTexture();
 
+  // デプスデータの計測不能点を変換するために用いる一次メモリを確保する
+  depth = new GLushort[depthCount];
+
   // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
   position = new GLfloat[depthCount][3];
 
   // デプスマップのテクスチャ座標に対する頂点座標の拡大率
   scale[0] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 320.0f;
   scale[1] = NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 240.0f;
-  scale[2] = -4.0f;
-  scale[3] = -65.535f / float(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT);
+  scale[2] = -65.535f;
+  scale[3] = -maxDepth;
 }
 
 // デストラクタ
@@ -81,6 +81,7 @@ KinectV1::~KinectV1()
   if (getActivated() > 0)
   {
     // データ変換用のメモリを削除する
+    delete[] depth;
     delete[] position;
 
     // センサをシャットダウンする
@@ -111,14 +112,31 @@ void KinectV1::getImage(HANDLE event, HANDLE stream,
       // ロックに成功したら
       if (rect.Pitch)
       {
-        // 取得したのがデプスデータかカラーデータであれば
-        if (texture == depthTexture || texture == colorTexture)
+        // 取得したのがデプスデータであれば
+        if (texture == depthTexture)
+        {
+          // すべての点について
+          for (int i = 0; i < depthCount; ++i)
+          {
+            // その点のデプス値を転送する
+            depth[i] = reinterpret_cast<USHORT *>(rect.pBits)[i] >> NUI_IMAGE_PLAYER_INDEX_SHIFT;
+
+            // その点が計測不能点なら最遠点に移動する
+            if (depth[i] == 0) depth[i] = USHRT_MAX;
+          }
+
+          // pBits に入っているデータをテクスチャに転送する
+          glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, type, depth);
+        }
+
+        // 取得したのがカラーデータであれば
+        else if (texture == colorTexture)
         {
           // pBits に入っているデータをテクスチャに転送する
           glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, type, rect.pBits);
         }
 
-        // デプスデータかカメラ座標を取得するときは
+        // デプス値かカメラ座標を取得するときは
         if (texture == depthTexture || texture == pointTexture)
         {
           // カラーデータのテクスチャ座標を求めてバッファオブジェクトに転送する
@@ -144,13 +162,13 @@ void KinectV1::getImage(HANDLE event, HANDLE stream,
             for (int i = 0; i < depthCount; ++i)
             {
               // デプス値の単位をメートルに換算する係数
-              static const GLfloat zScale(-0.001f / GLfloat(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT));
+              static constexpr GLfloat zScale(-0.001f / static_cast<GLfloat>(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT));
 
               // その点のデプス値を得る
               const unsigned short d(reinterpret_cast<USHORT *>(rect.pBits)[i]);
 
               // デプス値の単位をメートルに換算する (計測不能点は maxDepth にする)
-              const GLfloat z(d == 0 ? -maxDepth : GLfloat(d) * zScale);
+              const GLfloat z(d == 0 ? -maxDepth : static_cast<GLfloat>(d) * zScale);
 
               // レンズの画角にもとづくスケールを求める
               const GLfloat s(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * z);
@@ -170,9 +188,8 @@ void KinectV1::getImage(HANDLE event, HANDLE stream,
           }
         }
 
-        // ロックしたデータを開放する
-        const HRESULT hr(sensor->NuiImageStreamReleaseFrame(stream, &frame));
-        assert(hr == S_OK);
+        // データをアンロックする
+        sensor->NuiImageStreamReleaseFrame(stream, &frame);
       }
     }
   }

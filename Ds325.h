@@ -37,10 +37,10 @@ using namespace DepthSense;
 #define DS325                   1
 
 // 使用する DepthSense 
-#define CAPTURE_CAMERA          DS325
+#define DEPTHSENSE_MODEL        DS325
 
 // DepthSense の動作モード
-#if CAPTURE_CAMERA == DS325
+#if DEPTHSENSE_MODEL == DS325
 const FrameFormat capture_depth_format(FRAME_FORMAT_QVGA);
 const DepthNode::CameraMode capture_depth_mode(DepthNode::CAMERA_MODE_CLOSE_MODE);
 const FrameFormat capture_color_format(FRAME_FORMAT_VGA);
@@ -101,7 +101,7 @@ class Ds325 : public DepthCamera
   void unregisterNode(Node node);
 
   // DepthSense が取り付けられた時の処理
-  static void Ds325::onDeviceConnected(Context context, Context::DeviceAddedData data);
+  static void onDeviceConnected(Context context, Context::DeviceAddedData data);
 
   // DepthSense が取り外されたときの処理
   static void Ds325::onDeviceDisconnected(Context context, Context::DeviceRemovedData data);
@@ -124,6 +124,18 @@ class Ds325 : public DepthCamera
   // デプスノード用の mutex
   std::mutex depthMutex;
 
+  // デプスカメラの内部パラメータ
+  IntrinsicParameters depthIntrinsics;
+
+  // デプスデータ転送用のメモリ
+  GLshort *depth, *depthBuffer;
+
+  // カメラ座標転送用のメモリ
+  GLfloat *point;
+
+  // テクスチャ座標転送用のメモリ
+  GLfloat *uvmap;
+
   // カラーノード
   ColorNode colorNode;
 
@@ -136,14 +148,8 @@ class Ds325 : public DepthCamera
   // カラーノード用の mutex
   std::mutex colorMutex;
 
-  // デプスデータ転送用のメモリ
-  GLshort *depth, *depthBuffer;
-
-  // カメラ座標転送用のメモリ
-  GLfloat *point;
-
-  // テクスチャ座標転送用のメモリ
-  GLfloat *uvmap;
+  // カラーカメラの内部パラメータ
+  IntrinsicParameters colorIntrinsics;
 
   // カラーデータ転送用のメモリ
   GLubyte *color, *colorBuffer;
@@ -169,6 +175,20 @@ public:
 
   // デストラクタ
   virtual ~Ds325();
+
+#if DEPTHSENSE_MODEL == DS325
+  // 計測不能点のデフォルト距離
+  static constexpr GLfloat maxDepth = 3.0f;
+
+  // 疑似カラー処理の範囲
+  static constexpr GLfloat range[2] = { 0.2f, 1.0f };
+#else
+  // 計測不能点のデフォルト距離
+  static constexpr GLfloat maxDepth = 10.0f;
+
+  // 疑似カラー処理の範囲
+  static constexpr GLfloat range[2] = { 0.4f, 6.0f };
+#endif
 
   // デプスデータを取得する
   GLuint getDepth();

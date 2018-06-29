@@ -33,18 +33,24 @@
 #include "Ds325.h"
 
 // OpenCV によるビデオキャプチャに使うカメラ
-#define CAPTURE_CAMERA 1
+#define CAPTURE_DEVICE 1
 
 // 頂点位置の生成をシェーダ (position.frag) で行うなら 1
 #define GENERATE_POSITION 0
 
+// バイラテラルフィルタを使うなら 1
+#define USE_FILTER 0
+
+// 透明人間にするなら 1
+#define USE_REFRACTION 0
+
 // カメラパラメータ
-const GLfloat cameraFovy(1.0f);                         // 画角
-const GLfloat cameraNear(0.1f);                         // 前方面までの距離
-const GLfloat cameraFar(50.0f);                         // 後方面までの距離
+constexpr GLfloat cameraFovy(1.0f);                     // 画角
+constexpr GLfloat cameraNear(0.1f);                     // 前方面までの距離
+constexpr GLfloat cameraFar(50.0f);                     // 後方面までの距離
 
 // 光源
-const GgSimpleShader::Light lightData =
+constexpr GgSimpleShader::Light lightData =
 {
   { 0.2f, 0.2f, 0.2f, 1.0f },                           // 環境光成分
   { 1.0f, 1.0f, 1.0f, 1.0f },                           // 拡散反射光成分
@@ -53,7 +59,7 @@ const GgSimpleShader::Light lightData =
 };
 
 // 材質
-const GgSimpleShader::Material materialData =
+constexpr GgSimpleShader::Material materialData =
 {
   { 0.8f, 0.8f, 0.8f, 1.0f },                           // 環境光の反射係数
   { 0.8f, 0.8f, 0.8f, 1.0f },                           // 拡散反射係数
@@ -62,7 +68,10 @@ const GgSimpleShader::Material materialData =
 };
 
 // 背景色
-const GLfloat background[] = { 0.2f, 0.3f, 0.4f, 0.0f };
+constexpr GLfloat background[] = { 0.2f, 0.3f, 0.4f, 0.0f };
+
+// バイラテラルフィルタのデフォルトの分散
+constexpr GLfloat variance(100.0f);
 
 //
 // アプリケーションの実行
@@ -82,7 +91,7 @@ void GgApplication::run()
   sensor.getDepthResolution(&width, &height);
 
   // OpenCV によるビデオキャプチャを初期化する
-  cv::VideoCapture camera(CAPTURE_CAMERA);
+  cv::VideoCapture camera(CAPTURE_DEVICE);
   if (!camera.isOpened()) throw std::runtime_error("ビデオカメラが見つかりません");
 
   // カメラの初期設定
@@ -94,29 +103,9 @@ void GgApplication::run()
   const Mesh mesh(width, height, sensor.getCoordBuffer());
 
   // 描画用のシェーダ
-  const GgSimpleShader simple("simple.vert", "simple.frag");
-  //const GgSimpleShader simple("refraction.vert", "refraction.frag");
-  //const GLint sizeLoc(glGetUniformLocation(simple.get(), "size"));
-
-  // 光源データ
-  const GgSimpleShader::LightBuffer light(lightData);
-
-  // 材質データ
-  const GgSimpleShader::MaterialBuffer material(materialData);
-
-  // デプスデータから頂点位置を計算するシェーダ
-  const Calculate position(width, height, "position.frag");
-  const GLuint scaleLoc(glGetUniformLocation(position.get(), "scale"));
-  const GLuint depthMaxLoc(glGetUniformLocation(position.get(), "depthMax"));
-  const GLuint depthScaleLoc(glGetUniformLocation(position.get(), "depthScale"));
-
-  // バイラテラルフィルタのシェーダ
-  const Calculate bilateral(width, height, "bilateral.frag");
-  //const Compute bilateral(width, height, "bilateral.comp");
-  const GLint varianceLoc(glGetUniformLocation(bilateral.get(), "variance"));
-
-  // 頂点位置から法線ベクトルを計算するシェーダ
-  const Calculate normal(width, height, "normal.frag");
+#if USE_REFRACTION
+  const GgSimpleShader simple("refraction.vert", "refraction.frag");
+  const GLint sizeLoc(glGetUniformLocation(simple.get(), "size"));
 
   // 背景画像のテクスチャ
   GLuint bmap;
@@ -127,6 +116,27 @@ void GgApplication::run()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+#else
+  const GgSimpleShader simple("simple.vert", "simple.frag");
+#endif
+
+  // 光源データ
+  const GgSimpleShader::LightBuffer light(lightData);
+
+  // 材質データ
+  const GgSimpleShader::MaterialBuffer material(materialData);
+
+  // デプスデータから頂点位置を計算するシェーダ
+  const Calculate position(width, height, "position.frag");
+  const GLuint scaleLoc(glGetUniformLocation(position.get(), "scale"));
+
+  // バイラテラルフィルタのシェーダ
+  const Calculate bilateral(width, height, "bilateral.frag");
+  //const Compute bilateral(width, height, "bilateral.comp");
+  const GLint varianceLoc(glGetUniformLocation(bilateral.get(), "variance"));
+
+  // 頂点位置から法線ベクトルを計算するシェーダ
+  const Calculate normal(width, height, "normal.frag");
 
   // 背景色を設定する
   glClearColor(background[0], background[1], background[2], background[3]);
@@ -138,6 +148,22 @@ void GgApplication::run()
   // ウィンドウが開いている間くり返し描画する
   while (!window.shouldClose())
   {
+#if USE_REFRACTION
+    // 画像のキャプチャ
+    if (camera.grab())
+    {
+      // キャプチャ映像から画像を切り出す
+      cv::Mat frame;
+      camera.retrieve(frame, 3);
+
+      // 切り出した画像をテクスチャに転送する
+      cv::Mat flipped;
+      cv::flip(frame, flipped, 0);
+      glBindTexture(GL_TEXTURE_2D, bmap);
+      glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, frame.cols, flipped.rows, GL_BGR, GL_UNSIGNED_BYTE, flipped.data);
+    }
+#endif
+
 #if GENERATE_POSITION
     // 頂点位置の計算
     position.use();
@@ -146,37 +172,34 @@ void GgApplication::run()
     glActiveTexture(GL_TEXTURE0);
     sensor.getDepth();
     const std::vector<GLuint> &positionTexture(position.execute());
-
-    // バイラテラルフィルタ
-    bilateral.use();
-    glUniform1f(varianceLoc, static_cast<GLfloat>(window.getArrowY()));
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
-    const std::vector<GLuint> &bilateralTexture(bilateral.execute());
-
-    // 法線ベクトルの計算
-    normal.use();
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, bilateralTexture[0]);
-    const std::vector<GLuint> &normalTexture(normal.execute());
-#else
-    // バイラテラルフィルタ
-    bilateral.use();
-    glUniform1f(varianceLoc, static_cast<GLfloat>(window.getArrowY()));
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-    sensor.getPoint();
-    const std::vector<GLuint> &bilateralTexture(bilateral.execute());
-
-    // 法線ベクトルの計算
-    normal.use();
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-    sensor.getPoint();
-    const std::vector<GLuint> &normalTexture(normal.execute());
 #endif
+
+#if USE_FILTER
+    // バイラテラルフィルタ
+    bilateral.use();
+    glUniform1f(varianceLoc, variance + static_cast<GLfloat>(window.getArrowY()));
+    glUniform1i(0, 0);
+    glActiveTexture(GL_TEXTURE0);
+#  if GENERATE_POSITION
+    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
+#  else
+    sensor.getPoint();
+#  endif
+    const std::vector<GLuint> &bilateralTexture(bilateral.execute());
+#endif
+
+    // 法線ベクトルの計算
+    normal.use();
+    glUniform1i(0, 0);
+    glActiveTexture(GL_TEXTURE0);
+#if USE_FILTER
+    glBindTexture(GL_TEXTURE_2D, bilateralTexture[0]);
+#elif GENERATE_POSITION
+    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
+#else
+    sensor.getPoint();
+#endif
+    const std::vector<GLuint> &normalTexture(normal.execute());
 
     // 画面消去
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -200,7 +223,11 @@ void GgApplication::run()
     // 頂点座標テクスチャ
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
+#  if USE_FILTER
     glBindTexture(GL_TEXTURE_2D, bilateralTexture[0]);
+#  else
+    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
+#  endif
 #endif
 
     // 法線ベクトルテクスチャ
@@ -208,10 +235,23 @@ void GgApplication::run()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, normalTexture[0]);
 
+#if USE_REFRACTION
+    // ウィンドウサイズ
+    glUniform2f(sizeLoc, static_cast<GLfloat>(window.getWidth()), static_cast<GLfloat>(window.getHeight()));
+
     // 背景テクスチャ
+    glUniform1i(3, 3);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, bmap);
+#else
+    // 前景テクスチャ
     glUniform1i(2, 2);
     glActiveTexture(GL_TEXTURE2);
     sensor.getColor();
+
+    // 疑似カラー処理
+    glUniform2fv(3, 1, sensor.range);
+#endif
 
     // 図形描画
     mesh.draw();
