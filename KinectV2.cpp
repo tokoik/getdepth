@@ -9,9 +9,6 @@
 // Kinect V2 関連
 #pragma comment(lib, "Kinect20.lib")
 
-// 標準ライブラリ
-#include <climits>
-
 // コンストラクタ
 KinectV2::KinectV2()
 {
@@ -67,7 +64,7 @@ KinectV2::KinectV2()
   makeTexture();
 
   // デプスデータの計測不能点を変換するために用いる一次メモリを確保する
-  depth = new GLushort[depthCount];
+  depth = new GLfloat[depthCount];
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
   position = new GLfloat[depthCount][3];
@@ -78,8 +75,6 @@ KinectV2::KinectV2()
   // デプスマップのテクスチャ座標に対する頂点座標の拡大率
   scale[0] = 1.546592f;
   scale[1] = 1.222434f;
-  scale[2] = -65.535f;
-  scale[3] = -maxDepth;
 }
 
 // デストラクタ
@@ -119,19 +114,26 @@ GLuint KinectV2::getDepth() const
     UINT16 *depthBuffer;
     depthFrame->AccessUnderlyingBuffer(&depthSize, &depthBuffer);
 
-    // デプスデータの計測不能点を最遠点に移動する
-    for (UINT i = 0; i < depthSize; ++i) if ((depth[i] = depthBuffer[i]) == 0) depthBuffer[i] = USHRT_MAX;
+    // すべての点について
+    for (UINT i = 0; i < depthSize; ++i)
+    {
+      // その点のデプス値を取り出す
+      UINT16 d(depthBuffer[i]);
+
+      // デプス値の単位をメートルに換算して (計測不能点は maxDepth にして) 転送する
+      depth[i] = d == 0 ? -maxDepth : -0.001f * static_cast<GLfloat>(d);
+    }
 
     // デプスフレームを開放する
     depthFrame->Release();
 
     // デプスデータをテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_UNSIGNED_SHORT, depth);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_FLOAT, depth);
 
     // カラーのテクスチャ座標を求めてバッファオブジェクトに転送する
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-    ColorSpacePoint *const texcoord(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
-    coordinateMapper->MapDepthFrameToColorSpace(depthSize, depth, depthCount, texcoord);
+    ColorSpacePoint *const uvmap(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
+    coordinateMapper->MapDepthFrameToColorSpace(depthSize, depthBuffer, depthCount, uvmap);
     glUnmapBuffer(GL_ARRAY_BUFFER);
   }
 
@@ -155,8 +157,8 @@ GLuint KinectV2::getPoint() const
 
     // カラーのテクスチャ座標を求めてバッファオブジェクトに転送する
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-    ColorSpacePoint *const texcoord(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
-    coordinateMapper->MapDepthFrameToColorSpace(depthSize, depthBuffer, depthCount, texcoord);
+    ColorSpacePoint *const uvmap(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
+    coordinateMapper->MapDepthFrameToColorSpace(depthSize, depthBuffer, depthCount, uvmap);
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
     // カメラ座標への変換テーブルを得る
@@ -167,14 +169,11 @@ GLuint KinectV2::getPoint() const
     // すべての点について
     for (unsigned int i = 0; i < entry; ++i)
     {
-      // デプス値の単位をメートルに換算する係数
-      static constexpr GLfloat zScale(-0.001f);
-
       // その点のデプス値を得る
-      const unsigned short d(depthBuffer[i]);
+      const UINT16 d(depthBuffer[i]);
 
       // デプス値の単位をメートルに換算する (計測不能点は maxDepth にする)
-      const GLfloat z(d == 0 ? -maxDepth : static_cast<GLfloat>(d) * zScale);
+      const GLfloat z(d == 0 ? -maxDepth : -0.001f * static_cast<GLfloat>(d));
 
       // その点のスクリーン上の位置を求める
       const GLfloat x(table[i].X);

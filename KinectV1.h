@@ -48,7 +48,7 @@ class KinectV1 : public DepthCamera
   const HANDLE nextDepthFrameEvent;
 
   // デプスデータの計測不能点を変換するために用いる一次メモリ
-  GLushort *depth;
+  GLfloat *depth;
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
   GLfloat (*position)[3];
@@ -81,31 +81,19 @@ public:
   static constexpr GLfloat maxDepth = 10.0f;
 
   // 疑似カラー処理の範囲
-  static constexpr GLfloat range[2] = { 0.4f, 6.0f };
+  static constexpr GLfloat range[2] = { 0.8f, 4.0f };
+
+  // デプス値からカメラ座標を用いるのに用いるシェーダーのソースファイル名
+  static constexpr char shader[] = "position_v1.frag";
 
   // デプスデータを取得する
-  GLuint getDepth() const
-  {
-    getImage(nextDepthFrameEvent, depthStream, depthTexture,
-      depthWidth, depthHeight, GL_RED, GL_UNSIGNED_SHORT);
-    return depthTexture;
-  }
+  GLuint getDepth() const;
 
   // カメラ座標を取得する
-  GLuint getPoint() const
-  {
-    getImage(nextDepthFrameEvent, depthStream, pointTexture,
-      depthWidth, depthHeight, GL_RED, GL_UNSIGNED_SHORT);
-    return pointTexture;
-  }
+  GLuint getPoint() const;
 
   // カラーデータを取得する
-  GLuint getColor() const
-  {
-    getImage(nextColorFrameEvent, colorStream, colorTexture,
-      colorWidth, colorHeight, GL_BGRA, GL_UNSIGNED_BYTE);
-    return colorTexture;
-  }
+  GLuint getColor() const;
 };
 
 #endif

@@ -36,8 +36,8 @@ protected:
   // デプスデータの画素におけるカラーデータのテクスチャ座標を格納するバッファオブジェクト
   GLuint coordBuffer;
 
-  // デプスマップのテクスチャ座標に対する頂点座標の拡大率
-  GLfloat scale[4];
+  // デプス値に対する頂点座標の拡大率
+  GLfloat scale[2];
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   void makeTexture();

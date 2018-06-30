@@ -7,11 +7,11 @@
 // テクスチャ座標の生成してバッファオブジェクトに転送する
 void Mesh::genCoord()
 {
-  GLfloat (*const coord)[2](static_cast<GLfloat(*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
+  GLfloat (*const coord)[2](static_cast<GLfloat (*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
   for (int i = 0; i < vertices; ++i)
   {
-    coord[i][0] = (GLfloat(i % slices) + 0.5f) / GLfloat(slices);
-    coord[i][1] = (GLfloat(i / slices) + 0.5f) / GLfloat(stacks);
+    coord[i][0] = (static_cast<GLfloat>(i % slices) + 0.5f) / static_cast<GLfloat>(slices);
+    coord[i][1] = (static_cast<GLfloat>(i / slices) + 0.5f) / static_cast<GLfloat>(stacks);
   }
   glUnmapBuffer(GL_ARRAY_BUFFER);
 }

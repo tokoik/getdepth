@@ -5116,7 +5116,7 @@ gg::GgElements *gg::ggElementsObj(const char *name, bool normalize)
 /*
 ** メッシュ形状を作成する (Elements 形式)
 */
-gg::GgElements *gg::ggElementsMesh(GLuint slices, GLuint stacks, const GLfloat(*pos)[3], const GLfloat(*norm)[3])
+gg::GgElements *gg::ggElementsMesh(GLuint slices, GLuint stacks, const GLfloat (*pos)[3], const GLfloat (*norm)[3])
 {
   // 頂点属性
   std::vector<GgVertex> vert;
@@ -5245,8 +5245,8 @@ gg::GgElements *gg::ggElementsSphere(GLfloat radius, int slices, int stacks)
   }
 
   // GgElements オブジェクトを作成する
-  return ggElementsMesh(slices, stacks, reinterpret_cast<GLfloat(*)[3]>(&p[0]),
-    reinterpret_cast<GLfloat(*)[3]>(&n[0]));
+  return ggElementsMesh(slices, stacks, reinterpret_cast<GLfloat (*)[3]>(&p[0]),
+    reinterpret_cast<GLfloat (*)[3]>(&n[0]));
 }
 
 /*

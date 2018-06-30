@@ -128,7 +128,7 @@ class Ds325 : public DepthCamera
   IntrinsicParameters depthIntrinsics;
 
   // デプスデータ転送用のメモリ
-  GLshort *depth, *depthBuffer;
+  GLfloat *depth, *depthBuffer;
 
   // カメラ座標転送用のメモリ
   GLfloat *point;
@@ -189,6 +189,9 @@ public:
   // 疑似カラー処理の範囲
   static constexpr GLfloat range[2] = { 0.4f, 6.0f };
 #endif
+
+  // デプス値からカメラ座標を用いるのに用いるシェーダーのソースファイル名
+  static constexpr char shader[] = "position_ds.frag";
 
   // デプスデータを取得する
   GLuint getDepth();

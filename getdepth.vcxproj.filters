@@ -119,10 +119,16 @@
     <None Include="normal.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
-    <None Include="position.frag">
+    <None Include="position.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
-    <None Include="position.comp">
+    <None Include="position_v1.frag">
+      <Filter>シェーダー ファイル</Filter>
+    </None>
+    <None Include="position_v2.frag">
+      <Filter>シェーダー ファイル</Filter>
+    </None>
+    <None Include="position_ds.frag">
       <Filter>シェーダー ファイル</Filter>
     </None>
   </ItemGroup>

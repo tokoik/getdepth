@@ -6,7 +6,7 @@
 layout (location = 0) uniform sampler2D depth;
 
 // スケール
-uniform vec4 scale;
+uniform vec2 scale;
 
 // テクスチャ座標
 in vec2 texcoord;
@@ -15,7 +15,7 @@ in vec2 texcoord;
 layout (location = 0) out vec3 position;
 
 // 分散
-uniform float variance = 100.0;
+uniform float variance = 0.1;
 
 // 対象画素の値
 float base;
@@ -68,8 +68,8 @@ void main(void)
 #endif
 
   // デプス値を取り出す
-  float z = csum.r * scale.z / csum.g;
+  float z = csum.r / csum.g;
 
   // デプス値からカメラ座標値を求める
-  position = vec3((texcoord - 0.5) * scale.xy * z, z);
+  position = vec3((texcoord - 0.5) * scale * z, z);
 }

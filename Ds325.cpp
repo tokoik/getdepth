@@ -52,7 +52,7 @@ Ds325::Ds325(
     makeTexture();
 
     // データ転送用のメモリを確保する
-    depthBuffer = new GLshort[depthCount];
+    depthBuffer = new GLfloat[depthCount];
     point = new GLfloat[depthCount * 3];
     uvmap = new GLfloat[depthCount * 2];
     colorBuffer = new GLubyte[colorCount * 3];
@@ -60,8 +60,6 @@ Ds325::Ds325(
     // デプスマップのテクスチャ座標に対する頂点座標の拡大率
     scale[0] = -0.753554f * 2.0f;
     scale[1] = -0.554309f * 2.0f;
-    scale[2] = -32.767f;
-    scale[3] = -maxDepth;
 
     // DepthSense の各ノードを初期化する
     for (Node &node : device.getNodes()) configureNode(node);
@@ -291,7 +289,15 @@ void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData da
   sensor->depthIntrinsics = data.stereoCameraParameters.depthIntrinsics;
 
   // データ転送
-  for (int i = 0; i < sensor->depthCount; ++i) sensor->depthBuffer[i] = data.depthMap[i];
+  for (int i = 0; i < sensor->depthCount; ++i)
+  {
+    const int u(i % sensor->depthWidth);
+    const int v(i / sensor->depthWidth);
+    const int j((sensor->depthHeight - v - 1) * sensor->depthWidth + u);
+    const int d(data.depthMap[i]);
+
+    sensor->depthBuffer[j] = d > 32000 ? -maxDepth : -0.001f * static_cast<GLfloat>(d);
+  }
 
   // デプスデータが更新されたことを記録する
   sensor->depth = sensor->depthBuffer;
@@ -421,7 +427,7 @@ GLuint Ds325::getDepth()
     glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
 
     // デプスデータをテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_SHORT, depth);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_FLOAT, depth);
 
     // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
     depth = nullptr;

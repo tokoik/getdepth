@@ -29,14 +29,14 @@
 
 // センサ関連の処理
 //#include "KinectV1.h"
-//#include "KinectV2.h"
-#include "Ds325.h"
+#include "KinectV2.h"
+//#include "Ds325.h"
 
 // OpenCV によるビデオキャプチャに使うカメラ
 #define CAPTURE_DEVICE 1
 
 // 頂点位置の生成をシェーダ (position.frag) で行うなら 1
-#define GENERATE_POSITION 0
+#define GENERATE_POSITION 1
 
 // バイラテラルフィルタを使うなら 1
 #define USE_FILTER 0
@@ -71,7 +71,7 @@ constexpr GgSimpleShader::Material materialData =
 constexpr GLfloat background[] = { 0.2f, 0.3f, 0.4f, 0.0f };
 
 // バイラテラルフィルタのデフォルトの分散
-constexpr GLfloat variance(100.0f);
+constexpr GLfloat variance(0.1f);
 
 //
 // アプリケーションの実行
@@ -126,14 +126,19 @@ void GgApplication::run()
   // 材質データ
   const GgSimpleShader::MaterialBuffer material(materialData);
 
+#if GENERATE_POSITION
   // デプスデータから頂点位置を計算するシェーダ
-  const Calculate position(width, height, "position.frag");
-  const GLuint scaleLoc(glGetUniformLocation(position.get(), "scale"));
+  const Calculate position(width, height, sensor.shader);
+  const GLint scaleLoc(glGetUniformLocation(position.get(), "scale"));
+  const GLint varianceLoc(glGetUniformLocation(position.get(), "variance"));
+#endif
 
+#if USE_FILTER
   // バイラテラルフィルタのシェーダ
   const Calculate bilateral(width, height, "bilateral.frag");
   //const Compute bilateral(width, height, "bilateral.comp");
   const GLint varianceLoc(glGetUniformLocation(bilateral.get(), "variance"));
+#endif
 
   // 頂点位置から法線ベクトルを計算するシェーダ
   const Calculate normal(width, height, "normal.frag");
@@ -167,7 +172,8 @@ void GgApplication::run()
 #if GENERATE_POSITION
     // 頂点位置の計算
     position.use();
-    glUniform4fv(scaleLoc, 1, sensor.getScale());
+    glUniform2fv(scaleLoc, 1, sensor.getScale());
+    glUniform1f(varianceLoc, variance + static_cast<GLfloat>(window.getArrowY()) * 0.01f);
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
     sensor.getDepth();
@@ -177,7 +183,7 @@ void GgApplication::run()
 #if USE_FILTER
     // バイラテラルフィルタ
     bilateral.use();
-    glUniform1f(varianceLoc, variance + static_cast<GLfloat>(window.getArrowY()));
+    glUniform1f(varianceLoc, variance + static_cast<GLfloat>(window.getArrowY()) * 0.01f);
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
 #  if GENERATE_POSITION
