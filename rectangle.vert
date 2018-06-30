@@ -1,17 +1,13 @@
 #version 150 core
-#extension GL_ARB_explicit_attrib_location : enable
-
-// 頂点座標
-layout (location = 0) in vec4 pv;
 
 // テクスチャ座標
 out vec2 texcoord;
 
 void main()
 {
-  // 頂点座標をテクスチャ座標に換算
-  texcoord = pv.xy * 0.5 + 0.5;
+  // テクスチャ座標を求める
+  texcoord = vec2(gl_VertexID & 1, gl_VertexID >> 1);
 
-  // 頂点座標をそのまま出力
-  gl_Position = pv;
+  // テクスチャ座標から頂点座標を求めて出力
+  gl_Position = vec4(texcoord * 2.0 - 1.0, 0.0, 1.0);
 }

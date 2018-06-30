@@ -57,10 +57,6 @@ Ds325::Ds325(
     uvmap = new GLfloat[depthCount * 2];
     colorBuffer = new GLubyte[colorCount * 3];
 
-    // デプスマップのテクスチャ座標に対する頂点座標の拡大率
-    scale[0] = -0.753554f * 2.0f;
-    scale[1] = -0.554309f * 2.0f;
-
     // DepthSense の各ノードを初期化する
     for (Node &node : device.getNodes()) configureNode(node);
   }

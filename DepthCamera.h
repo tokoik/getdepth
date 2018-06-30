@@ -8,6 +8,12 @@
 #include "gg.h"
 using namespace gg;
 
+// 計算用のシェーダ
+#include "Calculate.h"
+
+// 標準ライブラリ
+#include <memory>
+
 class DepthCamera
 {
   // 有効化されたデプスカメラの台数
@@ -36,8 +42,11 @@ protected:
   // デプスデータの画素におけるカラーデータのテクスチャ座標を格納するバッファオブジェクト
   GLuint coordBuffer;
 
-  // デプス値に対する頂点座標の拡大率
-  GLfloat scale[2];
+  // カメラ座標を計算するシェーダ
+  std::unique_ptr<Calculate> shader;
+
+  // バイラテラルフィルタの分散
+  GLfloat variance;
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   void makeTexture();
@@ -46,10 +55,14 @@ public:
 
   // コンストラクタ
   DepthCamera()
+    : shader(nullptr)
+    , variance(0.1f)
   {
   }
   DepthCamera(int depthWidth, int depthHeight, int colorWidth, int colorHeight)
-    : depthWidth(depthWidth)
+    : shader(nullptr)
+    , variance(0.1f)
+    , depthWidth(depthWidth)
     , depthHeight(depthHeight)
     , colorWidth(colorWidth)
     , colorHeight(colorHeight)
@@ -72,21 +85,28 @@ public:
   }
 
   // デプスデータを取得する
-  GLuint getDepth() const
+  virtual GLuint getDepth() const
   {
     glBindTexture(GL_TEXTURE_2D, depthTexture);
     return depthTexture;
   }
 
   // カメラ座標を取得する
-  GLuint getPoint() const
+  virtual GLuint getPoint() const
+  {
+    glBindTexture(GL_TEXTURE_2D, pointTexture);
+    return pointTexture;
+  }
+
+  // カメラ座標を算出する
+  virtual GLuint getPosition() const
   {
     glBindTexture(GL_TEXTURE_2D, pointTexture);
     return pointTexture;
   }
 
   // カラーデータを取得する
-  GLuint getColor() const
+  virtual GLuint getColor() const
   {
     glBindTexture(GL_TEXTURE_2D, colorTexture);
     return colorTexture;
@@ -106,15 +126,15 @@ public:
     *height = colorHeight;
   }
 
-  // デプスマップのテクスチャ座標に対する頂点座標の拡大率を得る
-  const GLfloat *getScale() const
-  {
-    return scale;
-  }
-
   // カラーデータのテクスチャ座標を格納するバッファオブジェクトを得る
   GLuint getCoordBuffer() const
   {
     return coordBuffer;
+  }
+
+  // バイラテラルフィルタの分散を設定する
+  void setVariance(GLfloat v)
+  {
+    variance = v;
   }
 };

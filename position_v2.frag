@@ -6,7 +6,7 @@
 layout (location = 0) uniform sampler2D depth;
 
 // スケール
-uniform vec2 scale;
+layout (location = 1) uniform sampler2D mapper;
 
 // テクスチャ座標
 in vec2 texcoord;
@@ -70,6 +70,10 @@ void main(void)
   // デプス値を取り出す
   float z = csum.r / csum.g;
 
+  // カメラ座標の補正係数を取り出す
+  vec2 k = texture(mapper, texcoord).xy;
+
   // デプス値からカメラ座標値を求める
-  position = vec3((texcoord - 0.5) * scale * z, z);
+  position = vec3(vec2(k.x, -k.y) * z, z);
+  //position = vec3((texcoord - 0.5) * vec2(1.546592f, 1.222434f) * z, z);
 }

@@ -126,20 +126,6 @@ void GgApplication::run()
   // 材質データ
   const GgSimpleShader::MaterialBuffer material(materialData);
 
-#if GENERATE_POSITION
-  // デプスデータから頂点位置を計算するシェーダ
-  const Calculate position(width, height, sensor.shader);
-  const GLint scaleLoc(glGetUniformLocation(position.get(), "scale"));
-  const GLint varianceLoc(glGetUniformLocation(position.get(), "variance"));
-#endif
-
-#if USE_FILTER
-  // バイラテラルフィルタのシェーダ
-  const Calculate bilateral(width, height, "bilateral.frag");
-  //const Compute bilateral(width, height, "bilateral.comp");
-  const GLint varianceLoc(glGetUniformLocation(bilateral.get(), "variance"));
-#endif
-
   // 頂点位置から法線ベクトルを計算するシェーダ
   const Calculate normal(width, height, "normal.frag");
 
@@ -169,43 +155,16 @@ void GgApplication::run()
     }
 #endif
 
-#if GENERATE_POSITION
     // 頂点位置の計算
-    position.use();
-    glUniform2fv(scaleLoc, 1, sensor.getScale());
-    glUniform1f(varianceLoc, variance + static_cast<GLfloat>(window.getArrowY()) * 0.01f);
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-    sensor.getDepth();
-    const std::vector<GLuint> &positionTexture(position.execute());
-#endif
-
-#if USE_FILTER
-    // バイラテラルフィルタ
-    bilateral.use();
-    glUniform1f(varianceLoc, variance + static_cast<GLfloat>(window.getArrowY()) * 0.01f);
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-#  if GENERATE_POSITION
-    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
-#  else
-    sensor.getPoint();
-#  endif
-    const std::vector<GLuint> &bilateralTexture(bilateral.execute());
-#endif
+    sensor.setVariance(variance + static_cast<GLfloat>(window.getArrowY()) * 0.01f);
+    const GLuint positionTexture(sensor.getPosition());
 
     // 法線ベクトルの計算
     normal.use();
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
-#if USE_FILTER
-    glBindTexture(GL_TEXTURE_2D, bilateralTexture[0]);
-#elif GENERATE_POSITION
-    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
-#else
-    sensor.getPoint();
-#endif
-    const std::vector<GLuint> &normalTexture(normal.execute());
+    glBindTexture(GL_TEXTURE_2D, positionTexture);
+    const GLuint normalTexture(normal.execute()[0]);
 
     // 画面消去
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -225,21 +184,15 @@ void GgApplication::run()
     simple.selectLight(light);
     simple.selectMaterial(material);
 
-#if GENERATE_POSITION
     // 頂点座標テクスチャ
     glUniform1i(0, 0);
     glActiveTexture(GL_TEXTURE0);
-#  if USE_FILTER
-    glBindTexture(GL_TEXTURE_2D, bilateralTexture[0]);
-#  else
-    glBindTexture(GL_TEXTURE_2D, positionTexture[0]);
-#  endif
-#endif
+    glBindTexture(GL_TEXTURE_2D, positionTexture);
 
     // 法線ベクトルテクスチャ
     glUniform1i(1, 1);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normalTexture[0]);
+    glBindTexture(GL_TEXTURE_2D, normalTexture);
 
 #if USE_REFRACTION
     // ウィンドウサイズ

@@ -27,6 +27,9 @@ class KinectV2 : public DepthCamera
   // センサの識別子
   static IKinectSensor *sensor;
 
+  // 座標のマッピング
+  ICoordinateMapper *coordinateMapper;
+
   // デプスデータ
   IDepthFrameReader *depthReader;
 
@@ -36,14 +39,17 @@ class KinectV2 : public DepthCamera
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
   GLfloat (*position)[3];
 
+  // デプス値に対するカメラ座標の変換テーブルのテクスチャ
+  GLuint mapperTexture;
+
+  // シェーダの uniform 変数 variance の場所
+  GLint varianceLoc;
+
   // カラーデータ
   IColorFrameReader *colorReader;
 
   // カラーデータの変換に用いる一時メモリ
   GLubyte *color;
-
-  // 座標のマッピング
-  ICoordinateMapper *coordinateMapper;
 
   // コピーコンストラクタ (コピー禁止)
   KinectV2(const KinectV2 &w);
@@ -65,14 +71,14 @@ public:
   // 疑似カラー処理の範囲
   static constexpr GLfloat range[2] = { 0.5f, 8.0f };
 
-  // デプス値からカメラ座標を用いるのに用いるシェーダーのソースファイル名
-  static constexpr char shader[] = "position_v2.frag";
-
   // デプスデータを取得する
   GLuint getDepth() const;
 
   // カメラ座標を取得する
   GLuint getPoint() const;
+
+  // カメラ座標を算出する
+  GLuint KinectV2::getPosition() const;
 
   // カラーデータを取得する
   GLuint getColor() const;

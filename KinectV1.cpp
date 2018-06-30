@@ -60,6 +60,13 @@ KinectV1::KinectV1()
   // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
   position = new GLfloat[depthCount][3];
 
+  // カメラ座標算出用のシェーダを作成する
+  shader.reset(new Calculate(depthWidth, depthHeight, "position_v1.frag"));
+
+  // シェーダの uniform 変数の場所を調べる
+  scaleLoc = glGetUniformLocation(shader->get(), "scale");
+  varianceLoc = glGetUniformLocation(shader->get(), "variance");
+
   // デプスマップのテクスチャ座標に対する頂点座標の拡大率
   scale[0] = static_cast<GLfloat>(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * depthWidth);
   scale[1] = static_cast<GLfloat>(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * depthHeight);
@@ -118,23 +125,23 @@ GLuint KinectV1::getDepth() const
 
         // pBits に入っているデータをテクスチャに転送する
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_FLOAT, depth);
-      }
 
-      // カラーデータのテクスチャ座標を求めてバッファオブジェクトに転送する
-      glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-      GLfloat (*const uvmap)[2](static_cast<GLfloat (*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
-      for (int i = 0; i < depthCount; ++i)
-      {
-        // デプスの画素位置からカラーの画素位置を求める
-        LONG x, y;
-        sensor->NuiImageGetColorPixelCoordinatesFromDepthPixel(COLOR_RESOLUTION,
-          NULL, i % depthWidth, i / depthWidth, reinterpret_cast<USHORT *>(rect.pBits)[i], &x, &y);
+        // カラーデータのテクスチャ座標を求めてバッファオブジェクトに転送する
+        glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+        GLfloat(*const uvmap)[2](static_cast<GLfloat(*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
+        for (int i = 0; i < depthCount; ++i)
+        {
+          // デプスの画素位置からカラーの画素位置を求める
+          LONG x, y;
+          sensor->NuiImageGetColorPixelCoordinatesFromDepthPixel(COLOR_RESOLUTION,
+            NULL, i % depthWidth, i / depthWidth, reinterpret_cast<USHORT *>(rect.pBits)[i], &x, &y);
 
-        // カラーデータのテクスチャ座標に変換する
-        uvmap[i][0] = static_cast<GLfloat>(x) + 0.5f;
-        uvmap[i][1] = static_cast<GLfloat>(y) + 0.5f;
+          // カラーデータのテクスチャ座標に変換する
+          uvmap[i][0] = static_cast<GLfloat>(x) + 0.5f;
+          uvmap[i][1] = static_cast<GLfloat>(y) + 0.5f;
+        }
+        glUnmapBuffer(GL_ARRAY_BUFFER);
       }
-      glUnmapBuffer(GL_ARRAY_BUFFER);
     }
 
     // データをアンロックする
@@ -214,6 +221,18 @@ GLuint KinectV1::getPoint() const
   }
 
   return pointTexture;
+}
+
+// カメラ座標を算出する
+GLuint KinectV1::getPosition() const
+{
+  shader->use();
+  glUniform2fv(scaleLoc, 1, scale);
+  glUniform1f(varianceLoc, variance);
+  glUniform1i(0, 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, getDepth());
+  return shader->execute()[0];
 }
 
 // カラーデータを取得する

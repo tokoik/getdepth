@@ -53,15 +53,20 @@ class KinectV1 : public DepthCamera
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
   GLfloat (*position)[3];
 
+  // デプス値に対する頂点座標の拡大率
+  GLfloat scale[2];
+
+  // シェーダの uniform 変数 scale の場所
+  GLint scaleLoc;
+
+  // シェーダの uniform 変数 variance の場所
+  GLint varianceLoc;
+
   // カラーデータのストリームハンドル
   HANDLE colorStream;
 
   // カラーデータのイベントハンドル
   const HANDLE nextColorFrameEvent;
-
-  // データを取得する
-  void getImage(HANDLE event, HANDLE stream,
-    GLuint texture, GLsizei width, GLsizei height, GLenum format, GLenum type) const;
 
   // コピーコンストラクタ (コピー禁止)
   KinectV1(const KinectV1 &w);
@@ -83,14 +88,14 @@ public:
   // 疑似カラー処理の範囲
   static constexpr GLfloat range[2] = { 0.8f, 4.0f };
 
-  // デプス値からカメラ座標を用いるのに用いるシェーダーのソースファイル名
-  static constexpr char shader[] = "position_v1.frag";
-
   // デプスデータを取得する
   GLuint getDepth() const;
 
   // カメラ座標を取得する
   GLuint getPoint() const;
+
+  // カメラ座標を算出する
+  GLuint getPosition() const;
 
   // カラーデータを取得する
   GLuint getColor() const;

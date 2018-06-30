@@ -15,10 +15,10 @@ class Rect : public Shape
 public:
 
   // コンストラクタ
-  Rect();
+  Rect() {};
 
   // デストラクタ
-  virtual ~Rect();
+  virtual ~Rect() {};
 
   // 描画
   virtual void draw() const;

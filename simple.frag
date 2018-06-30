@@ -16,7 +16,7 @@ layout (location = 0) out vec4 fc;                    // フラグメントの�
 void main(void)
 {
   // テクスチャマッピングを行って陰影を求める
-  //fc = idiff + ispec;
-  fc = texture(color, texcoord);
+  fc = idiff + ispec;
+  //fc = texture(color, texcoord);
   //fc = texture(color, texcoord) * idiff + ispec;
 }
