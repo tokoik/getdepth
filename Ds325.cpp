@@ -31,89 +31,87 @@ Ds325::Ds325(
   , color_compression(color_compression)
   , power_line_frequency(frequency)
 {
-  // イベントループを開始して接続されている DepthSense の数を求める
-  startLoop();
-
-  // DepthSense が接続されており使用台数が接続台数に達していなければ
-  if (getActivated() < connected)
-  {
-    // 未使用の DepthSense を取り出す
-    Device device(context.getDevices()[getActivated()]);
-
-    // DepthSense のノードのイベントハンドラを登録する
-    device.nodeAddedEvent().connect(&onNodeConnected, this);
-    device.nodeRemovedEvent().connect(&onNodeDisconnected, this);
-
-    // DepthSense のフレームフォーマットから解像度を求める
-    FrameFormat_toResolution(depth_format, &depthWidth, &depthHeight);
-    FrameFormat_toResolution(color_format, &colorWidth, &colorHeight);
-
-    // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-    makeTexture();
-
-    // データ転送用のメモリを確保する
-    depthBuffer = new GLfloat[depthCount];
-    point = new GLfloat[depthCount * 3];
-    uvmap = new GLfloat[depthCount * 2];
-    colorBuffer = new GLubyte[colorCount * 3];
-
-    // DepthSense の各ノードを初期化する
-    for (Node &node : device.getNodes()) configureNode(node);
-  }
-}
-
-// デストラクタ
-Ds325::~Ds325()
-{
-  // DepthSense が有効になっていたら
-  if (getActivated() > 0)
-  {
-    // ノードの登録解除
-    unregisterNode(colorNode);
-    unregisterNode(depthNode);
-
-    // データ転送用のメモリの開放
-    delete[] depthBuffer;
-    delete[] point;
-    delete[] uvmap;
-    delete[] colorBuffer;
-  }
-
-  // 最後の DepthSense を削除するときはイベントループを停止する
-  if (getActivated() <= 1 && worker.joinable())
-  {
-    // イベントループを停止する
-    context.quit();
-
-    // イベントループのスレッドが終了するのを待つ
-    worker.join();
-
-    // ストリーミングを停止する
-    context.stopNodes();
-  }
-}
-
-// イベントループが停止していたらイベントループを開始する
-void Ds325::startLoop()
-{
   // スレッドが走っていなかったら
   if (!worker.joinable())
   {
     // DepthSense のサーバに接続する
     context = Context::create();
 
+    // 現在接続されている DepthSense の数を数える
+    connected = static_cast<int>(context.getDevices().size());
+
     // DepthSense の取り付け／取り外し時の処理を登録する
     context.deviceAddedEvent().connect(&onDeviceConnected);
     context.deviceRemovedEvent().connect(&onDeviceDisconnected);
-
-    // 現在接続されている DepthSense の数を数える
-    connected = context.getDevices().size();
 
     // ストリーミングを開始する
     context.startNodes();
 
     // イベントループを開始する
     worker = std::thread([&]() { context.run(); });
+  }
+
+  // DepthSense の使用台数が接続台数に達していれば戻る
+  if (activated >= connected) throw std::runtime_error("DepthSense の数が足りません");
+
+  // 未使用のセンサを取り出して使用中のセンサの数を増す
+  Device device(context.getDevices()[activated++]);
+
+  // DepthSense のノードのイベントハンドラを登録する
+  device.nodeAddedEvent().connect(&onNodeConnected, this);
+  device.nodeRemovedEvent().connect(&onNodeDisconnected, this);
+
+  // DepthSense のフレームフォーマットから解像度を求める
+  FrameFormat_toResolution(depth_format, &depthWidth, &depthHeight);
+  FrameFormat_toResolution(color_format, &colorWidth, &colorHeight);
+
+  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
+  makeTexture();
+
+  // データ転送用のメモリを確保する
+  depth = new GLfloat[depthCount];
+  point = new GLfloat[depthCount][3];
+  uvmap = new GLfloat[depthCount][2];
+  color = new GLubyte[colorCount][3];
+
+  // DepthSense の各ノードを初期化する
+  for (Node &node : device.getNodes()) configureNode(node);
+
+  // カメラ座標算出用のシェーダを作成する
+  shader.reset(new Calculate(depthWidth, depthHeight, "position_ds.frag"));
+
+  // シェーダの uniform 変数の場所を調べる
+  varianceLoc = glGetUniformLocation(shader->get(), "variance");
+}
+
+// デストラクタ
+Ds325::~Ds325()
+{
+  // DepthSense が有効になっていたら
+  if (--activated >= 0)
+  {
+    // 最後の DepthSense を削除するときはイベントループを停止する
+    if (activated == 0 && worker.joinable())
+    {
+      // イベントループを停止する
+      context.quit();
+
+      // イベントループのスレッドが終了するのを待つ
+      worker.join();
+
+      // ストリーミングを停止する
+      context.stopNodes();
+
+      // ノードの登録解除
+      unregisterNode(colorNode);
+      unregisterNode(depthNode);
+    }
+
+    // データ転送用のメモリの開放
+    delete[] depth;
+    delete[] point;
+    delete[] uvmap;
+    delete[] color;
   }
 }
 
@@ -123,7 +121,7 @@ void Ds325::configureNode(Node &node)
   if (node.is<DepthNode>() && !depthNode.isSet())
   {
     // デプスデータの取得前なのでテクスチャやバッファオブジェクトへの転送は行わない
-    depth = nullptr;
+    depthPtr = nullptr;
 
     // デプスノード
     depthNode = node.as<DepthNode>();
@@ -140,7 +138,7 @@ void Ds325::configureNode(Node &node)
   else if (node.is<ColorNode>() && !colorNode.isSet())
   {
     // カラーデータの取得前なのでテクスチャへの転送は行わない
-    color = nullptr;
+    colorPtr = nullptr;
 
     // カラーノード
     colorNode = node.as<ColorNode>();
@@ -167,7 +165,7 @@ void Ds325::unregisterNode(Node node)
     depthNode.unset();
 
     // デプスデータの取得を終了したのでテクスチャやバッファオブジェクトへの転送は行わない
-    depth = nullptr;
+    depthPtr = nullptr;
   }
   else if (node.is<ColorNode>() && colorNode.isSet())
   {
@@ -177,7 +175,7 @@ void Ds325::unregisterNode(Node node)
     colorNode.unset();
 
     // カラーデータの取得を終了したのでなのでテクスチャへの転送は行わない
-    color = nullptr;
+    colorPtr = nullptr;
   }
 }
 
@@ -186,8 +184,8 @@ void Ds325::onDeviceConnected(Context context, Context::DeviceAddedData data)
 {
   MessageBox(NULL, TEXT("DepthSense が取り付けられました"), TEXT("そうですか"), MB_OK);
 
-  // イベントループを開始して接続されている DepthSense の数を更新する
-  startLoop();
+  // 現在接続されている DepthSense の数を数える
+  connected = static_cast<int>(context.getDevices().size());
 }
 
 // DepthSense が取り外されたときの処理
@@ -195,8 +193,8 @@ void Ds325::onDeviceDisconnected(Context context, Context::DeviceRemovedData dat
 {
   MessageBox(NULL, TEXT("DepthSense が取り外されました"), TEXT("そうですか"), MB_OK);
 
-  // スレッドが走っていれば接続されている DepthSense の数を更新する
-  if (worker.joinable()) connected = context.getDevices().size();
+  // 現在接続されている DepthSense の数を数える
+  connected = static_cast<int>(context.getDevices().size());
 }
 
 // ノードが接続された時の処理
@@ -289,14 +287,14 @@ void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData da
   {
     const int u(i % sensor->depthWidth);
     const int v(i / sensor->depthWidth);
-    const int j((sensor->depthHeight - v - 1) * sensor->depthWidth + u);
+    const int j((v + 1) * sensor->depthWidth - u - 1);
     const int d(data.depthMap[i]);
 
-    sensor->depthBuffer[j] = d > 32000 ? -maxDepth : -0.001f * static_cast<GLfloat>(d);
+    sensor->depth[j] = d > 32000 ? -maxDepth : -0.001f * static_cast<GLfloat>(d);
   }
 
   // デプスデータが更新されたことを記録する
-  sensor->depth = sensor->depthBuffer;
+  sensor->depthPtr = sensor->depth;
 
   // デプスカメラをアンロックする
   sensor->depthMutex.unlock();
@@ -367,7 +365,7 @@ void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData da
   if (sensor->color_compression == COMPRESSION_TYPE_MJPEG)
   {
     // カラーデータをそのまま転送する
-    memcpy(sensor->colorBuffer, data.colorMap, sensor->colorCount * 3 * sizeof(GLubyte));
+    memcpy(sensor->color, data.colorMap, sensor->colorCount * 3 * sizeof (GLubyte));
   }
   else
   {
@@ -394,14 +392,14 @@ void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData da
       const float r(y + 1.402f * v);
       const float g(y - 0.344136f * u - 0.714136f * v);
       const float b(y + 1.772f * u);
-      sensor->colorBuffer[j + 0] = b > 0.0f ? static_cast<GLubyte>(b) : 0;
-      sensor->colorBuffer[j + 1] = g > 0.0f ? static_cast<GLubyte>(g) : 0;
-      sensor->colorBuffer[j + 2] = r > 0.0f ? static_cast<GLubyte>(r) : 0;
+      sensor->color[j][0] = b > 0.0f ? static_cast<GLubyte>(b) : 0;
+      sensor->color[j][1] = g > 0.0f ? static_cast<GLubyte>(g) : 0;
+      sensor->color[j][2] = r > 0.0f ? static_cast<GLubyte>(r) : 0;
     }
   }
 
   // カラーデータが更新されたことを記録する
-  sensor->color = sensor->colorBuffer;
+  sensor->colorPtr = sensor->color;
 
   // カラーカメラをアンロックする
   sensor->colorMutex.unlock();
@@ -414,19 +412,19 @@ GLuint Ds325::getDepth()
   glBindTexture(GL_TEXTURE_2D, depthTexture);
 
   // デプスデータが更新されておりデプスデータの取得中でなければ
-  if (depth && depthMutex.try_lock())
+  if (depthPtr && depthMutex.try_lock())
   {
     // テクスチャ座標のバッファオブジェクトを指定する
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
     // テクスチャ座標をバッファオブジェクトに転送する
-    glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
 
     // デプスデータをテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_FLOAT, depth);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_FLOAT, depthPtr);
 
     // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
-    depth = nullptr;
+    depthPtr = nullptr;
 
     // デプスデータをアンロックする
     depthMutex.unlock();
@@ -442,7 +440,7 @@ GLuint Ds325::getPoint()
   glBindTexture(GL_TEXTURE_2D, pointTexture);
 
   // デプスデータが更新されており DepthSense がデプスデータの取得中でなければ
-  if (depth && depthMutex.try_lock())
+  if (depthPtr && depthMutex.try_lock())
   {
     // デプスカメラの内部パラメータ
     const int &dw(depthIntrinsics.width);
@@ -470,10 +468,7 @@ GLuint Ds325::getPoint()
     {
       // デプスマップの画素位置
       const int u(i % dw);
-      const int v(dh - i / dw - 1);
-
-      // 転送先のマップは上下を反転する
-      const int j(v * dw + u);
+      const int v(i / dw);
 
       // 画素位置からデプスマップのスクリーン座標を求める
       const GLfloat dx((static_cast<GLfloat>(u) - dcx + 0.5f) / dfx);
@@ -486,14 +481,12 @@ GLuint Ds325::getPoint()
       // 歪みを補正したポイントのスクリーン座標値
       const GLfloat x(dx / dq);
       const GLfloat y(dy / dq);
-
-      // カメラ座標のデプス値を求める
-      const GLfloat z(depth[i] > 32000 ? maxDepth : depth[i] * 0.001f);
+      const GLfloat z(depthPtr[i]);
 
       // ポイントのカメラ座標を求める
-      point[j * 3 + 0] = x * z;
-      point[j * 3 + 1] = y * z;
-      point[j * 3 + 2] = -z;
+      point[i][0] = x * z;
+      point[i][1] = y * z;
+      point[i][2] = z;
 
       // カラーカメラの歪み補正係数
       const GLfloat cr(x * x + y * y);
@@ -504,8 +497,8 @@ GLuint Ds325::getPoint()
       const GLfloat cy(y / cq);
 
       // 歪みを補正したポイントのテクスチャ座標値
-      uvmap[j * 2 + 0] = ccx + cx * cfx;
-      uvmap[j * 2 + 1] = ccy - cy * cfy;
+      uvmap[i][0] = ccx + cx * cfx;
+      uvmap[i][1] = ccy - cy * cfy;
     }
 
     // カメラ座標をテクスチャに転送する
@@ -515,16 +508,31 @@ GLuint Ds325::getPoint()
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
     // テクスチャ座標をバッファオブジェクトに転送する
-    glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
 
     // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
-    depth = nullptr;
+    depthPtr = nullptr;
 
     // デプスデータをアンロックする
     depthMutex.unlock();
   }
 
   return pointTexture;
+}
+
+// カメラ座標を算出する
+GLuint Ds325::getPosition()
+{
+#if 0
+  shader->use();
+  glUniform1f(varianceLoc, variance);
+  glUniform1i(0, 0);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, getDepth());
+  return shader->execute()[0];
+#else
+  return getPoint();
+#endif
 }
 
 // カラーデータを取得する
@@ -534,13 +542,13 @@ GLuint Ds325::getColor()
   glBindTexture(GL_TEXTURE_2D, colorTexture);
 
   // カラーデータが更新されておりカラーデータの取得中でなければ
-  if (color && colorMutex.try_lock())
+  if (colorPtr && colorMutex.try_lock())
   {
     // カラーデータをテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGR, GL_UNSIGNED_BYTE, color);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGR, GL_UNSIGNED_BYTE, colorPtr);
 
     // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
-    color = nullptr;
+    colorPtr = nullptr;
 
     // カラーデータをアンロックする
     colorMutex.unlock();
@@ -548,6 +556,13 @@ GLuint Ds325::getColor()
 
   return colorTexture;
 }
+
+
+// 接続しているセンサの数
+int Ds325::connected(0);
+
+// 使用しているセンサの数
+int Ds325::activated(0);
 
 // DepthSense のコンテキスト
 Context Ds325::context;

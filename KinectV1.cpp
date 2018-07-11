@@ -11,12 +11,14 @@
 
 // コンストラクタ
 KinectV1::KinectV1()
-  : DepthCamera(DEPTH_W, DEPTH_H, COLOR_W, COLOR_H)
+  : nextDepthFrameEvent(CreateEvent(NULL, TRUE, FALSE, NULL))
   , nextColorFrameEvent(CreateEvent(NULL, TRUE, FALSE, NULL))
-  , nextDepthFrameEvent(CreateEvent(NULL, TRUE, FALSE, NULL))
+  , sensor(nullptr)
+  , depth(nullptr)
+  , position(nullptr)
 {
   // 最初のインスタンスを生成するときだけ
-  if (getActivated() == 0)
+  if (activated == 0)
   {
     // 接続されているセンサの数を調べる
     if (NuiGetSensorCount(&connected) != S_OK || connected == 0)
@@ -24,11 +26,11 @@ KinectV1::KinectV1()
   }
 
   // センサが接続されており使用台数が接続台数に達していないかどうか確認する
-  if (getActivated() >= connected)
+  if (activated >= connected)
     throw std::runtime_error("Kinect (v1) センサの数が足りません");
 
   // 使用できるセンサを見つける
-  if (NuiCreateSensorByIndex(getActivated(), &sensor) != S_OK || sensor == nullptr)
+  if (NuiCreateSensorByIndex(activated, &sensor) != S_OK || sensor == nullptr)
     throw std::runtime_error("Kinect (v1) センサが見つかりません");
 
   // センサの使用を開始する
@@ -50,6 +52,17 @@ KinectV1::KinectV1()
   // カラーストリームの取得設定
   if (sensor->NuiImageStreamOpen(NUI_IMAGE_TYPE_COLOR, COLOR_RESOLUTION, 0, 2, nextColorFrameEvent, &colorStream) != S_OK)
     throw std::runtime_error("Kinect (v1) センサのカラーストリームが取得できません");
+
+  // 有効にしたセンサの数を数える
+  ++activated;
+
+  // デプスカメラの解像度を初期化する
+  depthWidth = DEPTH_W;
+  depthHeight = DEPTH_H;
+
+  // カラーカメラの解像度を初期化する
+  colorWidth = COLOR_W;
+  colorHeight = COLOR_H;
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   makeTexture();
@@ -79,20 +92,16 @@ KinectV1::~KinectV1()
   CloseHandle(nextDepthFrameEvent);
   CloseHandle(nextColorFrameEvent);
 
-  // センサが有効になっていたら
-  if (getActivated() > 0)
-  {
-    // データ変換用のメモリを削除する
-    delete[] depth;
-    delete[] position;
+  // データ変換用のメモリを削除する
+  delete[] depth;
+  delete[] position;
 
-    // センサをシャットダウンする
-    sensor->NuiShutdown();
-  }
+  // センサをシャットダウンする
+  if (sensor)  sensor->NuiShutdown();
 }
 
 // デプスデータを取得する
-GLuint KinectV1::getDepth() const
+GLuint KinectV1::getDepth()
 {
   // カラーのテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -152,7 +161,7 @@ GLuint KinectV1::getDepth() const
 }
 
 // カメラ座標を取得する
-GLuint KinectV1::getPoint() const
+GLuint KinectV1::getPoint()
 {
   // カラーのテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, pointTexture);
@@ -224,7 +233,7 @@ GLuint KinectV1::getPoint() const
 }
 
 // カメラ座標を算出する
-GLuint KinectV1::getPosition() const
+GLuint KinectV1::getPosition()
 {
   shader->use();
   glUniform2fv(scaleLoc, 1, scale);
@@ -236,7 +245,7 @@ GLuint KinectV1::getPosition() const
 }
 
 // カラーデータを取得する
-GLuint KinectV1::getColor() const
+GLuint KinectV1::getColor()
 {
 
   // カラーのテクスチャを指定する
@@ -269,4 +278,11 @@ GLuint KinectV1::getColor() const
 
   return colorTexture;
 }
+
+// 接続しているセンサの数
+int KinectV1::connected(0);
+
+// 使用しているセンサの数
+int KinectV1::activated(0);
+
 #endif

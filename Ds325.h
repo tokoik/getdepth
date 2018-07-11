@@ -64,6 +64,12 @@ const PowerLineFrequency color_frequency(POWER_LINE_FREQUENCY_60HZ);    // 関�
 
 class Ds325 : public DepthCamera
 {
+  // 接続しているセンサの数
+  static int connected;
+
+  // 使用しているセンサの数
+  static int activated;
+
   // デプスカメラの解像度
   const FrameFormat depth_format;
 
@@ -90,9 +96,6 @@ class Ds325 : public DepthCamera
 
   // データ取得用のスレッド
   static std::thread worker;
-
-  // イベントループが停止していたらイベントループを開始する
-  static void startLoop();
 
   // ノードを登録する
   void configureNode(Node &node);
@@ -128,13 +131,13 @@ class Ds325 : public DepthCamera
   IntrinsicParameters depthIntrinsics;
 
   // デプスデータ転送用のメモリ
-  GLfloat *depth, *depthBuffer;
+  GLfloat *depth, *depthPtr;
 
   // カメラ座標転送用のメモリ
-  GLfloat *point;
+  GLfloat (*point)[3];
 
   // テクスチャ座標転送用のメモリ
-  GLfloat *uvmap;
+  GLfloat (*uvmap)[2];
 
   // カラーノード
   ColorNode colorNode;
@@ -152,13 +155,7 @@ class Ds325 : public DepthCamera
   IntrinsicParameters colorIntrinsics;
 
   // カラーデータ転送用のメモリ
-  GLubyte *color, *colorBuffer;
-
-  // コピーコンストラクタ (コピー禁止)
-  Ds325(const Ds325 &w);
-
-  // 代入 (代入禁止)
-  Ds325 &operator=(const Ds325 &w);
+  GLubyte (*color)[3], (*colorPtr)[3];
 
 public:
 
@@ -190,14 +187,14 @@ public:
   static constexpr GLfloat range[2] = { 0.4f, 6.0f };
 #endif
 
-  // デプス値からカメラ座標を用いるのに用いるシェーダーのソースファイル名
-  static constexpr char shader[] = "position_ds.frag";
-
   // デプスデータを取得する
   GLuint getDepth();
 
   // カメラ座標を取得する
   GLuint getPoint();
+
+  // カメラ座標を算出する
+  GLuint getPosition();
 
   // カラーデータを取得する
   GLuint getColor();

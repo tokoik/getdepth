@@ -29,8 +29,8 @@
 
 // センサ関連の処理
 //#include "KinectV1.h"
-#include "KinectV2.h"
-//#include "Ds325.h"
+//#include "KinectV2.h"
+#include "Ds325.h"
 
 // OpenCV によるビデオキャプチャに使うカメラ
 #define CAPTURE_DEVICE 1
@@ -84,7 +84,6 @@ void GgApplication::run()
 
   // 深度センサを有効にする
   SENSOR sensor;
-  if (sensor.getActivated() == 0) throw std::runtime_error("深度センサを有効にできません");
 
   // 深度センサの解像度
   int width, height;

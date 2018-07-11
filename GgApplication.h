@@ -287,7 +287,7 @@ struct GgApplication
       window = glfwCreateWindow(width, height, title, monitor, share);
 
       // ウィンドウが作成できなければ戻る
-      if (!window) throw std::runtime_error("Can't create GLFW window");
+      if (!window) return;
 
       // 現在のウィンドウを処理対象にする
       glfwMakeContextCurrent(window);
@@ -1098,8 +1098,8 @@ struct GgApplication
     //
     GLfloat getArrow(int direction = 0, int mods = 0) const
     {
-      if (direction < 0 || direction > 1) throw std::out_of_range("No such directon.");
-      if (mods < 0 || mods > 3) throw std::out_of_range("No such modifier key.");
+      if (direction < 0 || direction > 1) throw std::out_of_range("No such directon");
+      if (mods < 0 || mods > 3) throw std::out_of_range("No such modifier key");
       return static_cast<GLfloat>(arrow[mods][direction]);
     }
 
@@ -1225,8 +1225,7 @@ struct GgApplication
     //
     const GLfloat getMouse(int direction) const
     {
-      if (direction < 0 || direction > 1) throw std::out_of_range("No such directon.");
-      return mouse_position[direction];
+      return mouse_position[direction & 1];
     }
 
     //
@@ -1267,8 +1266,7 @@ struct GgApplication
     //
     GLfloat getWheel(int direction = 1) const
     {
-      if (direction < 0 || direction > 1) throw std::out_of_range("No such directon.");
-      return wheel_rotation[direction];
+      return wheel_rotation[direction & 1];
     }
 
     //

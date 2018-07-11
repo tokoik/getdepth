@@ -16,13 +16,7 @@ using namespace gg;
 
 class DepthCamera
 {
-  // 有効化されたデプスカメラの台数
-  static int activated;
-
 protected:
-
-  // 接続しているセンサの数
-  static int connected;
 
   // デプスカメラのサイズと画素数
   int depthWidth, depthHeight, depthCount;
@@ -48,69 +42,33 @@ protected:
   // バイラテラルフィルタの分散
   GLfloat variance;
 
+  // シェーダの uniform 変数 variance の場所
+  GLint varianceLoc;
+
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   void makeTexture();
+
+  // コピーコンストラクタ (コピー禁止)
+  DepthCamera(const DepthCamera &w) {}
+
+  // 代入 (代入禁止)
+  DepthCamera &operator=(const DepthCamera &w) {}
 
 public:
 
   // コンストラクタ
   DepthCamera()
-    : shader(nullptr)
+    : depthTexture(0)
+    , pointTexture(0)
+    , colorTexture(0)
+    , coordBuffer(0)
+    , shader(nullptr)
     , variance(0.1f)
-  {
-  }
-  DepthCamera(int depthWidth, int depthHeight, int colorWidth, int colorHeight)
-    : shader(nullptr)
-    , variance(0.1f)
-    , depthWidth(depthWidth)
-    , depthHeight(depthHeight)
-    , colorWidth(colorWidth)
-    , colorHeight(colorHeight)
   {
   }
 
   // デストラクタ
   virtual ~DepthCamera();
-
-  // 接続されているセンサの数を調べる
-  static int getConnected()
-  {
-    return connected;
-  }
-
-  // 使用しているセンサの数を調べる
-  static int getActivated()
-  {
-    return activated;
-  }
-
-  // デプスデータを取得する
-  virtual GLuint getDepth() const
-  {
-    glBindTexture(GL_TEXTURE_2D, depthTexture);
-    return depthTexture;
-  }
-
-  // カメラ座標を取得する
-  virtual GLuint getPoint() const
-  {
-    glBindTexture(GL_TEXTURE_2D, pointTexture);
-    return pointTexture;
-  }
-
-  // カメラ座標を算出する
-  virtual GLuint getPosition() const
-  {
-    glBindTexture(GL_TEXTURE_2D, pointTexture);
-    return pointTexture;
-  }
-
-  // カラーデータを取得する
-  virtual GLuint getColor() const
-  {
-    glBindTexture(GL_TEXTURE_2D, colorTexture);
-    return colorTexture;
-  }
 
   // デプスカメラのサイズを得る
   void getDepthResolution(int *width, int *height) const
@@ -136,5 +94,33 @@ public:
   void setVariance(GLfloat v)
   {
     variance = v;
+  }
+
+  // デプスデータを取得する
+  virtual GLuint getDepth()
+  {
+    glBindTexture(GL_TEXTURE_2D, depthTexture);
+    return depthTexture;
+  }
+
+  // カメラ座標を取得する
+  virtual GLuint getPoint()
+  {
+    glBindTexture(GL_TEXTURE_2D, pointTexture);
+    return pointTexture;
+  }
+
+  // カメラ座標を算出する
+  virtual GLuint getPosition()
+  {
+    glBindTexture(GL_TEXTURE_2D, pointTexture);
+    return pointTexture;
+  }
+
+  // カラーデータを取得する
+  virtual GLuint getColor()
+  {
+    glBindTexture(GL_TEXTURE_2D, colorTexture);
+    return colorTexture;
   }
 };

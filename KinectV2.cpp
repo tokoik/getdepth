@@ -11,6 +11,10 @@
 
 // コンストラクタ
 KinectV2::KinectV2()
+  : depth(nullptr)
+  , point(nullptr)
+  , color(nullptr)
+  , mapperTexture(0)
 {
   // センサが既に使用されていたら戻る
   if (sensor)
@@ -18,7 +22,7 @@ KinectV2::KinectV2()
 
   // センサを取得する
   if (GetDefaultKinectSensor(&sensor) != S_OK || sensor == nullptr)
-    throw std::runtime_error("Kinect (v2) センサが接続されていません");
+    throw std::runtime_error("Kinect (v2) センサのドライバがインストールされていません");
 
   // センサの使用を開始する
   if (sensor->Open() != S_OK)
@@ -67,7 +71,7 @@ KinectV2::KinectV2()
   depth = new GLfloat[depthCount];
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
-  position = new GLfloat[depthCount][3];
+  point = new GLfloat[depthCount][3];
 
   // カラーデータを変換する用いる一時メモリを確保する
   color = new GLubyte[colorCount * 4];
@@ -91,15 +95,16 @@ KinectV2::KinectV2()
 // デストラクタ
 KinectV2::~KinectV2()
 {
-  if (getActivated() > 0)
+  // コンストラクタが正常に実行されセンサが有効なら
+  if (mapperTexture > 0 && sensor)
   {
     // データ変換用のメモリを削除する
     delete[] depth;
-    delete[] position;
+    delete[] point;
     delete[] color;
 
     // 変換テーブルのテクスチャを削除する
-    glDeleteTextures(1, &mapperTexture);
+     glDeleteTextures(1, &mapperTexture);
 
     // センサを開放する
     colorReader->Release();
@@ -109,12 +114,12 @@ KinectV2::~KinectV2()
     sensor->Release();
 
     // センサを開放したことを記録する
-    sensor = NULL;
+    sensor = nullptr;
   }
 }
 
 // デプスデータを取得する
-GLuint KinectV2::getDepth() const
+GLuint KinectV2::getDepth()
 {
   // デプスのテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, depthTexture);
@@ -167,7 +172,7 @@ GLuint KinectV2::getDepth() const
 }
 
 // カメラ座標を取得する
-GLuint KinectV2::getPoint() const
+GLuint KinectV2::getPoint()
 {
   // カメラ座標のテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, pointTexture);
@@ -206,13 +211,13 @@ GLuint KinectV2::getPoint() const
       const GLfloat y(-table[i].Y);
 
       // その点のカメラ座標を求める
-      position[i][0] = x * z;
-      position[i][1] = y * z;
-      position[i][2] = z;
+      point[i][0] = x * z;
+      point[i][1] = y * z;
+      point[i][2] = z;
     }
 
     // カメラ座標を転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, position);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
 
     // テーブルに使ったメモリを開放する
     CoTaskMemFree(table);
@@ -225,7 +230,7 @@ GLuint KinectV2::getPoint() const
 }
 
 // カメラ座標を算出する
-GLuint KinectV2::getPosition() const
+GLuint KinectV2::getPosition()
 {
   shader->use();
   glUniform1f(varianceLoc, variance);
@@ -239,7 +244,7 @@ GLuint KinectV2::getPosition() const
 }
 
 // カラーデータを取得する
-GLuint KinectV2::getColor() const
+GLuint KinectV2::getColor()
 {
   // カラーのテクスチャを指定する
   glBindTexture(GL_TEXTURE_2D, colorTexture);
@@ -263,6 +268,6 @@ GLuint KinectV2::getColor() const
 }
 
 // センサの識別子
-IKinectSensor *KinectV2::sensor(NULL);
+IKinectSensor *KinectV2::sensor(nullptr);
 
 #endif

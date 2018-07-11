@@ -5,8 +5,17 @@
 // テクスチャ
 layout (location = 0) uniform sampler2D depth;
 
+#define NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS (3.501e-3)
+#define NUI_IMAGE_PLAYER_INDEX_SHIFT 3
+#define MILLIMETER 0.001
+#define DEPTH_SCALE (-65535.0 * MILLIMETER / float(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT))
+#define DEPTH_MAXIMUM (-4.0)
+
 // スケール
-uniform vec2 scale;
+uniform vec2 scale = vec2(
+  NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 320.0,
+  NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 240.0
+);
 
 // テクスチャ座標
 in vec2 texcoord;

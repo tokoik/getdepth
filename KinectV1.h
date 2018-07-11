@@ -38,6 +38,12 @@
 
 class KinectV1 : public DepthCamera
 {
+  // 接続しているセンサの数
+  static int connected;
+
+  // 使用しているセンサの数
+  static int activated;
+
   // センサの識別子
   INuiSensor *sensor;
 
@@ -59,20 +65,11 @@ class KinectV1 : public DepthCamera
   // シェーダの uniform 変数 scale の場所
   GLint scaleLoc;
 
-  // シェーダの uniform 変数 variance の場所
-  GLint varianceLoc;
-
   // カラーデータのストリームハンドル
   HANDLE colorStream;
 
   // カラーデータのイベントハンドル
   const HANDLE nextColorFrameEvent;
-
-  // コピーコンストラクタ (コピー禁止)
-  KinectV1(const KinectV1 &w);
-
-  // 代入 (代入禁止)
-  KinectV1 &operator=(const KinectV1 &w);
 
 public:
 
@@ -89,16 +86,16 @@ public:
   static constexpr GLfloat range[2] = { 0.8f, 4.0f };
 
   // デプスデータを取得する
-  GLuint getDepth() const;
+  GLuint getDepth();
 
   // カメラ座標を取得する
-  GLuint getPoint() const;
+  GLuint getPoint();
 
   // カメラ座標を算出する
-  GLuint getPosition() const;
+  GLuint getPosition();
 
   // カラーデータを取得する
-  GLuint getColor() const;
+  GLuint getColor();
 };
 
 #endif

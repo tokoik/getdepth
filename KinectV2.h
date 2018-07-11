@@ -37,25 +37,16 @@ class KinectV2 : public DepthCamera
   GLfloat *depth;
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
-  GLfloat (*position)[3];
+  GLfloat (*point)[3];
 
   // デプス値に対するカメラ座標の変換テーブルのテクスチャ
   GLuint mapperTexture;
-
-  // シェーダの uniform 変数 variance の場所
-  GLint varianceLoc;
 
   // カラーデータ
   IColorFrameReader *colorReader;
 
   // カラーデータの変換に用いる一時メモリ
   GLubyte *color;
-
-  // コピーコンストラクタ (コピー禁止)
-  KinectV2(const KinectV2 &w);
-
-  // 代入 (代入禁止)
-  KinectV2 &operator=(const KinectV2 &w);
 
 public:
 
@@ -72,16 +63,16 @@ public:
   static constexpr GLfloat range[2] = { 0.5f, 8.0f };
 
   // デプスデータを取得する
-  GLuint getDepth() const;
+  GLuint getDepth();
 
   // カメラ座標を取得する
-  GLuint getPoint() const;
+  GLuint getPoint();
 
   // カメラ座標を算出する
-  GLuint KinectV2::getPosition() const;
+  GLuint KinectV2::getPosition();
 
   // カラーデータを取得する
-  GLuint getColor() const;
+  GLuint getColor();
 };
 
 #endif

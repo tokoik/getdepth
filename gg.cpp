@@ -2557,9 +2557,6 @@ void gg::ggInit()
 
   // 使用している GPU のバッファアライメントを調べる
   glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &ggBufferAlignment);
-
-  // GPU のバッファアライメントが取得できなければエラー
-  if (ggBufferAlignment == 0) throw std::runtime_error("Can't get uniform buffer offset alignment");
 }
 
 /*

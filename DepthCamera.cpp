@@ -7,7 +7,7 @@
 // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
 void DepthCamera::makeTexture()
 {
-  // デプスデータとカラーデータの画素数を求める
+  // デプスデータとカラーデータのデータ数を求める
   depthCount = depthWidth * depthHeight;
   colorCount = colorWidth * colorHeight;
 
@@ -41,33 +41,17 @@ void DepthCamera::makeTexture()
   // デプスデータの画素位置のカラーのテクスチャ座標を格納するバッファオブジェクトを準備する
   glGenBuffers(1, &coordBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-  glBufferData(GL_ARRAY_BUFFER, depthCount * 2 * sizeof(GLfloat), nullptr, GL_DYNAMIC_DRAW);
-
-  // 使用しているセンサの数を数える
-  ++activated;
+  glBufferData(GL_ARRAY_BUFFER, depthCount * 2 * sizeof (GLfloat), nullptr, GL_DYNAMIC_DRAW);
 }
 
 // デストラクタ
 DepthCamera::~DepthCamera()
 {
-  // センサが有効になっていたら
-  if (activated > 0)
-  {
-    // テクスチャを削除する
-    glDeleteTextures(1, &depthTexture);
-    glDeleteTextures(1, &colorTexture);
-    glDeleteTextures(1, &pointTexture);
+  // テクスチャを削除する
+  if (depthTexture > 0) glDeleteTextures(1, &depthTexture);
+  if (pointTexture > 0) glDeleteTextures(1, &pointTexture);
+  if (colorTexture > 0) glDeleteTextures(1, &colorTexture);
 
-    // バッファオブジェクトを削除する
-    glDeleteBuffers(1, &coordBuffer);
-
-    // 使用しているセンサの数を減らす
-    --activated;
-  }
+  // バッファオブジェクトを削除する
+  if (coordBuffer > 0) glDeleteBuffers(1, &coordBuffer);
 }
-
-// 接続しているセンサの数
-int DepthCamera::connected(0);
-
-// 使用しているセンサの数
-int DepthCamera::activated(0);
