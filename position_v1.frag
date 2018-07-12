@@ -12,7 +12,7 @@ uniform vec2 scale;
 in vec2 texcoord;
 
 // フレームバッファに出力するデータ
-layout (location = 0) out vec3 position;
+layout (location = 0) out vec4 position;
 
 // 分散
 uniform float variance = 0.1;
@@ -71,5 +71,5 @@ void main(void)
   float z = csum.r / csum.g;
 
   // デプス値からカメラ座標値を求める
-  position = vec3((texcoord - 0.5) * scale * z, z);
+  position = vec4((texcoord - 0.5) * scale * z, z, 1.0);
 }

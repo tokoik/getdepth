@@ -16,7 +16,7 @@ class Compute
   // 計算結果を保存するフレームバッファのターゲットに使うテクスチャ
   std::vector<GLuint> textures;
 
-  // フレームバッファオブジェクトのサイズ
+  // テクスチャのサイズ
   const GLsizei width, height;
 
   // 計算用のシェーダプログラム
@@ -25,7 +25,7 @@ class Compute
 public:
 
   // コンストラクタ
-  Compute(int width, int height, const char *source, int targets = 1);
+  Compute(int width, int height, const char *comp, GLuint targets = 1);
 
   // デストラクタ
   virtual ~Compute();
@@ -49,5 +49,5 @@ public:
   }
 
   // 計算を実行する
-  const std::vector<GLuint> &execute(GLuint texture, GLuint internal) const;
+  const std::vector<GLuint> &execute(int count, const GLuint *sources, GLuint xGroup = 64, GLuint yGroup = 8) const;
 };

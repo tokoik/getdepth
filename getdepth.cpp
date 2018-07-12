@@ -126,7 +126,8 @@ void GgApplication::run()
   const GgSimpleShader::MaterialBuffer material(materialData);
 
   // 頂点位置から法線ベクトルを計算するシェーダ
-  const Calculate normal(width, height, "normal.frag");
+  //const Calculate normal(width, height, "normal.frag");
+  const Compute normal(width, height, "normal.comp");
 
   // 背景色を設定する
   glClearColor(background[0], background[1], background[2], background[3]);
@@ -160,10 +161,7 @@ void GgApplication::run()
 
     // 法線ベクトルの計算
     normal.use();
-    glUniform1i(0, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, positionTexture);
-    const GLuint normalTexture(normal.execute()[0]);
+    const GLuint normalTexture(normal.execute(1, &positionTexture)[0]);
 
     // 画面消去
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

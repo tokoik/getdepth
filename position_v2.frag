@@ -12,7 +12,7 @@ layout (location = 1) uniform sampler2D mapper;
 in vec2 texcoord;
 
 // フレームバッファに出力するデータ
-layout (location = 0) out vec3 position;
+layout (location = 0) out vec4 position;
 
 // 分散
 uniform float variance = 0.1;
@@ -74,6 +74,5 @@ void main(void)
   vec2 k = texture(mapper, texcoord).xy;
 
   // デプス値からカメラ座標値を求める
-  position = vec3(vec2(k.x, -k.y) * z, z);
-  //position = vec3((texcoord - 0.5) * vec2(1.546592f, 1.222434f) * z, z);
+  position = vec4(vec2(k.x, -k.y) * z, z, 1.0);
 }

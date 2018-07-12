@@ -40,7 +40,7 @@ class Calculate
 public:
 
   // コンストラクタ
-  Calculate(int width, int height, const char *source, int targets = 1);
+  Calculate(int width, int height, const char *frag, GLuint targets = 1);
 
   // デストラクタ
   virtual ~Calculate();
@@ -64,5 +64,5 @@ public:
   }
 
   // 計算を実行する
-  const std::vector<GLuint> &execute() const;
+  const std::vector<GLuint> &execute(int count, const GLuint *sources) const;
 };

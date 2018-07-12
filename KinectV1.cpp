@@ -238,10 +238,8 @@ GLuint KinectV1::getPosition()
   shader->use();
   glUniform2fv(scaleLoc, 1, scale);
   glUniform1f(varianceLoc, variance);
-  glUniform1i(0, 0);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, getDepth());
-  return shader->execute()[0];
+  const GLuint depthTexture(getDepth());
+  return shader->execute(1, &depthTexture)[0];
 }
 
 // カラーデータを取得する

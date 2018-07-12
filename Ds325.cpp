@@ -446,9 +446,11 @@ GLuint Ds325::getPoint()
   // デプスデータが更新されており DepthSense がデプスデータの取得中でなければ
   if (depthPtr && depthMutex.try_lock())
   {
-    // デプスカメラの内部パラメータ
+    // デプスカメラの解像度
     const int &dw(depthIntrinsics.width);
     const int &dh(depthIntrinsics.height);
+
+    // デプスカメラの内部パラメータ
     const float &dcx(depthIntrinsics.cx);
     const float &dcy(depthIntrinsics.cy);
     const float &dfx(depthIntrinsics.fx);
@@ -458,8 +460,6 @@ GLuint Ds325::getPoint()
     const float &dk3(depthIntrinsics.k3);
 
     // カラーカメラの内部パラメータ
-    const int &cw(colorIntrinsics.width);
-    const int &ch(colorIntrinsics.height);
     const float &ccx(colorIntrinsics.cx);
     const float &ccy(colorIntrinsics.cy);
     const float &cfx(colorIntrinsics.fx);
@@ -500,9 +500,12 @@ GLuint Ds325::getPoint()
       const GLfloat cx((x + 0.0508f) / cq);
       const GLfloat cy(y / cq);
 
+      // テクスチャ座標のインデックス
+      const int j((dh - v) * dw - u - 1);
+
       // 歪みを補正したポイントのテクスチャ座標値
-      uvmap[i][0] = ccx + cx * cfx;
-      uvmap[i][1] = ccy - cy * cfy;
+      uvmap[j][0] = ccx + cx * cfx;
+      uvmap[j][1] = ccy - cy * cfy;
     }
 
     // カメラ座標をテクスチャに転送する
@@ -527,16 +530,77 @@ GLuint Ds325::getPoint()
 // カメラ座標を算出する
 GLuint Ds325::getPosition()
 {
+  // デプスカメラの解像度
+  const int &dw(depthIntrinsics.width);
+  const int &dh(depthIntrinsics.height);
+
+  // デプスカメラの内部パラメータ
+  const float &dcx(depthIntrinsics.cx);
+  const float &dcy(depthIntrinsics.cy);
+  const float &dfx(depthIntrinsics.fx);
+  const float &dfy(depthIntrinsics.fy);
+  const float &dk1(depthIntrinsics.k1);
+  const float &dk2(depthIntrinsics.k2);
+  const float &dk3(depthIntrinsics.k3);
+
+  // カラーカメラの内部パラメータ
+  const float &ccx(colorIntrinsics.cx);
+  const float &ccy(colorIntrinsics.cy);
+  const float &cfx(colorIntrinsics.fx);
+  const float &cfy(colorIntrinsics.fy);
+  const float &ck1(colorIntrinsics.k1);
+  const float &ck2(colorIntrinsics.k2);
+  const float &ck3(colorIntrinsics.k3);
+
+  for (int i = 0; i < depthCount; ++i)
+  {
+    // デプスマップの画素位置
+    const int u(i % dw);
+    const int v(i / dw);
+
+    // 画素位置からデプスマップのスクリーン座標を求める
+    const GLfloat dx((static_cast<GLfloat>(u) - dcx + 0.5f) / dfx);
+    const GLfloat dy((static_cast<GLfloat>(v) - dcy + 0.5f) / dfy);
+
+    // デプスカメラの歪み補正係数
+    const GLfloat dr(dx * dx + dy * dy);
+    const GLfloat dq(1.0f + dr * (dk1 + dr * (dk2 + dr * dk3)));
+
+    // 歪みを補正したポイントのスクリーン座標値
+    const GLfloat x(dx / dq);
+    const GLfloat y(dy / dq);
+
+    // カラーカメラの歪み補正係数
+    const GLfloat cr(x * x + y * y);
+    const GLfloat cq(1.0f + cr * (ck1 + cr * (ck2 + cr * ck3)));
+
+    // カラーのスクリーン座標
+    const GLfloat cx((x + 0.0508f) / cq);
+    const GLfloat cy(y / cq);
+
+    // テクスチャ座標のインデックス
+    const int j((dh - v) * dw - u - 1);
+
+    // 歪みを補正したポイントのテクスチャ座標値
+    uvmap[j][0] = ccx + cx * cfx;
+    uvmap[j][1] = ccy - cy * cfy;
+  }
+
+  // テクスチャ座標のバッファオブジェクトを指定する
+  glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+
+  // テクスチャ座標をバッファオブジェクトに転送する
+  glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
+
+  // カメラ座標をシェーダで算出する
   shader->use();
   glUniform1f(varianceLoc, variance);
   glUniform2f(dsLoc, static_cast<GLfloat>(depthIntrinsics.width - 1), static_cast<GLfloat>(depthIntrinsics.height - 1));
   glUniform2f(dcLoc, depthIntrinsics.cx, depthIntrinsics.cy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   glUniform3f(dkLoc, depthIntrinsics.k1, depthIntrinsics.k2, depthIntrinsics.k3);
-  glUniform1i(0, 0);
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, getDepth());
-  return shader->execute()[0];
+  const GLuint depthTexture(getDepth());
+  return shader->execute(1, &depthTexture)[0];
 }
 
 // カラーデータを取得する

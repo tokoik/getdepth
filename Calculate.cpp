@@ -5,22 +5,22 @@
 //
 
 // コンストラクタ
-Calculate::Calculate(int width, int height, const char *source, int targets)
+Calculate::Calculate(int width, int height, const char *frag, GLuint targets)
   : width(width)
   , height(height)
-  , program(ggLoadShader("rectangle.vert", source))
+  , program(ggLoadShader("rectangle.vert", frag))
 {
   // 計算結果を格納するフレームバッファオブジェクトを作成する
   glGenFramebuffers(1, &fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-  for (int i = 0; i < targets; ++i)
+  for (GLuint i = 0; i < targets; ++i)
   {
     // フレームバッファオブジェクトのターゲットに使うテクスチャを作成する
     GLuint t;
     glGenTextures(1, &t);
     glBindTexture(GL_TEXTURE_2D, t);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -57,7 +57,7 @@ Calculate::~Calculate()
 }
 
 // 計算を実行する
-const std::vector<GLuint> &Calculate::execute() const
+const std::vector<GLuint> &Calculate::execute(int count, const GLuint *sources) const
 {
   // フレームバッファオブジェクトにレンダリング
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -69,6 +69,14 @@ const std::vector<GLuint> &Calculate::execute() const
 
   // ビューポートをフレームバッファオブジェクトのサイズに設定する
   glViewport(0, 0, width, height);
+
+  // 入力側のテクスチャを結合する
+  for (int i = 0; i < count; ++i)
+  {
+    glUniform1i(i, i);
+    glActiveTexture(GL_TEXTURE0 + i);
+    glBindTexture(GL_TEXTURE_2D, sources[i]);
+  }
 
   // クリッピング空間いっぱいの矩形をレンダリングする
   rectangle->draw();
