@@ -59,17 +59,17 @@ class KinectV1 : public DepthCamera
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
   GLfloat (*position)[3];
 
-  // デプス値に対する頂点座標の拡大率
-  GLfloat scale[2];
-
-  // シェーダの uniform 変数 scale の場所
-  GLint scaleLoc;
-
   // カラーデータのストリームハンドル
   HANDLE colorStream;
 
   // カラーデータのイベントハンドル
   const HANDLE nextColorFrameEvent;
+
+  // デプス値に対する頂点座標の拡大率
+  GLfloat scale[2];
+
+  // シェーダの uniform 変数 scale の場所
+  GLint scaleLoc;
 
 public:
 

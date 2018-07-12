@@ -82,6 +82,10 @@ Ds325::Ds325(
 
   // シェーダの uniform 変数の場所を調べる
   varianceLoc = glGetUniformLocation(shader->get(), "variance");
+  dsLoc = glGetUniformLocation(shader->get(), "ds");
+  dcLoc = glGetUniformLocation(shader->get(), "dc");
+  dfLoc = glGetUniformLocation(shader->get(), "df");
+  dkLoc = glGetUniformLocation(shader->get(), "dk");
 }
 
 // デストラクタ
@@ -523,16 +527,16 @@ GLuint Ds325::getPoint()
 // カメラ座標を算出する
 GLuint Ds325::getPosition()
 {
-#if 0
   shader->use();
   glUniform1f(varianceLoc, variance);
+  glUniform2f(dsLoc, static_cast<GLfloat>(depthIntrinsics.width - 1), static_cast<GLfloat>(depthIntrinsics.height - 1));
+  glUniform2f(dcLoc, depthIntrinsics.cx, depthIntrinsics.cy);
+  glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
+  glUniform3f(dkLoc, depthIntrinsics.k1, depthIntrinsics.k2, depthIntrinsics.k3);
   glUniform1i(0, 0);
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D, getDepth());
   return shader->execute()[0];
-#else
-  return getPoint();
-#endif
 }
 
 // カラーデータを取得する

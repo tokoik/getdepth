@@ -157,6 +157,9 @@ class Ds325 : public DepthCamera
   // カラーデータ転送用のメモリ
   GLubyte (*color)[3], (*colorPtr)[3];
 
+  // カメラパラメータの uniform 変数の場所
+  GLint dsLoc, dcLoc, dfLoc, dkLoc;
+
 public:
 
   // コンストラクタ

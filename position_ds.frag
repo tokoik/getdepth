@@ -5,17 +5,9 @@
 // テクスチャ
 layout (location = 0) uniform sampler2D depth;
 
-#define NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS (3.501e-3)
-#define NUI_IMAGE_PLAYER_INDEX_SHIFT 3
-#define MILLIMETER 0.001
-#define DEPTH_SCALE (-65535.0 * MILLIMETER / float(1 << NUI_IMAGE_PLAYER_INDEX_SHIFT))
-#define DEPTH_MAXIMUM (-4.0)
-
-// スケール
-uniform vec2 scale = vec2(
-  NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 320.0,
-  NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * 240.0
-);
+// カメラパラメータ
+uniform vec2 ds, dc, df;
+uniform vec3 dk;
 
 // テクスチャ座標
 in vec2 texcoord;
@@ -79,6 +71,13 @@ void main(void)
   // デプス値を取り出す
   float z = csum.r / csum.g;
 
+  // 画素のスクリーン座標
+  vec2 dp = (texcoord * ds - dc + 0.5f) / df;
+
+  // デプスカメラの歪み補正係数
+  float dr = dot(dp, dp);
+  float dq = (1.0 + dr * (dk.x + dr * (dk.y + dr * dk.z)));
+
   // デプス値からカメラ座標値を求める
-  position = vec3((texcoord - 0.5) * scale * z, z);
+  position = vec3(dp * z / dq, z);
 }
