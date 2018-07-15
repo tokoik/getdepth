@@ -265,4 +265,10 @@ GLuint KinectV2::getColor()
 // センサの識別子
 IKinectSensor *KinectV2::sensor(nullptr);
 
+// カメラ座標を計算するシェーダ
+std::unique_ptr<Calculate> KinectV2::shader(nullptr);
+
+//バイラテラルフィルタの分散の uniform 変数 variance の場所
+GLint KinectV2::varianceLoc;
+
 #endif

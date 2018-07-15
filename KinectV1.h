@@ -65,11 +65,17 @@ class KinectV1 : public DepthCamera
   // カラーデータのイベントハンドル
   const HANDLE nextColorFrameEvent;
 
-  // デプス値に対する頂点座標の拡大率
+  // スクリーン座標からカメラ座標に変換する係数
   GLfloat scale[2];
 
-  // シェーダの uniform 変数 scale の場所
-  GLint scaleLoc;
+  // カメラ座標を計算するシェーダ
+  static std::unique_ptr<Calculate> shader;
+
+  //バイラテラルフィルタの分散の uniform 変数 variance の場所
+  static GLint varianceLoc;
+
+  // スクリーン座標からカメラ座標に変換する係数の uniform 変数 scale の場所
+  static GLint scaleLoc;
 
 public:
 

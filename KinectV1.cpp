@@ -73,16 +73,20 @@ KinectV1::KinectV1()
   // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
   position = new GLfloat[depthCount][3];
 
-  // カメラ座標算出用のシェーダを作成する
-  shader.reset(new Calculate(depthWidth, depthHeight, "position_v1.frag"));
-
-  // シェーダの uniform 変数の場所を調べる
-  scaleLoc = glGetUniformLocation(shader->get(), "scale");
-  varianceLoc = glGetUniformLocation(shader->get(), "variance");
-
   // デプスマップのテクスチャ座標に対する頂点座標の拡大率
   scale[0] = static_cast<GLfloat>(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * depthWidth);
   scale[1] = static_cast<GLfloat>(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * depthHeight);
+
+  // まだシェーダが作られていなかったら
+  if (shader.get() == nullptr)
+  {
+    // カメラ座標算出用のシェーダを作成する
+    shader.reset(new Calculate(depthWidth, depthHeight, "position_v1.frag"));
+
+    // シェーダの uniform 変数の場所を調べる
+    varianceLoc = glGetUniformLocation(shader->get(), "variance");
+    scaleLoc = glGetUniformLocation(shader->get(), "scale");
+  }
 }
 
 // デストラクタ
@@ -282,5 +286,14 @@ int KinectV1::connected(0);
 
 // 使用しているセンサの数
 int KinectV1::activated(0);
+
+// カメラ座標を計算するシェーダ
+std::unique_ptr<Calculate> KinectV1::shader(nullptr);
+
+//バイラテラルフィルタの分散の uniform 変数 variance の場所
+GLint KinectV1::varianceLoc;
+
+// スクリーン座標からカメラ座標に変換する係数の uniform 変数 scale の場所
+GLint KinectV1::scaleLoc;
 
 #endif

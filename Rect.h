@@ -9,9 +9,6 @@
 
 class Rect : public Shape
 {
-  // 頂点バッファオブジェクト
-  GLuint vbo;
-
 public:
 
   // コンストラクタ

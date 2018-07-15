@@ -157,8 +157,14 @@ class Ds325 : public DepthCamera
   // カラーデータ転送用のメモリ
   GLubyte (*color)[3], (*colorPtr)[3];
 
+  // カメラ座標を計算するシェーダ
+  static std::unique_ptr<Calculate> shader;
+
+  //バイラテラルフィルタの分散の uniform 変数 variance の場所
+  static GLint varianceLoc;
+
   // カメラパラメータの uniform 変数の場所
-  GLint dsLoc, dcLoc, dfLoc, dkLoc;
+  static GLint dsLoc, dcLoc, dfLoc, dkLoc;
 
 public:
 

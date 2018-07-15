@@ -48,6 +48,12 @@ class KinectV2 : public DepthCamera
   // カラーデータの変換に用いる一時メモリ
   GLubyte *color;
 
+  // カメラ座標を計算するシェーダ
+  static std::unique_ptr<Calculate> shader;
+
+  //バイラテラルフィルタの分散の uniform 変数 variance の場所
+  static GLint varianceLoc;
+
 public:
 
   // コンストラクタ

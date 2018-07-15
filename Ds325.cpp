@@ -52,7 +52,26 @@ Ds325::Ds325(
   }
 
   // DepthSense の使用台数が接続台数に達していれば戻る
-  if (activated >= connected) throw std::runtime_error("DepthSense の数が足りません");
+  if (activated >= connected)
+  {
+    if (worker.joinable())
+    {
+      // イベントループを停止する
+      context.quit();
+
+      // イベントループのスレッドが終了するのを待つ
+      worker.join();
+
+      // ストリーミングを停止する
+      context.stopNodes();
+
+      // ノードの登録解除
+      unregisterNode(colorNode);
+      unregisterNode(depthNode);
+    }
+
+    throw std::runtime_error("DepthSense の数が足りません");
+  }
 
   // 未使用のセンサを取り出して使用中のセンサの数を増す
   Device device(context.getDevices()[activated++]);
@@ -77,15 +96,19 @@ Ds325::Ds325(
   // DepthSense の各ノードを初期化する
   for (Node &node : device.getNodes()) configureNode(node);
 
-  // カメラ座標算出用のシェーダを作成する
-  shader.reset(new Calculate(depthWidth, depthHeight, "position_ds.frag"));
+  // まだシェーダが作られていなかったら
+  if (shader.get() == nullptr)
+  {
+    // カメラ座標算出用のシェーダを作成する
+    shader.reset(new Calculate(depthWidth, depthHeight, "position_ds.frag"));
 
-  // シェーダの uniform 変数の場所を調べる
-  varianceLoc = glGetUniformLocation(shader->get(), "variance");
-  dsLoc = glGetUniformLocation(shader->get(), "ds");
-  dcLoc = glGetUniformLocation(shader->get(), "dc");
-  dfLoc = glGetUniformLocation(shader->get(), "df");
-  dkLoc = glGetUniformLocation(shader->get(), "dk");
+    // シェーダの uniform 変数の場所を調べる
+    varianceLoc = glGetUniformLocation(shader->get(), "variance");
+    dsLoc = glGetUniformLocation(shader->get(), "ds");
+    dcLoc = glGetUniformLocation(shader->get(), "dc");
+    dfLoc = glGetUniformLocation(shader->get(), "df");
+    dkLoc = glGetUniformLocation(shader->get(), "dk");
+  }
 }
 
 // デストラクタ
@@ -637,5 +660,14 @@ Context Ds325::context;
 
 // データ取得用のスレッド
 std::thread Ds325::worker;
+
+// カメラ座標を計算するシェーダ
+std::unique_ptr<Calculate> Ds325::shader(nullptr);
+
+//バイラテラルフィルタの分散の uniform 変数 variance の場所
+GLint Ds325::varianceLoc;
+
+// カメラパラメータの uniform 変数の場所
+GLint Ds325::dsLoc, Ds325::dcLoc, Ds325::dfLoc, Ds325::dkLoc;
 
 #endif

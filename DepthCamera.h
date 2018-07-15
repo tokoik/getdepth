@@ -36,14 +36,8 @@ protected:
   // デプスデータの画素におけるカラーデータのテクスチャ座標を格納するバッファオブジェクト
   GLuint coordBuffer;
 
-  // カメラ座標を計算するシェーダ
-  std::unique_ptr<Calculate> shader;
-
   // バイラテラルフィルタの分散
   GLfloat variance;
-
-  // シェーダの uniform 変数 variance の場所
-  GLint varianceLoc;
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   void makeTexture();
@@ -62,7 +56,6 @@ public:
     , pointTexture(0)
     , colorTexture(0)
     , coordBuffer(0)
-    , shader(nullptr)
     , variance(0.1f)
   {
   }
