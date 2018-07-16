@@ -164,7 +164,7 @@ class Ds325 : public DepthCamera
   static GLint varianceLoc;
 
   // カメラパラメータの uniform 変数の場所
-  static GLint dsLoc, dcLoc, dfLoc, dkLoc;
+  static GLint dcLoc, dfLoc, dkLoc;
 
 public:
 

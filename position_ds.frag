@@ -5,15 +5,18 @@
 // テクスチャ
 layout (location = 0) uniform sampler2D depth;
 
-// カメラパラメータ
-uniform vec2 ds, dc, df;
-uniform vec3 dk;
+// テクスチャのサイズ - 1
+ivec2 ds = textureSize(depth, 0) - 1;
+
+// フレームバッファに出力するデータ
+layout (location = 0) out vec4 position;
 
 // テクスチャ座標
 in vec2 texcoord;
 
-// フレームバッファに出力するデータ
-layout (location = 0) out vec4 position;
+// カメラパラメータ
+uniform vec2 dc, df;
+uniform vec3 dk;
 
 // 分散
 uniform float variance = 0.1;

@@ -9,7 +9,8 @@
 using namespace gg;
 
 // 計算用のシェーダ
-#include "Calculate.h"
+//#include "Fragment.h"
+#include "Compute.h"
 
 // 標準ライブラリ
 #include <memory>

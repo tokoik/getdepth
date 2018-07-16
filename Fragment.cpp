@@ -1,11 +1,11 @@
-﻿#include "Calculate.h"
+﻿#include "Fragment.h"
 
 //
 // 画像処理
 //
 
 // コンストラクタ
-Calculate::Calculate(int width, int height, const char *frag, GLuint targets)
+Fragment::Fragment(int width, int height, const char *frag, GLuint targets)
   : width(width)
   , height(height)
   , program(ggLoadShader("rectangle.vert", frag))
@@ -41,7 +41,7 @@ Calculate::Calculate(int width, int height, const char *frag, GLuint targets)
 }
 
 // デストラクタ
-Calculate::~Calculate()
+Fragment::~Fragment()
 {
   // シェーダプログラムを削除する
   glDeleteShader(program);
@@ -57,7 +57,7 @@ Calculate::~Calculate()
 }
 
 // 計算を実行する
-const std::vector<GLuint> &Calculate::execute(int count, const GLuint *sources) const
+const std::vector<GLuint> &Fragment::execute(GLuint count, const GLuint *sources, ...) const
 {
   // フレームバッファオブジェクトにレンダリング
   glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -71,7 +71,7 @@ const std::vector<GLuint> &Calculate::execute(int count, const GLuint *sources) 
   glViewport(0, 0, width, height);
 
   // 入力側のテクスチャを結合する
-  for (int i = 0; i < count; ++i)
+  for (GLuint i = 0; i < count; ++i)
   {
     glUniform1i(i, i);
     glActiveTexture(GL_TEXTURE0 + i);
@@ -93,7 +93,7 @@ const std::vector<GLuint> &Calculate::execute(int count, const GLuint *sources) 
 }
 
 // 計算に使う矩形
-const Rect *Calculate::rectangle;
+const Rect *Fragment::rectangle;
 
 // リファレンスカウント
-unsigned int Calculate::count(0);
+unsigned int Fragment::count(0);

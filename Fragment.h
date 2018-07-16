@@ -14,7 +14,7 @@ using namespace gg;
 // 標準ライブラリ
 #include <vector>
 
-class Calculate
+class Fragment
 {
   // 画像処理に使うフレームバッファオブジェクト
   GLuint fbo;
@@ -40,10 +40,10 @@ class Calculate
 public:
 
   // コンストラクタ
-  Calculate(int width, int height, const char *frag, GLuint targets = 1);
+  Fragment(int width, int height, const char *frag, GLuint targets = 1);
 
   // デストラクタ
-  virtual ~Calculate();
+  virtual ~Fragment();
 
   // シェーダプログラムを得る
   GLuint get() const
@@ -64,5 +64,8 @@ public:
   }
 
   // 計算を実行する
-  const std::vector<GLuint> &execute(int count, const GLuint *sources) const;
+  const std::vector<GLuint> &execute(GLuint count, const GLuint *sources, ...) const;
 };
+
+typedef Fragment Calculate;
+#define SHADER_EXT ".frag"

@@ -1,0 +1,77 @@
+#version 430 core
+
+// ワークグループのサイズ
+layout(local_size_x = 1, local_size_y = 1) in;
+
+// 入力
+layout (binding = 0, r32f) readonly uniform image2D depth;
+layout (binding = 1, rg32f) readonly uniform image2D mapper;
+
+// 出力
+layout (binding = 2, rgba32f) writeonly uniform image2D position;
+
+// 分散
+uniform float variance = 0.1;
+
+// 対象画素の値
+float base;
+
+// 重み付き画素値の合計と重みの合計を求める
+void f(inout vec2 csum, const in float c, const in float w)
+{
+  float d = c - base;
+  float e = exp(-0.5 * d * d / variance) * w;
+  csum += vec2(c * e, e);
+}
+
+void main(void)
+{
+  // 画素位置
+  ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+
+  // 対象画素の値を基準値とする
+  base = imageLoad(depth, p).r;
+
+  // 対象画素の値とその重みのペアを作る
+  vec2 csum = vec2(base, 1.0);
+
+#if 1
+  f(csum, imageLoad(depth, p + ivec2(-2, -2)).r, 0.018315639);
+  f(csum, imageLoad(depth, p + ivec2(-1, -2)).r, 0.082084999);
+  f(csum, imageLoad(depth, p + ivec2( 0, -2)).r, 0.135335283);
+  f(csum, imageLoad(depth, p + ivec2( 1, -2)).r, 0.082084999);
+  f(csum, imageLoad(depth, p + ivec2( 2, -2)).r, 0.018315639);
+
+  f(csum, imageLoad(depth, p + ivec2(-2, -1)).r, 0.082084999);
+  f(csum, imageLoad(depth, p + ivec2(-1, -1)).r, 0.367879441);
+  f(csum, imageLoad(depth, p + ivec2( 0, -1)).r, 0.60653066);
+  f(csum, imageLoad(depth, p + ivec2( 1, -1)).r, 0.367879441);
+  f(csum, imageLoad(depth, p + ivec2( 2, -1)).r, 0.082084999);
+
+  f(csum, imageLoad(depth, p + ivec2(-2,  0)).r, 0.135335283);
+  f(csum, imageLoad(depth, p + ivec2(-1,  0)).r, 0.60653066);
+  f(csum, imageLoad(depth, p + ivec2( 1,  0)).r, 0.60653066);
+  f(csum, imageLoad(depth, p + ivec2( 2,  0)).r, 0.135335283);
+
+  f(csum, imageLoad(depth, p + ivec2(-2,  1)).r, 0.082084999);
+  f(csum, imageLoad(depth, p + ivec2(-1,  1)).r, 0.367879441);
+  f(csum, imageLoad(depth, p + ivec2( 0,  1)).r, 0.60653066);
+  f(csum, imageLoad(depth, p + ivec2( 1,  1)).r, 0.367879441);
+  f(csum, imageLoad(depth, p + ivec2( 2,  1)).r, 0.082084999);
+
+  f(csum, imageLoad(depth, p + ivec2(-2,  2)).r, 0.018315639);
+  f(csum, imageLoad(depth, p + ivec2(-1,  2)).r, 0.082084999);
+  f(csum, imageLoad(depth, p + ivec2( 0,  2)).r, 0.135335283);
+  f(csum, imageLoad(depth, p + ivec2( 1,  2)).r, 0.082084999);
+  f(csum, imageLoad(depth, p + ivec2( 2,  2)).r, 0.018315639);
+#endif
+
+  // デプス値を取り出す
+  float z = csum.r / csum.g;
+
+  // カメラ座標の補正係数を取り出す
+  vec2 k = imageLoad(mapper, p).xy;
+
+  // デプス値からカメラ座標値を求める
+  imageStore(position, p, vec4(vec2(k.x, -k.y) * z, z, 1.0));
+}

@@ -18,9 +18,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Calculate.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="DepthCamera.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -51,11 +48,11 @@
     <ClInclude Include="Compute.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Fragment.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Calculate.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="DepthCamera.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -89,6 +86,9 @@
     <ClCompile Include="Compute.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Fragment.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="normal.frag">
@@ -104,22 +104,13 @@
       <Filter>シェーダー ファイル</Filter>
     </None>
     <None Include="README.md" />
-    <None Include="bilateral.frag">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
     <None Include="refraction.frag">
       <Filter>シェーダー ファイル</Filter>
     </None>
     <None Include="refraction.vert">
       <Filter>シェーダー ファイル</Filter>
     </None>
-    <None Include="bilateral.comp">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
     <None Include="normal.comp">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
-    <None Include="position.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
     <None Include="position_v1.frag">
@@ -129,6 +120,15 @@
       <Filter>シェーダー ファイル</Filter>
     </None>
     <None Include="position_ds.frag">
+      <Filter>シェーダー ファイル</Filter>
+    </None>
+    <None Include="position_ds.comp">
+      <Filter>シェーダー ファイル</Filter>
+    </None>
+    <None Include="position_v1.comp">
+      <Filter>シェーダー ファイル</Filter>
+    </None>
+    <None Include="position_v2.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
   </ItemGroup>

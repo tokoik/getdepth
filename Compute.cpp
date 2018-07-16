@@ -35,12 +35,12 @@ Compute::~Compute()
 }
 
 // 計算を実行する
-const std::vector<GLuint> &Compute::execute(int count, const GLuint *sources, GLuint xGroup, GLuint yGroup) const
+const std::vector<GLuint> &Compute::execute(GLuint count, const GLuint *sources, const GLenum *format, GLuint local_size_x, GLuint local_size_y) const
 {
   // 入力側のテクスチャを結合する
-  for (int i = 0; i < count; ++i)
+  for (GLuint i = 0; i < count; ++i)
   {
-    glBindImageTexture(0, sources[i], 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+    glBindImageTexture(i, sources[i], 0, GL_FALSE, 0, GL_READ_ONLY, format ? format[i] : GL_RGBA32F);
   }
 
   // 出力側のテクスチャを結合する
@@ -50,7 +50,7 @@ const std::vector<GLuint> &Compute::execute(int count, const GLuint *sources, GL
   }
 
   // 計算を実行する
-  glDispatchCompute(width / xGroup, height / yGroup, 1);
+  glDispatchCompute((width + local_size_x - 1) / local_size_x, (height + local_size_y - 1) / local_size_y, 1);
 
   return textures;
 }

@@ -100,11 +100,10 @@ Ds325::Ds325(
   if (shader.get() == nullptr)
   {
     // カメラ座標算出用のシェーダを作成する
-    shader.reset(new Calculate(depthWidth, depthHeight, "position_ds.frag"));
+    shader.reset(new Calculate(depthWidth, depthHeight, "position_ds" SHADER_EXT));
 
     // シェーダの uniform 変数の場所を調べる
     varianceLoc = glGetUniformLocation(shader->get(), "variance");
-    dsLoc = glGetUniformLocation(shader->get(), "ds");
     dcLoc = glGetUniformLocation(shader->get(), "dc");
     dfLoc = glGetUniformLocation(shader->get(), "df");
     dkLoc = glGetUniformLocation(shader->get(), "dk");
@@ -618,12 +617,12 @@ GLuint Ds325::getPosition()
   // カメラ座標をシェーダで算出する
   shader->use();
   glUniform1f(varianceLoc, variance);
-  glUniform2f(dsLoc, static_cast<GLfloat>(depthIntrinsics.width - 1), static_cast<GLfloat>(depthIntrinsics.height - 1));
   glUniform2f(dcLoc, depthIntrinsics.cx, depthIntrinsics.cy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   glUniform3f(dkLoc, depthIntrinsics.k1, depthIntrinsics.k2, depthIntrinsics.k3);
   const GLuint depthTexture(getDepth());
-  return shader->execute(1, &depthTexture)[0];
+  const GLenum depthFormat(GL_R32F);
+  return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
 }
 
 // カラーデータを取得する
@@ -668,6 +667,6 @@ std::unique_ptr<Calculate> Ds325::shader(nullptr);
 GLint Ds325::varianceLoc;
 
 // カメラパラメータの uniform 変数の場所
-GLint Ds325::dsLoc, Ds325::dcLoc, Ds325::dfLoc, Ds325::dkLoc;
+GLint Ds325::dcLoc, Ds325::dfLoc, Ds325::dkLoc;
 
 #endif

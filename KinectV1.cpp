@@ -81,7 +81,7 @@ KinectV1::KinectV1()
   if (shader.get() == nullptr)
   {
     // カメラ座標算出用のシェーダを作成する
-    shader.reset(new Calculate(depthWidth, depthHeight, "position_v1.frag"));
+    shader.reset(new Calculate(depthWidth, depthHeight, "position_v1" SHADER_EXT));
 
     // シェーダの uniform 変数の場所を調べる
     varianceLoc = glGetUniformLocation(shader->get(), "variance");
@@ -243,7 +243,8 @@ GLuint KinectV1::getPosition()
   glUniform2fv(scaleLoc, 1, scale);
   glUniform1f(varianceLoc, variance);
   const GLuint depthTexture(getDepth());
-  return shader->execute(1, &depthTexture)[0];
+  const GLenum depthFormat(GL_R32F);
+  return shader->execute(1, &depthTexture, &depthFormat)[0];
 }
 
 // カラーデータを取得する

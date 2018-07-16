@@ -49,5 +49,8 @@ public:
   }
 
   // 計算を実行する
-  const std::vector<GLuint> &execute(int count, const GLuint *sources, GLuint xGroup = 64, GLuint yGroup = 8) const;
+  const std::vector<GLuint> &execute(GLuint count, const GLuint *sources, const GLenum *format = nullptr, GLuint local_size_x = 1, GLuint local_size_y = 1) const;
 };
+
+typedef Compute Calculate;
+#define SHADER_EXT ".comp"

@@ -1,7 +1,7 @@
 #version 430 core
 
 // ワークグループのサイズ
-layout(local_size_x = 64, local_size_y = 8) in;
+layout(local_size_x = 1, local_size_y = 1) in;
 
 // 入力
 layout (binding = 0, rgba32f) readonly uniform image2D position;
@@ -11,6 +11,7 @@ layout (binding = 1, rgba32f) writeonly uniform image2D normal;
 
 void main(void)
 {
+  // 画素位置
   ivec2 p = ivec2(gl_GlobalInvocationID.xy);
 
   // 近傍の勾配を求める
