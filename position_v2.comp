@@ -1,17 +1,45 @@
 #version 430 core
 
 // ワークグループのサイズ
-layout(local_size_x = 1, local_size_y = 1) in;
+layout(local_size_x = 16, local_size_y = 16) in;
 
 // 入力
 layout (binding = 0, r32f) readonly uniform image2D depth;
 layout (binding = 1, rg32f) readonly uniform image2D mapper;
+
+// イメージのサイズ - 1
+const ivec2 ds = imageSize(depth) - 1;
 
 // 出力
 layout (binding = 2, rgba32f) writeonly uniform image2D position;
 
 // 分散
 uniform float variance = 0.1;
+
+// フィルタのサイズ
+const ivec2 filterSize = ivec2(5, 5);
+
+// フィルタの中心位置
+const ivec2 filterOffset = filterSize / 2;
+
+// 一度に処理する領域のサイズ
+const ivec2 tileSize = ivec2(gl_WorkGroupSize);
+
+// 近傍を含む領域のサイズ
+const ivec2 neighborhoodSize = tileSize + filterOffset * 2;
+
+// 処理する領域の近傍を含めたコピー
+shared float pixel[neighborhoodSize.y][neighborhoodSize.x];
+
+// 重み
+const float weight[filterSize.y][filterSize.x] =
+{
+  { 0.018315639, 0.082084999, 0.135335283, 0.082084999, 0.018315639 },
+  { 0.082084999, 0.367879441, 0.606530660, 0.367879441, 0.082084999 },
+  { 0.135335283, 0.135335283, 1.000000000, 0.606530660, 0.606530660 },
+  { 0.082084999, 0.367879441, 0.606530660, 0.367879441, 0.082084999 },
+  { 0.018315639, 0.082084999, 0.135335283, 0.082084999, 0.018315639 }
+};
 
 // 対象画素の値
 float base;
@@ -24,54 +52,70 @@ void f(inout vec2 csum, const in float c, const in float w)
   csum += vec2(c * e, e);
 }
 
+// インデックスがイメージの領域から外れないようにする
+ivec2 clampLocation(ivec2 xy)
+{
+  return clamp(xy, ivec2(0, 0), ds);
+}
+
+// 他のスレッドの共有メモリへのアクセス完了と他のワークグループの処理完了を待つ
+void retirePhase()
+{
+  memoryBarrierShared();
+  barrier();
+}
+
 void main(void)
 {
-  // 画素位置
-  ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+  // ワークグループが処理する領域の基準位置
+  const ivec2 tile_xy = ivec2(gl_WorkGroupID);
+
+  // スレッドが処理する画素のワークグループにおける相対位置
+  const ivec2 thread_xy = ivec2(gl_LocalInvocationID);
+
+  // イメージ上の画素位置
+  const ivec2 pixel_xy = tile_xy * tileSize + thread_xy;
+
+  // スレッドが処理する画素位置
+  const uint x = thread_xy.x;
+  const uint y = thread_xy.y;
+
+  // 処理する領域をコピーする
+  for (int j = 0; j < neighborhoodSize.y; j += tileSize.y)
+  {
+    for (int i = 0; i < neighborhoodSize.x; i += tileSize.x)
+    {
+      if (x + i < neighborhoodSize.x && y + j  < neighborhoodSize.y)
+      {
+        const ivec2 read_at = clampLocation(pixel_xy + ivec2(i, j) - filterOffset);
+        pixel[y + j][x + i] = imageLoad(depth, read_at).r;
+      }
+    }
+  }
+
+  // 他のスレッドの共有メモリへのアクセス完了と他のワークグループの処理完了を待つ
+  retirePhase();
 
   // 対象画素の値を基準値とする
-  base = imageLoad(depth, p).r;
+  base = pixel[y + filterOffset.y][x + filterOffset.x];
 
   // 対象画素の値とその重みのペアを作る
-  vec2 csum = vec2(base, 1.0);
+  vec2 csum = vec2(0.0);
 
-#if 1
-  f(csum, imageLoad(depth, p + ivec2(-2, -2)).r, 0.018315639);
-  f(csum, imageLoad(depth, p + ivec2(-1, -2)).r, 0.082084999);
-  f(csum, imageLoad(depth, p + ivec2( 0, -2)).r, 0.135335283);
-  f(csum, imageLoad(depth, p + ivec2( 1, -2)).r, 0.082084999);
-  f(csum, imageLoad(depth, p + ivec2( 2, -2)).r, 0.018315639);
-
-  f(csum, imageLoad(depth, p + ivec2(-2, -1)).r, 0.082084999);
-  f(csum, imageLoad(depth, p + ivec2(-1, -1)).r, 0.367879441);
-  f(csum, imageLoad(depth, p + ivec2( 0, -1)).r, 0.60653066);
-  f(csum, imageLoad(depth, p + ivec2( 1, -1)).r, 0.367879441);
-  f(csum, imageLoad(depth, p + ivec2( 2, -1)).r, 0.082084999);
-
-  f(csum, imageLoad(depth, p + ivec2(-2,  0)).r, 0.135335283);
-  f(csum, imageLoad(depth, p + ivec2(-1,  0)).r, 0.60653066);
-  f(csum, imageLoad(depth, p + ivec2( 1,  0)).r, 0.60653066);
-  f(csum, imageLoad(depth, p + ivec2( 2,  0)).r, 0.135335283);
-
-  f(csum, imageLoad(depth, p + ivec2(-2,  1)).r, 0.082084999);
-  f(csum, imageLoad(depth, p + ivec2(-1,  1)).r, 0.367879441);
-  f(csum, imageLoad(depth, p + ivec2( 0,  1)).r, 0.60653066);
-  f(csum, imageLoad(depth, p + ivec2( 1,  1)).r, 0.367879441);
-  f(csum, imageLoad(depth, p + ivec2( 2,  1)).r, 0.082084999);
-
-  f(csum, imageLoad(depth, p + ivec2(-2,  2)).r, 0.018315639);
-  f(csum, imageLoad(depth, p + ivec2(-1,  2)).r, 0.082084999);
-  f(csum, imageLoad(depth, p + ivec2( 0,  2)).r, 0.135335283);
-  f(csum, imageLoad(depth, p + ivec2( 1,  2)).r, 0.082084999);
-  f(csum, imageLoad(depth, p + ivec2( 2,  2)).r, 0.018315639);
-#endif
+  for (int j = 0; j < filterSize.y; ++j)
+  {
+    for (int i = 0; i < filterSize.x; ++i)
+    {
+      f(csum, pixel[y + j][x + i], weight[j][i]);
+    }
+  }
 
   // デプス値を取り出す
   float z = csum.r / csum.g;
 
   // カメラ座標の補正係数を取り出す
-  vec2 k = imageLoad(mapper, p).xy;
+  vec2 k = imageLoad(mapper, pixel_xy).xy;
 
   // デプス値からカメラ座標値を求める
-  imageStore(position, p, vec4(vec2(k.x, -k.y) * z, z, 1.0));
+  imageStore(position, pixel_xy, vec4(vec2(k.x, -k.y) * z, z, 1.0));
 }

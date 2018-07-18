@@ -244,7 +244,7 @@ GLuint KinectV1::getPosition()
   glUniform1f(varianceLoc, variance);
   const GLuint depthTexture(getDepth());
   const GLenum depthFormat(GL_R32F);
-  return shader->execute(1, &depthTexture, &depthFormat)[0];
+  return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
 }
 
 // カラーデータを取得する

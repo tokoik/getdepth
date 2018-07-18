@@ -236,7 +236,7 @@ GLuint KinectV2::getPosition()
   glUniform1f(varianceLoc, variance);
   const GLuint texture[] = { getDepth(), mapperTexture };
   const GLenum format[] = { GL_R32F, GL_RG32F };
-  return shader->execute(2, texture, format)[0];
+  return shader->execute(2, texture, format, 16, 16)[0];
 }
 
 // カラーデータを取得する
