@@ -77,6 +77,7 @@ void GgApplication::run()
 
   // 深度センサを有効にする
   SENSOR sensor;
+  if (!sensor.isOpend()) throw std::runtime_error(sensor.getMessage());
 
   // 深度センサの解像度
   int width, height;

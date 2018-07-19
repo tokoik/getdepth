@@ -49,6 +49,17 @@ protected:
   // 代入 (代入禁止)
   DepthCamera &operator=(const DepthCamera &w) {}
 
+  // エラーメッセージ
+  const char *message;
+
+protected:
+
+  // エラーメッセージをセットする
+  void setMessage(const char *message)
+  {
+    this->message = message;
+  }
+
 public:
 
   // コンストラクタ
@@ -58,11 +69,24 @@ public:
     , colorTexture(0)
     , coordBuffer(0)
     , variance(0.1f)
+    , message(nullptr)
   {
   }
 
   // デストラクタ
   virtual ~DepthCamera();
+
+  // 使用可能なら true を返す
+  bool isOpend() const
+  {
+    return message == nullptr;
+  }
+
+  // エラーメッセージを取り出す
+  const char *getMessage() const
+  {
+    return message;
+  }
 
   // デプスカメラのサイズを得る
   void getDepthResolution(int *width, int *height) const

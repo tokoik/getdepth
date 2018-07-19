@@ -52,29 +52,14 @@ Ds325::Ds325(
   }
 
   // DepthSense の使用台数が接続台数に達していれば戻る
-  if (activated >= connected)
+  if (++activated > connected)
   {
-    if (worker.joinable())
-    {
-      // イベントループを停止する
-      context.quit();
-
-      // イベントループのスレッドが終了するのを待つ
-      worker.join();
-
-      // ストリーミングを停止する
-      context.stopNodes();
-
-      // ノードの登録解除
-      unregisterNode(colorNode);
-      unregisterNode(depthNode);
-    }
-
-    throw std::runtime_error("DepthSense の数が足りません");
+    setMessage("DepthSense の数が足りません");
+    return;
   }
 
   // 未使用のセンサを取り出して使用中のセンサの数を増す
-  Device device(context.getDevices()[activated++]);
+  Device device(context.getDevices()[activated - 1]);
 
   // DepthSense のノードのイベントハンドラを登録する
   device.nodeAddedEvent().connect(&onNodeConnected, this);
@@ -646,7 +631,6 @@ GLuint Ds325::getColor()
 
   return colorTexture;
 }
-
 
 // 接続しているセンサの数
 int Ds325::connected(0);
