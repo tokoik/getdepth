@@ -45,8 +45,8 @@ float base;
 // 重み付き画素値の合計と重みの合計を求める
 void f(inout vec2 csum, const in float c, const in float w)
 {
-  float d = c - base;
-  float e = exp(-0.5 * d * d / variance) * w;
+  const float d = c - base;
+  const float e = exp(-0.5 * d * d / variance) * w;
   csum += vec2(c * e, e);
 }
 
@@ -119,14 +119,17 @@ void main(void)
     }
 
     // デプス値を取り出す
-    float z = csum.r / csum.g;
+    const float z = csum.r / csum.g;
+
+    // 結果を保存する画素位置を求める
+    const ivec2 pixel_xy = tile_xy * tileSize + thread_xy; 
 
     // 画素のスクリーン座標
-    vec2 dp = (pixel_xy - dc + 0.5f) / df;
+    const vec2 dp = (pixel_xy - dc + 0.5f) / df;
 
     // デプスカメラの歪み補正係数
-    float dr = dot(dp, dp);
-    float dq = (1.0 + dr * (dk.x + dr * (dk.y + dr * dk.z)));
+    const float dr = dot(dp, dp);
+    const float dq = (1.0 + dr * (dk.x + dr * (dk.y + dr * dk.z)));
 
     // デプス値からカメラ座標値を求める
     imageStore(position, pixel_xy, vec4(dp * z / dq, z, 1.0));

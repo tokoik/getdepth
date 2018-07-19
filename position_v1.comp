@@ -44,15 +44,15 @@ float base;
 // 重み付き画素値の合計と重みの合計を求める
 void f(inout vec2 csum, const in float c, const in float w)
 {
-  float d = c - base;
-  float e = exp(-0.5 * d * d / variance) * w;
+  const float d = c - base;
+  const float e = exp(-0.5 * d * d / variance) * w;
   csum += vec2(c * e, e);
 }
 
 // インデックスがイメージの領域から外れないようにする
 ivec2 clampLocation(ivec2 xy)
 {
-  return clamp(xy, ivec2(0, 0), ds);
+  return clamp(xy, ivec2(0), ds);
 }
 
 // 他のスレッドの共有メモリへのアクセス完了と他のワークグループの処理完了を待つ
@@ -118,7 +118,10 @@ void main(void)
     }
 
     // デプス値を取り出す
-    float z = csum.r / csum.g;
+    const float z = csum.r / csum.g;
+
+    // 結果を保存する画素位置を求める
+    const ivec2 pixel_xy = tile_xy * tileSize + thread_xy; 
 
     // デプス値からカメラ座標値を求める
     imageStore(position, pixel_xy, vec4((vec2(pixel_xy) / vec2(ds) - 0.5) * scale * z, z, 1.0));
