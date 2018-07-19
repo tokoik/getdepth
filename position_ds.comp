@@ -1,7 +1,7 @@
 #version 430 core
 
 // ワークグループのサイズ
-layout(local_size_x = 16, local_size_y = 16) in;
+layout(local_size_x = 16, local_size_y = 20) in;
 
 // 入力
 layout (binding = 0, r32f) readonly uniform image2D depth;
@@ -26,23 +26,18 @@ const ivec2 filterSize = ivec2(5, 5);
 const ivec2 filterOffset = filterSize / 2;
 
 // 一度に処理する領域のサイズ
-const ivec2 tileSize = ivec2(gl_WorkGroupSize);
+const ivec2 tileSize = ivec2(gl_WorkGroupSize) - ivec2(0, filterOffset.y * 2);
 
 // 近傍を含む領域のサイズ
 const ivec2 neighborhoodSize = tileSize + filterOffset * 2;
 
 // 処理する領域の近傍を含めたコピー
 shared float pixel[neighborhoodSize.y][neighborhoodSize.x];
+shared float row[neighborhoodSize.y][tileSize.x]; 
 
 // 重み
-const float weight[filterSize.y][filterSize.x] =
-{
-  { 0.018315639, 0.082084999, 0.135335283, 0.082084999, 0.018315639 },
-  { 0.082084999, 0.367879441, 0.606530660, 0.367879441, 0.082084999 },
-  { 0.135335283, 0.135335283, 1.000000000, 0.606530660, 0.606530660 },
-  { 0.082084999, 0.367879441, 0.606530660, 0.367879441, 0.082084999 },
-  { 0.018315639, 0.082084999, 0.135335283, 0.082084999, 0.018315639 }
-};
+const float rowWeight[filterSize.x] = { 0.135335283, 0.60653066, 1.0, 0.60653066, 0.135335283 };
+const float columnWeight[filterSize.y] = { 0.135335283, 0.60653066, 1.0, 0.60653066, 0.135335283 };
 
 // 対象画素の値
 float base;
@@ -77,22 +72,19 @@ void main(void)
   const ivec2 thread_xy = ivec2(gl_LocalInvocationID);
 
   // イメージ上の画素位置
-  const ivec2 pixel_xy = tile_xy * tileSize + thread_xy;
+  const ivec2 pixel_xy = tile_xy * tileSize + thread_xy - ivec2(0, filterOffset.y);
 
   // スレッドが処理する画素位置
   const uint x = thread_xy.x;
   const uint y = thread_xy.y;
 
   // 処理する領域をコピーする
-  for (int j = 0; j < neighborhoodSize.y; j += tileSize.y)
+  for (int i = 0; i < neighborhoodSize.x; i += tileSize.x)
   {
-    for (int i = 0; i < neighborhoodSize.x; i += tileSize.x)
+    if (x + i < neighborhoodSize.x)
     {
-      if (x + i < neighborhoodSize.x && y + j  < neighborhoodSize.y)
-      {
-        const ivec2 read_at = clampLocation(pixel_xy + ivec2(i, j) - filterOffset);
-        pixel[y + j][x + i] = imageLoad(depth, read_at).r;
-      }
+      const ivec2 read_at = clampLocation(pixel_xy + ivec2(i - filterOffset.x, 0));
+      pixel[y][x + i] = imageLoad(depth, read_at).r;
     }
   }
 
@@ -100,29 +92,43 @@ void main(void)
   retirePhase();
 
   // 対象画素の値を基準値とする
-  base = pixel[y + filterOffset.y][x + filterOffset.x];
+  base = pixel[y][x + filterOffset.x];
 
   // 対象画素の値とその重みのペアを作る
   vec2 csum = vec2(0.0);
 
-  for (int j = 0; j < filterSize.y; ++j)
+  for(int i = 0; i < filterSize.x; ++i)
   {
-    for (int i = 0; i < filterSize.x; ++i)
-    {
-      f(csum, pixel[y + j][x + i], weight[j][i]);
-    }
+    f(csum, pixel[y][x + i], rowWeight[i]);
   }
 
   // デプス値を取り出す
-  float z = csum.r / csum.g;
+  row[y][x] = csum.r / csum.g;
 
-  // 画素のスクリーン座標
-  vec2 dp = (pixel_xy - dc + 0.5f) / df;
+  // 他のスレッドの共有メモリへのアクセス完了と他のワークグループの処理完了を待つ
+  retirePhase();
 
-  // デプスカメラの歪み補正係数
-  float dr = dot(dp, dp);
-  float dq = (1.0 + dr * (dk.x + dr * (dk.y + dr * dk.z)));
+  if (y < tileSize.y)
+  {
+    // 対象画素の値とその重みのペアを作る
+    vec2 csum = vec2(0.0);
 
-  // デプス値からカメラ座標値を求める
-  imageStore(position, pixel_xy, vec4(dp * z / dq, z, 1.0));
+    for (int j = 0; j < filterSize.y; ++j)
+    {
+      f(csum, row[y + j][x], columnWeight[j]);
+    }
+
+    // デプス値を取り出す
+    float z = csum.r / csum.g;
+
+    // 画素のスクリーン座標
+    vec2 dp = (pixel_xy - dc + 0.5f) / df;
+
+    // デプスカメラの歪み補正係数
+    float dr = dot(dp, dp);
+    float dq = (1.0 + dr * (dk.x + dr * (dk.y + dr * dk.z)));
+
+    // デプス値からカメラ座標値を求める
+    imageStore(position, pixel_xy, vec4(dp * z / dq, z, 1.0));
+  }
 }
