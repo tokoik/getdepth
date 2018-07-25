@@ -1348,7 +1348,7 @@ namespace gg
   **   \param depth 1画素のバイト数.
   **   \return 保存に成功すれば true, 失敗すれば false.
   */
-  bool ggSaveTga(const char *name, const void *buffer,
+  extern void ggSaveTga(const char *name, const void *buffer,
     unsigned int width, unsigned int height, unsigned int depth);
 
   /*!
@@ -1357,7 +1357,7 @@ namespace gg
   **   \param name 保存するファイル名.
   **   \return 保存に成功すれば true, 失敗すれば false.
   */
-  extern bool ggSaveColor(const char *name);
+  extern void ggSaveColor(const char *name);
 
   /*!
   ** \brief デプスバッファの内容を TGA ファイルに保存する.
@@ -1365,7 +1365,7 @@ namespace gg
   **   \param name 保存するファイル名.
   **   \return 保存に成功すれば true, 失敗すれば false.
   */
-  extern bool ggSaveDepth(const char *name);
+  extern void ggSaveDepth(const char *name);
 
   /*!
   ** \brief TGA ファイル (8/16/24/32bit) をメモリに読み込む.

@@ -2655,9 +2655,8 @@ void gg::_ggFBOError(const char *name, unsigned int line)
 **   width 画像の横の画素数
 **   height 画像の縦の画素数
 **   depth 画像の 1 画素のバイト数
-**   戻り値 保存に成功したら true
 */
-bool gg::ggSaveTga(const char *name, const void *buffer,
+void gg::ggSaveTga(const char *name, const void *buffer,
   unsigned int width, unsigned int height, unsigned int depth)
 {
   // ファイルを開く
@@ -2731,16 +2730,14 @@ bool gg::ggSaveTga(const char *name, const void *buffer,
 
   // ファイルを閉じる
   file.close();
-  return true;
 }
 
 /*
 ** カラーバッファの内容を TGA ファイルに保存する
 **
 **   name 保存するファイル名
-**   戻り値 保存に成功したら true
 */
-bool gg::ggSaveColor(const char *name)
+void gg::ggSaveColor(const char *name)
 {
   // 現在のビューポートのサイズを得る
   GLint viewport[4];
@@ -2757,7 +2754,7 @@ bool gg::ggSaveColor(const char *name)
     GL_BGR, GL_UNSIGNED_BYTE, buffer.data());
 
   // 読み込んだデータをファイルに書き込む
-  return ggSaveTga(name, buffer.data(), viewport[2], viewport[3], 3);
+  ggSaveTga(name, buffer.data(), viewport[2], viewport[3], 3);
 }
 
 /*
@@ -2766,7 +2763,7 @@ bool gg::ggSaveColor(const char *name)
 **   name 保存するファイル名
 **   戻り値 保存に成功したら true
 */
-bool gg::ggSaveDepth(const char *name)
+void gg::ggSaveDepth(const char *name)
 {
   // 現在のビューポートのサイズを得る
   GLint viewport[4];
@@ -2783,7 +2780,7 @@ bool gg::ggSaveDepth(const char *name)
     GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, buffer.data());
 
   // 読み込んだデータをファイルに書き込む
-  return ggSaveTga(name, buffer.data(), viewport[2], viewport[3], 1);
+  ggSaveTga(name, buffer.data(), viewport[2], viewport[3], 1);
 }
 
 /*
@@ -2794,7 +2791,6 @@ bool gg::ggSaveDepth(const char *name)
 **   pHeight 読み込んだファイルの縦の画素数の格納先のポインタ (nullptr なら格納しない)
 **   pFormat 読み込んだファイルのフォーマットの格納先のポインタ (nullptr なら格納しない)
 **   image 読み込んだ画像を格納する vector
-**   戻り値 読み込み成功したら true
 */
 void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWidth, GLsizei *pHeight, GLenum *pFormat)
 {
