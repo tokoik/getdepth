@@ -52,5 +52,5 @@ public:
   const std::vector<GLuint> &execute(GLuint count, const GLuint *sources, const GLenum *format = nullptr, GLuint local_size_x = 1, GLuint local_size_y = 1) const;
 };
 
-typedef Compute Calculate;
+using Calculate = Compute;
 #define SHADER_EXT ".comp"

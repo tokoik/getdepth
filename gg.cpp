@@ -3179,10 +3179,10 @@ void gg::GgNormalTexture::load(const char *name, float nz, GLenum internal)
 namespace gg
 {
   // GLfloat 型の 2 要素のベクトル
-  typedef std::array<GLfloat, 2> vec2;
+  using  vec2 = std::array<GLfloat, 2>;
 
   // GLfloat 型の 3 要素のベクトル
-  typedef std::array<GLfloat, 3> vec3;
+  using vec3 = std::array<GLfloat, 3>;
 
   // 三角形データ
   struct fidx

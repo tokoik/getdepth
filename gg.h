@@ -1301,7 +1301,7 @@ namespace gg
   /*!
   ** \brief 4 要素の単精度実数の配列
   */
-  typedef std::array<GLfloat, 4> GgVector;
+  using GgVector = std::array<GLfloat, 4>;
 
   /*!
   ** \brief ゲームグラフィックス特論の都合にもとづく初期化を行う.

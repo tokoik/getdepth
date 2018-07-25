@@ -67,5 +67,5 @@ public:
   const std::vector<GLuint> &execute(GLuint count, const GLuint *sources, ...) const;
 };
 
-typedef Fragment Calculate;
+using Calculate = Fragment;
 #define SHADER_EXT ".frag"
