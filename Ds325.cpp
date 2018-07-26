@@ -73,7 +73,7 @@ Ds325::Ds325(
   makeTexture();
 
   // データ転送用のメモリを確保する
-  depth = new GLfloat[depthCount];
+  depth = new GLushort[depthCount];
   point = new GLfloat[depthCount][3];
   uvmap = new GLfloat[depthCount][2];
   color = new GLubyte[colorCount][3];
@@ -296,12 +296,14 @@ void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData da
   // データ転送
   for (int i = 0; i < sensor->depthCount; ++i)
   {
+    // その点のデプス値を取り出す
     const int u(i % sensor->depthWidth);
     const int v(i / sensor->depthWidth);
     const int j((v + 1) * sensor->depthWidth - u - 1);
     const int d(data.depthMap[i]);
 
-    sensor->depth[j] = d > 32000 ? -maxDepth : -0.001f * static_cast<GLfloat>(d);
+    // デプス値を (計測不能点は maxDepth にして) 転送する
+    if ((sensor->depth[j] = d) > 32000) sensor->depth[j] = maxDepth;
   }
 
   // デプスデータが更新されたことを記録する
@@ -432,7 +434,7 @@ GLuint Ds325::getDepth()
     glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
 
     // デプスデータをテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_FLOAT, depthPtr);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depthPtr);
 
     // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
     depthPtr = nullptr;
@@ -492,7 +494,7 @@ GLuint Ds325::getPoint()
       // 歪みを補正したポイントのスクリーン座標値
       const GLfloat x(dx / dq);
       const GLfloat y(dy / dq);
-      const GLfloat z(depthPtr[i]);
+      const GLfloat z(-0.001f * static_cast<GLfloat>(depthPtr[i]));
 
       // ポイントのカメラ座標を求める
       point[i][0] = x * z;
@@ -597,7 +599,7 @@ GLuint Ds325::getPosition()
   glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
   // テクスチャ座標をバッファオブジェクトに転送する
-  glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
 
   // カメラ座標をシェーダで算出する
   shader->use();
@@ -606,7 +608,7 @@ GLuint Ds325::getPosition()
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   glUniform3f(dkLoc, depthIntrinsics.k1, depthIntrinsics.k2, depthIntrinsics.k3);
   const GLuint depthTexture(getDepth());
-  const GLenum depthFormat(GL_R32F);
+  const GLenum depthFormat(GL_R16UI);
   return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
 }
 

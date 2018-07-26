@@ -4072,7 +4072,7 @@ GLuint gg::ggCreateComputeShader(const char *csrc, const char *ctext)
 */
 static bool readShaderSource(const char *name, std::vector<GLchar> &src)
 {
-  // ファイル名が nullptr ならそのまま戻る
+// ファイル名が nullptr ならそのまま戻る
   if (name == nullptr) return true;
 
   // ソースファイルを開く

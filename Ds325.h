@@ -131,7 +131,7 @@ class Ds325 : public DepthCamera
   IntrinsicParameters depthIntrinsics;
 
   // デプスデータ転送用のメモリ
-  GLfloat *depth, *depthPtr;
+  GLushort *depth, *depthPtr;
 
   // カメラ座標転送用のメモリ
   GLfloat (*point)[3];
@@ -183,14 +183,14 @@ public:
   virtual ~Ds325();
 
 #if DEPTHSENSE_MODEL == DS325
-  // 計測不能点のデフォルト距離
-  static constexpr GLfloat maxDepth = 3.0f;
+  // 計測不能点のデフォルト距離 (mm)
+  static constexpr GLushort maxDepth = 4000;
 
   // 疑似カラー処理の範囲
   static constexpr GLfloat range[2] = { 0.2f, 1.0f };
 #else
   // 計測不能点のデフォルト距離
-  static constexpr GLfloat maxDepth = 10.0f;
+  static constexpr GLushort maxDepth = 10000;
 
   // 疑似カラー処理の範囲
   static constexpr GLfloat range[2] = { 0.4f, 6.0f };

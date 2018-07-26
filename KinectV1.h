@@ -54,7 +54,7 @@ class KinectV1 : public DepthCamera
   const HANDLE nextDepthFrameEvent;
 
   // デプスデータの計測不能点を変換するために用いる一次メモリ
-  GLfloat *depth;
+  GLushort *depth;
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
   GLfloat (*position)[3];
@@ -85,8 +85,8 @@ public:
   // デストラクタ
   virtual ~KinectV1();
 
-  // 奥行きの最大値
-  static constexpr GLfloat maxDepth = 10.0f;
+  // 奥行きの最大値 (mm)
+  static constexpr GLushort maxDepth = 10000;
 
   // 疑似カラー処理の範囲
   static constexpr GLfloat range[2] = { 0.8f, 4.0f };

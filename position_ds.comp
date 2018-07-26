@@ -4,7 +4,7 @@
 layout(local_size_x = 16, local_size_y = 20) in;
 
 // 入力
-layout (binding = 0, r32f) readonly uniform image2D depth;
+layout (binding = 0, r16ui) readonly uniform uimage2D depth;
 
 // イメージのサイズ - 1
 const ivec2 ds = imageSize(depth) - 1;
@@ -17,7 +17,7 @@ uniform vec2 dc, df;
 uniform vec3 dk;
 
 // 分散
-uniform float variance = 0.1;
+uniform float variance = 100.0;
 
 // フィルタのサイズ
 const ivec2 filterSize = ivec2(5, 5);
@@ -43,11 +43,11 @@ const float columnWeight[filterSize.y] = { 0.135335283, 0.60653066, 1.0, 0.60653
 float base;
 
 // 重み付き画素値の合計と重みの合計を求める
-void f(inout vec2 csum, const in float c, const in float w)
+vec2 f(const in float c, const in float w)
 {
   const float d = c - base;
   const float e = exp(-0.5 * d * d / variance) * w;
-  csum += vec2(c * e, e);
+  return vec2(c * e, e);
 }
 
 // インデックスがイメージの領域から外れないようにする
@@ -84,7 +84,7 @@ void main(void)
     if (x + i < neighborhoodSize.x)
     {
       const ivec2 read_at = clampLocation(pixel_xy + ivec2(i - filterOffset.x, 0));
-      pixel[y][x + i] = imageLoad(depth, read_at).r;
+      pixel[y][x + i] = float(imageLoad(depth, read_at).r);
     }
   }
 
@@ -99,7 +99,7 @@ void main(void)
 
   for(int i = 0; i < filterSize.x; ++i)
   {
-    f(csum, pixel[y][x + i], rowWeight[i]);
+    csum += f(pixel[y][x + i], rowWeight[i]);
   }
 
   // デプス値を取り出す
@@ -115,11 +115,11 @@ void main(void)
 
     for (int j = 0; j < filterSize.y; ++j)
     {
-      f(csum, row[y + j][x], columnWeight[j]);
+      csum += f(row[y + j][x], columnWeight[j]);
     }
 
     // デプス値を取り出す
-    const float z = csum.r / csum.g;
+    const float z = -0.001 * csum.r / csum.g;
 
     // 結果を保存する画素位置を求める
     const ivec2 pixel_xy = tile_xy * tileSize + thread_xy; 

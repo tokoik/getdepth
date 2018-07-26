@@ -98,7 +98,7 @@ KinectV2::KinectV2()
   makeTexture();
 
   // デプスデータの計測不能点を変換するために用いる一次メモリを確保する
-  depth = new GLfloat[depthCount];
+  depth = new GLushort[depthCount];
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
   point = new GLfloat[depthCount][3];
@@ -175,12 +175,12 @@ GLuint KinectV2::getDepth()
       // その点のデプス値を取り出す
       UINT16 d(depthBuffer[i]);
 
-      // デプス値の単位をメートルに換算して (計測不能点は maxDepth にして) 転送する
-      depth[i] = d == 0 ? -maxDepth : -0.001f * static_cast<GLfloat>(d);
+      // デプス値を (計測不能点は maxDepth にして) 転送する
+      if ((depth[i] = d) == 0) depth[i] = maxDepth;
     }
 
     // デプスデータをテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED, GL_FLOAT, depth);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depth);
 
     // カメラ座標への変換テーブルを得る
     UINT32 entry;
@@ -233,8 +233,8 @@ GLuint KinectV2::getPoint()
       // その点のデプス値を得る
       const UINT16 d(depthBuffer[i]);
 
-      // デプス値の単位をメートルに換算する (計測不能点は maxDepth にする)
-      const GLfloat z(d == 0 ? -maxDepth : -0.001f * static_cast<GLfloat>(d));
+      // デプス値の単位をメートルに換算する (計測不能点は maxDepth / 1000 にする)
+      const GLfloat z(-0.001f * static_cast<GLfloat>(d > 0 ? d : maxDepth));
 
       // その点のスクリーン上の位置を求める
       const GLfloat x(table[i].X);
@@ -265,7 +265,7 @@ GLuint KinectV2::getPosition()
   shader->use();
   glUniform1f(varianceLoc, variance);
   const GLuint texture[] = { getDepth(), mapperTexture };
-  const GLenum format[] = { GL_R32F, GL_RG32F };
+  const GLenum format[] = { GL_R16UI, GL_RG32F };
   return shader->execute(2, texture, format, 16, 16)[0];
 }
 

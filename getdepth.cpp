@@ -63,8 +63,8 @@ constexpr GgSimpleShader::Material materialData =
 // 背景色
 constexpr GLfloat background[] = { 0.2f, 0.3f, 0.4f, 0.0f };
 
-// バイラテラルフィルタのデフォルトの分散
-constexpr GLfloat variance(0.1f);
+// バイラテラルフィルタのデフォルトの標準偏差
+constexpr GLfloat deviation(100.0f);
 
 //
 // アプリケーションの実行
@@ -149,7 +149,8 @@ void GgApplication::run()
 #endif
 
     // 頂点位置の計算
-    sensor.setVariance(variance + static_cast<GLfloat>(window.getArrowY()) * 0.01f);
+    const GLfloat sd(deviation + static_cast<GLfloat>(window.getArrowY()));
+    sensor.setVariance(sd * sd);
 #if USE_SHADER
     const GLuint positionTexture(sensor.getPosition());
 #else

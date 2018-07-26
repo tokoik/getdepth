@@ -34,7 +34,7 @@ class KinectV2 : public DepthCamera
   IDepthFrameReader *depthReader;
 
   // デプスデータの計測不能点を変換するために用いる一次メモリ
-  GLfloat *depth;
+  GLushort *depth;
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
   GLfloat (*point)[3];
@@ -63,7 +63,7 @@ public:
   virtual ~KinectV2();
 
   // 奥行きの最大値
-  static constexpr GLfloat maxDepth = 10.0f;
+  static constexpr GLushort maxDepth = 10000;
 
   // 疑似カラー処理の範囲
   static constexpr GLfloat range[2] = { 0.5f, 8.0f };
