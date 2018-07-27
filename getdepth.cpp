@@ -83,15 +83,6 @@ void GgApplication::run()
   int width, height;
   sensor.getDepthResolution(&width, &height);
 
-  // OpenCV によるビデオキャプチャを初期化する
-  cv::VideoCapture camera(CAPTURE_DEVICE);
-  if (!camera.isOpened()) throw std::runtime_error("ビデオカメラが見つかりません");
-
-  // カメラの初期設定
-  camera.grab();
-  const GLsizei capture_env_width(GLsizei(camera.get(CV_CAP_PROP_FRAME_WIDTH)));
-  const GLsizei capture_env_height(GLsizei(camera.get(CV_CAP_PROP_FRAME_HEIGHT)));
-
   // 描画に使うメッシュ
   const Mesh mesh(width, height, sensor.getCoordBuffer());
 
@@ -109,6 +100,15 @@ void GgApplication::run()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  // 背景画像のキャプチャに使う OpenCV のビデオキャプチャを初期化する
+  cv::VideoCapture camera(CAPTURE_DEVICE);
+  if (!camera.isOpened()) throw std::runtime_error("ビデオカメラが見つかりません");
+
+  // カメラの初期設定
+  camera.grab();
+  const GLsizei capture_env_width(GLsizei(camera.get(CV_CAP_PROP_FRAME_WIDTH)));
+  const GLsizei capture_env_height(GLsizei(camera.get(CV_CAP_PROP_FRAME_HEIGHT)));
 #else
   const GgSimpleShader simple("simple.vert", "simple.frag");
 #endif

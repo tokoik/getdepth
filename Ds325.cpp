@@ -455,10 +455,6 @@ GLuint Ds325::getPoint()
   // デプスデータが更新されており DepthSense がデプスデータの取得中でなければ
   if (depthPtr && depthMutex.try_lock())
   {
-    // デプスカメラの解像度
-    const int &dw(depthIntrinsics.width);
-    const int &dh(depthIntrinsics.height);
-
     // デプスカメラの内部パラメータ
     const float &dcx(depthIntrinsics.cx);
     const float &dcy(depthIntrinsics.cy);
@@ -480,8 +476,8 @@ GLuint Ds325::getPoint()
     for (int i = 0; i < depthCount; ++i)
     {
       // デプスマップの画素位置
-      const int u(i % dw);
-      const int v(i / dw);
+      const int u(i % depthWidth);
+      const int v(i / depthWidth);
 
       // 画素位置からデプスマップのスクリーン座標を求める
       const GLfloat dx((static_cast<GLfloat>(u) - dcx + 0.5f) / dfx);
@@ -510,7 +506,7 @@ GLuint Ds325::getPoint()
       const GLfloat cy(y / cq);
 
       // テクスチャ座標のインデックス
-      const int j((dh - v) * dw - u - 1);
+      const int j((depthHeight - v) * depthWidth - u - 1);
 
       // 歪みを補正したポイントのテクスチャ座標値
       uvmap[j][0] = ccx + cx * cfx;
@@ -539,10 +535,6 @@ GLuint Ds325::getPoint()
 // カメラ座標を算出する
 GLuint Ds325::getPosition()
 {
-  // デプスカメラの解像度
-  const int &dw(depthIntrinsics.width);
-  const int &dh(depthIntrinsics.height);
-
   // デプスカメラの内部パラメータ
   const float &dcx(depthIntrinsics.cx);
   const float &dcy(depthIntrinsics.cy);
@@ -564,8 +556,8 @@ GLuint Ds325::getPosition()
   for (int i = 0; i < depthCount; ++i)
   {
     // デプスマップの画素位置
-    const int u(i % dw);
-    const int v(i / dw);
+    const int u(i % depthWidth);
+    const int v(i / depthWidth);
 
     // 画素位置からデプスマップのスクリーン座標を求める
     const GLfloat dx((static_cast<GLfloat>(u) - dcx + 0.5f) / dfx);
@@ -588,7 +580,7 @@ GLuint Ds325::getPosition()
     const GLfloat cy(y / cq);
 
     // テクスチャ座標のインデックス
-    const int j((dh - v) * dw - u - 1);
+    const int j((depthHeight - v) * depthWidth - u - 1);
 
     // 歪みを補正したポイントのテクスチャ座標値
     uvmap[j][0] = ccx + cx * cfx;
