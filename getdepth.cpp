@@ -86,10 +86,15 @@ void GgApplication::run()
   // 描画に使うメッシュ
   const Mesh mesh(width, height, sensor.getCoordBuffer());
 
-  // 描画用のシェーダ
 #if USE_REFRACTION
-  const GgSimpleShader simple("refraction.vert", "refraction.frag");
-  const GLint sizeLoc(glGetUniformLocation(simple.get(), "size"));
+  // 背景画像のキャプチャに使う OpenCV のビデオキャプチャを初期化する
+  cv::VideoCapture camera(CAPTURE_DEVICE);
+  if (!camera.isOpened()) throw std::runtime_error("ビデオカメラが見つかりません");
+
+  // カメラの初期設定
+  camera.grab();
+  const GLsizei capture_env_width(GLsizei(camera.get(CV_CAP_PROP_FRAME_WIDTH)));
+  const GLsizei capture_env_height(GLsizei(camera.get(CV_CAP_PROP_FRAME_HEIGHT)));
 
   // 背景画像のテクスチャ
   GLuint bmap;
@@ -101,15 +106,11 @@ void GgApplication::run()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-  // 背景画像のキャプチャに使う OpenCV のビデオキャプチャを初期化する
-  cv::VideoCapture camera(CAPTURE_DEVICE);
-  if (!camera.isOpened()) throw std::runtime_error("ビデオカメラが見つかりません");
-
-  // カメラの初期設定
-  camera.grab();
-  const GLsizei capture_env_width(GLsizei(camera.get(CV_CAP_PROP_FRAME_WIDTH)));
-  const GLsizei capture_env_height(GLsizei(camera.get(CV_CAP_PROP_FRAME_HEIGHT)));
+  // 透明人間用のシェーダ
+  const GgSimpleShader simple("refraction.vert", "refraction.frag");
+  const GLint sizeLoc(glGetUniformLocation(simple.get(), "size"));
 #else
+  // 描画用のシェーダ
   const GgSimpleShader simple("simple.vert", "simple.frag");
 #endif
 
