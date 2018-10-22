@@ -90,7 +90,7 @@ inline int Compare(const ovrGraphicsLuid& lhs, const ovrGraphicsLuid& rhs)
 struct GgApplication
 {
   // コンストラクタ
-  GgApplication(int major = 3, int minor = 2)
+  GgApplication(int major = 4, int minor = 1)
   {
     // GLFW を初期化する
     if (glfwInit() == GL_FALSE) throw std::runtime_error("Can't initialize GLFW");

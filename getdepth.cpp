@@ -25,8 +25,9 @@
 
 // センサ関連の処理
 //#include "KinectV1.h"
-#include "KinectV2.h"
-//#include "Ds325.h"
+//#include "KinectV2.h"
+#include "Ds325.h"
+//#include "Rs400.h"
 
 // OpenCV によるビデオキャプチャに使うカメラ
 #define CAPTURE_DEVICE 1

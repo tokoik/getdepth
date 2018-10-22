@@ -2655,15 +2655,16 @@ void gg::_ggFBOError(const char *name, unsigned int line)
 **   width 画像の横の画素数
 **   height 画像の縦の画素数
 **   depth 画像の 1 画素のバイト数
+**   戻り値 保存に成功すれば true, 失敗すれば false
 */
-void gg::ggSaveTga(const char *name, const void *buffer,
+bool gg::ggSaveTga(const char *name, const void *buffer,
   unsigned int width, unsigned int height, unsigned int depth)
 {
   // ファイルを開く
   std::ofstream file(name, std::ios::binary);
 
   // ファイルが開けなかったら戻る
-  if (!file) throw std::runtime_error("TGA ファイルが作成できませんでした");
+  if (!file) return false;
 
   // 画像のヘッダ
   const unsigned char type(depth == 0 ? 0 : depth < 3 ? 3 : 2);
@@ -2693,7 +2694,7 @@ void gg::ggSaveTga(const char *name, const void *buffer,
   if (file.bad())
   {
     file.close();
-    throw std::runtime_error("TGA ファイルのヘッダが書き込めませんでした");
+    return false;
   }
 
   // データを書き込む
@@ -2725,19 +2726,21 @@ void gg::ggSaveTga(const char *name, const void *buffer,
   if (file.bad())
   {
     file.close();
-    throw std::runtime_error("TGA ファイルに画像データが書き込めませんでした");
+    return false;
   }
 
   // ファイルを閉じる
   file.close();
+  return true;
 }
 
 /*
 ** カラーバッファの内容を TGA ファイルに保存する
 **
 **   name 保存するファイル名
+**   戻り値 保存に成功すれば true, 失敗すれば false
 */
-void gg::ggSaveColor(const char *name)
+bool gg::ggSaveColor(const char *name)
 {
   // 現在のビューポートのサイズを得る
   GLint viewport[4];
@@ -2754,16 +2757,16 @@ void gg::ggSaveColor(const char *name)
     GL_BGR, GL_UNSIGNED_BYTE, buffer.data());
 
   // 読み込んだデータをファイルに書き込む
-  ggSaveTga(name, buffer.data(), viewport[2], viewport[3], 3);
+  return ggSaveTga(name, buffer.data(), viewport[2], viewport[3], 3);
 }
 
 /*
 ** デプスバッファの内容を TGA ファイルに保存する
 **
 **   name 保存するファイル名
-**   戻り値 保存に成功したら true
+**   戻り値 保存に成功すれば true, 失敗すれば false
 */
-void gg::ggSaveDepth(const char *name)
+bool gg::ggSaveDepth(const char *name)
 {
   // 現在のビューポートのサイズを得る
   GLint viewport[4];
@@ -2780,7 +2783,7 @@ void gg::ggSaveDepth(const char *name)
     GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, buffer.data());
 
   // 読み込んだデータをファイルに書き込む
-  ggSaveTga(name, buffer.data(), viewport[2], viewport[3], 1);
+  return ggSaveTga(name, buffer.data(), viewport[2], viewport[3], 1);
 }
 
 /*
@@ -2791,14 +2794,15 @@ void gg::ggSaveDepth(const char *name)
 **   pHeight 読み込んだファイルの縦の画素数の格納先のポインタ (nullptr なら格納しない)
 **   pFormat 読み込んだファイルのフォーマットの格納先のポインタ (nullptr なら格納しない)
 **   image 読み込んだ画像を格納する vector
+**   戻り値 読み込みに成功すれば true, 失敗すれば false
 */
-void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWidth, GLsizei *pHeight, GLenum *pFormat)
+bool gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWidth, GLsizei *pHeight, GLenum *pFormat)
 {
   // ファイルを開く
   std::ifstream file(name, std::ios::binary);
 
   // ファイルが開けなかったら戻る
-  if (!file) throw std::runtime_error("TGA ファイルが開けませんでした");
+  if (!file) return false;
 
   // ヘッダを読み込む
   unsigned char header[18];
@@ -2808,7 +2812,7 @@ void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWi
   if (file.bad())
   {
     file.close();
-    throw std::runtime_error("TGA ファイルのヘッダが読み込めませんでした");
+    return false;
   }
 
   // 深度
@@ -2830,7 +2834,7 @@ void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWi
   default:
     // 取り扱えないフォーマットだったら戻る
     file.close();
-    throw std::runtime_error("ファイルが取り扱うことのできないフォーマットでした");
+    return false;
   }
 
   // 画像の縦横の画素数
@@ -2839,7 +2843,7 @@ void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWi
 
   // データサイズ
   const int size(*pWidth * *pHeight * depth);
-  if (size < 2) throw std::runtime_error("TGA ファイルのサイズが小さすぎます");
+  if (size < 2) return false;
 
   // 読み込みに使うメモリを確保する
   image.resize(size);
@@ -2880,8 +2884,16 @@ void gg::ggReadImage(const char *name, std::vector<GLubyte> &image, GLsizei *pWi
     file.read(reinterpret_cast<char *>(image.data()), size);
   }
 
+  // 読み込みに失敗したら戻る
+  if (file.bad())
+  {
+    file.close();
+    return false;
+  }
+
   // ファイルを閉じる
   file.close();
+  return true;
 }
 
 /*
@@ -5379,6 +5391,29 @@ void gg::GgSimpleShader::LightBuffer::loadLightPosition(GLfloat x, GLfloat y, GL
     light->position[1] = y;
     light->position[2] = z;
     light->position[3] = w;
+  }
+  unmap();
+}
+
+/*
+** 三角形に単純な陰影付けを行うシェーダが参照する光源データ：光源の位置を設定する
+**
+**   position 光源の位置
+**   first 値を設定する光源データの最初の番号, デフォルトは 0
+**   count 値を設定する光源データの数, デフォルトは 1
+*/
+void gg::GgSimpleShader::LightBuffer::loadLightPosition(const GgVector &position,
+  GLint first, GLsizei count) const
+{
+  // データを格納するバッファオブジェクトの先頭のポインタ
+  char *const start(static_cast<char *>(map(first, count)));
+  for (GLsizei i = 0; i < count; ++i)
+  {
+    // バッファオブジェクトの i 番目のブロックのポインタ
+    Light *const light(reinterpret_cast<Light *>(start + getStride() * i));
+
+    // 光源の位置を設定する
+    light->position = position;
   }
   unmap();
 }
