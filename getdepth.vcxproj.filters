@@ -51,6 +51,9 @@
     <ClInclude Include="Fragment.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Rs400.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DepthCamera.cpp">
@@ -87,6 +90,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Fragment.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Rs400.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

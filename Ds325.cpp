@@ -641,7 +641,7 @@ std::thread Ds325::worker;
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> Ds325::shader(nullptr);
 
-//バイラテラルフィルタの分散の uniform 変数 variance の場所
+// バイラテラルフィルタの分散の uniform 変数 variance の場所
 GLint Ds325::varianceLoc;
 
 // カメラパラメータの uniform 変数の場所

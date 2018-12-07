@@ -315,7 +315,7 @@ int KinectV1::activated(0);
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> KinectV1::shader(nullptr);
 
-//バイラテラルフィルタの分散の uniform 変数 variance の場所
+// バイラテラルフィルタの分散の uniform 変数 variance の場所
 GLint KinectV1::varianceLoc;
 
 // スクリーン座標からカメラ座標に変換する係数の uniform 変数 scale の場所
