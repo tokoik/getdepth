@@ -62,20 +62,26 @@ class Rs400 : public DepthCamera
 	// バイラテラルフィルタの分散の uniform 変数 variance の場所
 	static GLint varianceLoc;
 
-	// Helper struct per pipeline
-	struct view_port
-	{
-		std::map<int, rs2::frame> frames_per_stream;
-		rs2::colorizer colorize_frame;
-		rs2::pipeline pipe;
-		rs2::pipeline_profile profile;
-	};
+	// デバイスの mutex
+	std::mutex deviceMutex;
 
 	// RealSense のデバイスリスト
-	std::map<std::string, view_port> devices;
+	static std::map<std::string, Rs400 *> devices;
 
-	// RealSense のコンテキスト
-	static rs2::context context;
+	// RealSense の設定情報
+	rs2::config conf;
+
+	// RealSense のパイプライン
+	rs2::pipeline pipe;
+
+	// RealSense のパイプラインのプロファイル
+	rs2::pipeline_profile profile;
+
+	// ストームごとのフレーム数
+	std::map<int, rs2::frame> frames_per_stream;
+
+	// カラー化されたフレーム
+	rs2::colorizer colorize_frame;
 
 	// RealSense から取り出したフレーム
 	rs2::frameset frames;
@@ -86,8 +92,21 @@ class Rs400 : public DepthCamera
 	// We want the points object to be persistent so we can display the last cloud when a frame drops
 	rs2::points points;
 
-	// Declare RealSense pipeline, encapsulating the actual device and sensors
-	rs2::pipeline pipe;
+	// RealSense を有効にする
+	void enable_device(rs2::device dev);
+
+	// RealSense を無効にする
+	void remove_devices(const rs2::event_information& info);
+
+	// 接続されている RealSense の数を調べる
+	size_t device_count();
+
+	// RealSense のストリーム数を調べる
+	int stream_count();
+
+	// RealSense からフレームを取り出す
+	void poll_frames();
+
 
 public:
 

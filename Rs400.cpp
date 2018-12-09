@@ -16,38 +16,36 @@
 // コンストラクタ
 Rs400::Rs400()
 {
+	// RealSense のコンテキスト
+	static std::unique_ptr<rs2::context> context(nullptr);
+
 	// 最初のオブジェクトの時だけ
-	// 
-	context.set_devices_changed_callback([&](rs2::event_information& info)
+	if (!context)
 	{
-		std::lock_guard<std::mutex> lock(_mutex);
-		// Go over the list of devices and check if it was disconnected
-		auto itr = devices.begin();
-		while (itr != devices.end())
-		{
-			if (info.was_removed(itr->second.profile.get_device()))
-			{
-				itr = devices.erase(itr);
-			}
-			else
-			{
-				++itr;
-			}
-		}
+		// コンテキストを作成して
+		context.reset(new rs2::context);
 
-		connected_devices.remove_devices(info);
-		for (auto&& dev : info.get_new_devices())
+		// デバイスが変更されたときに呼び出すコールバック関数を指定する
+		context->set_devices_changed_callback([&](rs2::event_information &info)
 		{
-			connected_devices.enable_device(dev);
-		}
-	});
+			// 取り外されたデバイスがあればそれを削除する
+			remove_devices(info);
 
-  // スレッドが走っていなかったら
-  if (!worker.joinable())
-  {
-		// Start streaming with default recommended configuration
-		pipe.start();
-  }
+			// すべての新しく取り付けられたデバイスについて
+			for (auto &&device : info.get_new_devices())
+			{
+				// それを有効にする
+				enable_device(device);
+			}
+		});
+
+		// 最初からつながってるすべてのデバイスについて
+		for (auto &&dev : context->query_devices())
+		{
+			// それを有効にする
+			enable_device(dev);
+		}
+	}
 
   // DepthSense の使用台数が接続台数に達していれば戻る
   if (++activated > connected)
@@ -85,6 +83,126 @@ Rs400::~Rs400()
     delete[] uvmap;
     delete[] color;
   }
+}
+
+// RealSense を有効にする
+void Rs400::enable_device(rs2::device dev)
+{
+	// RealSense のシリアル番号を調べる
+	std::string serial_number(dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
+
+	// デバイスリストをロックする
+	std::lock_guard<std::mutex> lock(deviceMutex);
+
+	// デバイスリストのなかにデバイスがあるか調べる
+	if (devices.find(serial_number) != devices.end())
+	{
+		// 既にデバイスリストの中にある
+		return;
+	}
+
+	// RealSense 以外のカメラかどうか調べる
+	const std::string platform_camera_name = "Platform Camera";
+	if (platform_camera_name == dev.get_info(RS2_CAMERA_INFO_NAME))
+	{
+		// RealSense ではない
+		return;
+	}
+
+	// 指定したシリアル番号の RealSense をパイプラインで使用できるようにする
+	conf.enable_device(serial_number);
+
+	// パイプラインをその設定で開始する
+	profile = pipe.start(conf);
+
+	// このデバイスを登録する
+	devices.emplace(serial_number, this);
+}
+
+// RealSense を無効にする
+void Rs400::remove_devices(const rs2::event_information& info)
+{
+	// デバイスリストをロックする
+	std::lock_guard<std::mutex> lock(deviceMutex);
+
+	// デバイスリストのすべてのデバイスについて
+	for (auto device = devices.begin(); device != devices.end();)
+	{
+		// そのデバイスが削除されていたら
+		if (info.was_removed(device->second->profile.get_device()))
+		{
+			// そのデバイスをデバイスリストから削除して先に進む
+			device = devices.erase(device);
+		}
+		else
+		{
+			// そのデバイスをデバイスとリストに残して先に進む
+			++device;
+		}
+	}
+}
+
+// 接続されている RealSense の数を調べる
+size_t Rs400::device_count()
+{
+	// デバイスリストをロックする
+	std::lock_guard<std::mutex> lock(deviceMutex);
+
+	// デバイスリストの数を返す
+	return devices.size();
+}
+
+// RealSense のストリーム数を調べる
+int Rs400::stream_count()
+{
+	// デバイスリストをロックする
+	std::lock_guard<std::mutex> lock(deviceMutex);
+
+	// ストリームの数
+	int count(0);
+
+	// すべてのデバイスについて
+	for (auto &&sn_to_dev : devices)
+	{
+		// デバイスごとのストームについて
+		for (auto &&stream : sn_to_dev.second->frames_per_stream)
+		{
+			// 存在するストリームの数を数える
+			if (stream.second) count++;
+		}
+	}
+
+	// ストリームの数を返す
+	return count;
+}
+
+// RealSense からフレームを取り出す
+void Rs400::poll_frames()
+{
+	// デバイスリストをロックする
+	std::lock_guard<std::mutex> lock(deviceMutex);
+
+	// すべてのデバイスについて
+	for (auto &&view : devices)
+	{
+		// そのパイプラインからフレームセット全体を取り出す
+		rs2::frameset frameset;
+		if (view.second->pipe.poll_for_frames(&frameset))
+		{
+			// フレームセットの個々のフレームについて
+			for (int i = 0; i < frameset.size(); ++i)
+			{
+				// 一つのフレームを取り出す
+				rs2::frame new_frame = frameset[i];
+
+				// ストリームの番号を求める
+				int stream_id = new_frame.get_profile().unique_id();
+
+				// そのストリームのフレームを更新する
+				view.second->frames_per_stream[stream_id] = view.second->colorize_frame.process(new_frame);
+			}
+		}
+	}
 }
 
 // デプスデータを取得する
@@ -195,9 +313,6 @@ int Rs400::connected(-1);
 // 使用しているセンサの数
 int Rs400::activated(0);
 
-// RealSense のコンテキスト
-rs2::context Rs400::context;
-
 // データ取得用のスレッド
 std::thread Rs400::worker;
 
@@ -206,5 +321,8 @@ std::unique_ptr<Calculate> Rs400::shader(nullptr);
 
 // バイラテラルフィルタの分散の uniform 変数 variance の場所
 GLint Rs400::varianceLoc;
+
+// RealSense のデバイスリスト
+std::map<std::string, Rs400 *> Rs400::devices;
 
 #endif
