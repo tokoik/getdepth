@@ -132,7 +132,7 @@ void GgApplication::run()
   glEnable(GL_CULL_FACE);
 
   // ウィンドウが開いている間くり返し描画する
-  while (!window.shouldClose())
+  while (window)
   {
 #if USE_REFRACTION
     // 画像のキャプチャ

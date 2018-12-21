@@ -26,8 +26,7 @@ catch (const std::exception &e)
 {
   // エラーメッセージを表示する
 #if defined(_WIN32)
-  const CStringW message(e.what());
-  MessageBox(NULL, LPCWSTR(message), TEXT("ゲームグラフィックス特論"), MB_OK | MB_ICONERROR);
+  MessageBox(NULL, CString(e.what()), TEXT("ゲームグラフィックス特論"), MB_OK | MB_ICONERROR);
 #else
   std::cerr << e.what() << "\n\n[Type enter key] ";
   std::cin.get();
