@@ -156,6 +156,8 @@
     <None Include="normal.frag" />
     <None Include="position_ds.comp" />
     <None Include="position_ds.frag" />
+    <None Include="position_rs.comp" />
+    <None Include="position_rs.frag" />
     <None Include="position_v1.comp" />
     <None Include="position_v1.frag" />
     <None Include="position_v2.comp" />

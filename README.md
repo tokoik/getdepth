@@ -1,7 +1,7 @@
 getdepth
 ========
 
-Kinect v1, Kinect v2, DepthSense DS325/311 からカラーとデプスを取得するサンプル
+Kinect v1, Kinect v2, RealSense DS325/311 からカラーとデプスを取得するサンプル
 
     Copyright (c) 2011, 2012, 2013, 2014, 2015 Kohe Tokoi. All Rights Reserved.
     
@@ -27,8 +27,8 @@ Kinect v1, Kinect v2, DepthSense DS325/311 からカラーとデプスを取得�
 * KinectV1 クラスは Kinect for Windows SDK 1.8 を使います。
 * v2 ブランチにある KinectV2 (KinectV2.h) クラスは Kinect (v2) からカラーとデプスを取得します。
 * KinectV2 クラスは Kinect for Windows SDK 2.0 を使います。
-* ds325 ブランチにある Ds325 (Ds325.h) クラスは DepthSense Ds325/311 からカラーとデプスを取得します。
-* Ds325 クラスは DepthSense SDK 1.9 を使います。
+* ds325 ブランチにある Ds325 (Ds325.h) クラスは RealSense Ds325/311 からカラーとデプスを取得します。
+* Ds325 クラスは RealSense SDK 1.9 を使います。
 * 取得したカラーとデプスは OpenGL のテクスチャに格納します。
 * カラーのサンプリングに使うテクスチャ座標も計算します。
 
@@ -50,8 +50,8 @@ Kinect v1, Kinect v2, DepthSense DS325/311 からカラーとデプスを取得�
 
 * Ds325 クラスのオブジェクトを作ってください。
 * 一応、マルチセンサに対応してみましたが、テストしていません。
-* getActivated() メソッドは使用されている DepthSense の数を返します。
-* これが 0 なら DepthSense の起動に失敗してます。
+* getActivated() メソッドは使用されている RealSense の数を返します。
+* これが 0 なら RealSense の起動に失敗してます。
 
 ### 共通の設定
 
@@ -70,7 +70,7 @@ Kinect v1, Kinect v2, DepthSense DS325/311 からカラーとデプスを取得�
 * NuiTransformDepthImageToSkeleton() 相当の計算を position.frag で行っています。
 * position.frag で作ったテクスチャから normal.frag を使って法線ベクトルを求めています。
 * Kinect V1 / V2 版では NuiTransformDepthImageToSkeleton() 相当の計算を position.frag で行い，それから normal.frag を使って法線ベクトルを求めています。
-* DepthSense 版では getPoint() で取得したテクスチャから normal.frag を使って法線ベクトルを求めています。
+* RealSense 版では getPoint() で取得したテクスチャから normal.frag を使って法線ベクトルを求めています。
 * この二つのテクスチャとカラーのテクスチャを使ってメッシュをレンダリングしています。
 * 頂点属性はテプスとカラーのテクスチャをサンプリングするテクスチャ座標だけを送っています。
 * simple.frag の main() の内容を変更してみてください。

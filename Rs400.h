@@ -15,7 +15,7 @@
 
 #if USE_REAL_SENSE
 
-// DepthSense 関連
+// RealSense 関連
 #include <librealsense2/rs.hpp>
 
 // 標準ライブラリ
@@ -29,38 +29,38 @@
 
 class Rs400 : public DepthCamera
 {
-  // 接続しているセンサの数
-  static int connected;
-
   // 使用しているセンサの数
   static int activated;
 
-  // データ取得用のスレッド
-  static std::thread worker;
-
-  // デプスノード用の mutex
-  std::mutex depthMutex;
-
 	// デプスデータ転送用のメモリ
-	GLushort *depth, *depthPtr;
+	GLushort *depth;
+
+	// 新着のデプスデータ
+	const GLushort *depthPtr;
 
 	// カメラ座標転送用のメモリ
-	GLfloat(*point)[3];
+	GLfloat (*point)[3];
 
 	// テクスチャ座標転送用のメモリ
-	GLfloat(*uvmap)[2];
-
-	// カラーノード用の mutex
-	std::mutex colorMutex;
+	const GLfloat (*uvmap)[2];
 
 	// カラーデータ転送用のメモリ
-	GLubyte(*color)[3], (*colorPtr)[3];
+	GLubyte (*color)[3];
+
+	// 新着のカラーデータ
+	const GLubyte (*colorPtr)[3];
 
 	// カメラ座標を計算するシェーダ
 	static std::unique_ptr<Calculate> shader;
 
 	// バイラテラルフィルタの分散の uniform 変数 variance の場所
 	static GLint varianceLoc;
+
+	// データ取得用のスレッド
+	std::thread worker;
+
+	// スレッドの継続フラグ
+	bool run;
 
 	// デバイスの mutex
 	std::mutex deviceMutex;
@@ -89,9 +89,6 @@ class Rs400 : public DepthCamera
 	// Declare pointcloud object, for calculating pointclouds and texture mappings
 	rs2::pointcloud pc;
 
-	// We want the points object to be persistent so we can display the last cloud when a frame drops
-	rs2::points points;
-
 	// RealSense を有効にする
 	void enable_device(rs2::device dev);
 
@@ -99,7 +96,7 @@ class Rs400 : public DepthCamera
 	void remove_devices(const rs2::event_information& info);
 
 	// 接続されている RealSense の数を調べる
-	size_t device_count();
+	int device_count();
 
 	// RealSense のストリーム数を調べる
 	int stream_count();

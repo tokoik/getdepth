@@ -26,9 +26,13 @@ Ds325::Ds325(
   : depth_format(depth_format)
   , depth_fps(depth_fps)
   , depth_mode(depth_mode)
+	, depth(nullptr)
+	, point(nullptr)
+	, uvmap(nullptr)
   , color_format(color_format)
   , color_fps(color_fps)
   , color_compression(color_compression)
+	, color(nullptr)
   , power_line_frequency(frequency)
 {
   // スレッドが走っていなかったら
@@ -514,7 +518,7 @@ GLuint Ds325::getPoint()
     }
 
     // カメラ座標をテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
 
     // テクスチャ座標のバッファオブジェクトを指定する
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);

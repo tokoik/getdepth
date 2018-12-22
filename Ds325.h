@@ -131,7 +131,10 @@ class Ds325 : public DepthCamera
   IntrinsicParameters depthIntrinsics;
 
   // デプスデータ転送用のメモリ
-  GLushort *depth, *depthPtr;
+	GLushort *depth;
+
+	// 新着のデプスデータ
+	const GLushort *depthPtr;
 
   // カメラ座標転送用のメモリ
   GLfloat (*point)[3];
@@ -155,7 +158,10 @@ class Ds325 : public DepthCamera
   IntrinsicParameters colorIntrinsics;
 
   // カラーデータ転送用のメモリ
-  GLubyte (*color)[3], (*colorPtr)[3];
+	GLubyte (*color)[3];
+
+	// 新着のカラーデータ
+	const GLubyte (*colorPtr)[3];
 
   // カメラ座標を計算するシェーダ
   static std::unique_ptr<Calculate> shader;

@@ -1,7 +1,7 @@
 ﻿#include "Rs400.h"
 
 //
-// DepthSense 関連の処理
+// RealSense 関連の処理
 //
 
 #if USE_REAL_SENSE
@@ -9,12 +9,55 @@
 // RealSense 関連
 #pragma comment (lib, "realsense2.lib")
 
+	// パイプラインの設定
+constexpr int depth_width = 640;		// depth_intr.width;
+constexpr int depth_height = 480;		// depth_intr.height;
+constexpr int depth_fps = 30;				// 30 or 60 due to resolution
+constexpr int color_width = 640;		// color_intr.width
+constexpr int color_height = 480;		// color_intr.height
+constexpr int color_fps = 30;				// 30 or 60
+
 // 標準ライブラリ
 #include <iostream>
 #include <climits>
+#include <cassert>
+
+#if defined(DEBUG)
+static void check_format(int format)
+{
+	switch (format)
+	{
+	case RS2_FORMAT_ANY: std::cout << "RS2_FORMAT_ANY\n"; break;
+	case RS2_FORMAT_Z16: std::cout << "RS2_FORMAT_Z16\n"; break;
+	case RS2_FORMAT_DISPARITY16: std::cout << "RS2_FORMAT_DISPARITY16\n"; break;
+	case RS2_FORMAT_XYZ32F: std::cout << "RS2_FORMAT_XYZ32F\n"; break;
+	case RS2_FORMAT_YUYV: std::cout << "RS2_FORMAT_YUYV\n"; break;
+	case RS2_FORMAT_RGB8: std::cout << "RS2_FORMAT_RGB8\n"; break;
+	case RS2_FORMAT_BGR8: std::cout << "RS2_FORMAT_BGR8\n"; break;
+	case RS2_FORMAT_RGBA8: std::cout << "RS2_FORMAT_RGBA8\n"; break;
+	case RS2_FORMAT_BGRA8: std::cout << "RS2_FORMAT_BGRA8\n"; break;
+	case RS2_FORMAT_Y8: std::cout << "RS2_FORMAT_Y8\n"; break;
+	case RS2_FORMAT_Y16: std::cout << "RS2_FORMAT_Y16\n"; break;
+	case RS2_FORMAT_RAW10: std::cout << "RS2_FORMAT_RAW10\n"; break;
+	case RS2_FORMAT_RAW16: std::cout << "RS2_FORMAT_RAW16\n"; break;
+	case RS2_FORMAT_RAW8: std::cout << "RS2_FORMAT_RAW8\n"; break;
+	case RS2_FORMAT_UYVY: std::cout << "RS2_FORMAT_UYVY\n"; break;
+	case RS2_FORMAT_MOTION_RAW: std::cout << "RS2_FORMAT_MOTION_RAW\n"; break;
+	case RS2_FORMAT_MOTION_XYZ32F: std::cout << "RS2_FORMAT_MOTION_XYZ32F\n"; break;
+	case RS2_FORMAT_GPIO_RAW: std::cout << "RS2_FORMAT_GPIO_RAW\n"; break;
+	case RS2_FORMAT_6DOF: std::cout << "RS2_FORMAT_6DOF\n"; break;
+	case RS2_FORMAT_DISPARITY32: std::cout << "RS2_FORMAT_DISPARITY32\n"; break;
+	case RS2_FORMAT_COUNT: std::cout << "RS2_FORMAT_COUNT\n"; break;
+	default: break;
+	}
+}
+#endif
 
 // コンストラクタ
 Rs400::Rs400()
+	: run(false)
+	, depth(nullptr)
+	, color(nullptr)
 {
 	// RealSense のコンテキスト
 	static std::unique_ptr<rs2::context> context(nullptr);
@@ -40,49 +83,195 @@ Rs400::Rs400()
 		});
 
 		// 最初からつながってるすべてのデバイスについて
-		for (auto &&dev : context->query_devices())
+		for (auto &&device : context->query_devices())
 		{
 			// それを有効にする
-			enable_device(dev);
+			enable_device(device);
 		}
 	}
 
-  // DepthSense の使用台数が接続台数に達していれば戻る
-  if (++activated > connected)
-  {
-    setMessage("RealSense の数が足りません");
-    return;
-  }
+	// RealSense の使用台数が接続台数に達していれば戻る
+	if (++activated > device_count())
+	{
+		setMessage("RealSense の数が足りません");
+		return;
+	}
 
-  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-  makeTexture();
+	// パイプラインの設定
+	conf.enable_stream(RS2_STREAM_DEPTH, depth_width, depth_height, RS2_FORMAT_Z16, depth_fps);
+	conf.enable_stream(RS2_STREAM_COLOR, color_width, color_height, RS2_FORMAT_RGB8, color_fps);
 
-  // データ転送用のメモリを確保する
-  depth = new GLushort[depthCount];
-  point = new GLfloat[depthCount][3];
-  uvmap = new GLfloat[depthCount][2];
-  color = new GLubyte[colorCount][3];
+	// パイプラインをその設定で開始する
+	profile = pipe.start(conf);
+
+	// 最初のフレームを取り出す
+	frames = pipe.wait_for_frames();
+
+	// デプスフレームを取り出す
+	const auto dframe(frames.get_depth_frame());
+	assert(dframe.get_bits_per_pixel() == 16);
+
+	// デプスストリーム
+	const auto dstream(profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>());
+
+	// デプスストリームの内部パラメータ
+	const auto dintrinsics(dstream.get_intrinsics());
+
+#if defined(DEBUG)
+	// デプスフレームのフォーマットの確認
+	check_format(dframe.get_profile().format());
+
+	// 内部パラメータの確認
+	std::cerr << "Width = " << dintrinsics.width << ", Height = " << dintrinsics.height << "\n";
+	std::cerr << "Principal Point = (" << dintrinsics.ppx << ", " << dintrinsics.ppy << ")\n";
+	std::cerr << "Focal Length = (" << dintrinsics.fx << ", " << dintrinsics.fy << ")\n";
+	std::cerr << "Distortion coefficients =";
+	for (auto c : dintrinsics.coeffs) std::cout << " " << c;
+	std::cerr << "\n";
+
+	const auto sensor = profile.get_device().first<rs2::depth_sensor>();
+	std::cerr << "Scale = " << sensor.get_depth_scale() <<"\n";
+#endif
+
+	// デプスフレームの幅と高さ
+	depthWidth = dintrinsics.width;
+	depthHeight = dintrinsics.height;
+
+	// カメラ座標を求める
+	rs2::points points = pc.calculate(dframe);
+	const GLfloat (*const p)[3] = reinterpret_cast<const GLfloat (*)[3]>(points.get_vertices());
+	for (int i = 0; i < depthCount; ++i)
+	{
+		point[i][0] = p[i][0];
+		point[i][1] = -p[i][1];
+		point[i][2] = -p[i][2];
+	}
+
+	// テクスチャ座標を求める
+	uvmap = reinterpret_cast<const GLfloat(*)[2]>(points.get_texture_coordinates());
+
+	// カラーフレームを取り出す
+	const auto cframe(frames.get_color_frame());
+	assert(cframe.get_bits_per_pixel() == 24);
+
+	// カラーストリーム
+	const auto cstream(profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>());
+
+	// カラーストリームの内部パラメータ
+	const auto cintrinsics(cstream.get_intrinsics());
+
+#if defined(DEBUG)
+	// カラーフレームのフォーマットの確認
+	check_format(cframe.get_profile().format());
+
+	// 内部パラメータの確認
+	std::cerr << "Width = " << cintrinsics.width << ", Height = " << cintrinsics.height << "\n";
+	std::cerr << "Principal Point = (" << cintrinsics.ppx << ", " << cintrinsics.ppy << ")\n";
+	std::cerr << "Focal Length = (" << cintrinsics.fx << ", " << cintrinsics.fy << ")\n";
+	std::cerr << "Distortion coefficients =";
+	for (auto c : cintrinsics.coeffs) std::cout << " " << c;
+	std::cerr << "\n";
+#endif
+
+	// カラーフレームの幅と高さ
+	colorWidth = cintrinsics.width;
+	colorHeight = cintrinsics.height;
+
+	// depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
+	makeTexture();
+
+	// データ転送用のメモリを確保する
+	depth = new GLushort[depthCount];
+	point = new GLfloat[depthCount][3];
+	color = new GLubyte[colorCount][3];
+
+	// 最初のフレームを確保したメモリに格納する
+	memcpy(depth, dframe.get_data(), depthCount * sizeof *depth);
+	memcpy(color, cframe.get_data(), colorCount * sizeof *color);
+
+	// データの到着を知らせる
+	depthPtr = depth;
+	colorPtr = color;
+
+	// まだシェーダが作られていなかったら
+	if (shader.get() == nullptr)
+	{
+		// カメラ座標算出用のシェーダを作成する
+		shader.reset(new Calculate(depthWidth, depthHeight, "position_rs" SHADER_EXT));
+
+		// シェーダの uniform 変数の場所を調べる
+		varianceLoc = glGetUniformLocation(shader->get(), "variance");
+	}
+
+	// まだスレッドが走っていなかったら
+	if (!worker.joinable())
+	{
+		// ループが回るようにする
+		run = true;
+
+		// イベントループを開始する
+		worker = std::thread([&]()
+		{
+			while (run)
+			{
+				// フレームを取り出す
+				frames = pipe.wait_for_frames();
+
+				// デバイスをロックする
+				std::lock_guard<std::mutex> lock(deviceMutex);
+
+				// デプスフレームを取り出す
+				const auto dframe(frames.get_depth_frame());
+
+				// デプスフレームを確保したメモリに格納する
+				memcpy(depth, dframe.get_data(), depthCount * sizeof *depth);
+
+				// デプスデータの新着を知らせる
+				depthPtr = depth;
+
+				// カメラ座標を求める
+				const rs2::points points(pc.calculate(dframe));
+				const GLfloat (*const p)[3] = reinterpret_cast<const GLfloat (*)[3]>(points.get_vertices());
+				for (int i = 0; i < depthCount; ++i)
+				{
+					point[i][0] = -p[i][0];
+					point[i][1] = -p[i][1];
+					point[i][2] = -p[i][2];
+				}
+
+				// カラーフレームを取り出す
+				const auto cframe(frames.get_color_frame());
+
+				// カラーフレームを確保したメモリに格納する
+				memcpy(color, cframe.get_data(), colorCount * sizeof *color);
+
+				// カラーデータの新着を知らせる
+				colorPtr = color;
+
+				// テクスチャ座標を求める
+				pc.map_to(cframe);
+				uvmap = reinterpret_cast<const GLfloat(*)[2]>(points.get_texture_coordinates());
+			}
+		});
+	}
 }
 
 // デストラクタ
 Rs400::~Rs400()
 {
-  // RealSense が有効になっていたら
-  if (--activated >= 0)
-  {
-    // 最後の RealSense を削除するときはイベントループを停止する
-    if (activated == 0 && worker.joinable())
-    {
-      // イベントループのスレッドが終了するのを待つ
-      worker.join();
-    }
+	// イベントループを停止する
+	if (worker.joinable())
+	{
+		// イベントループを停止する
+		run = false;
 
-    // データ転送用のメモリの開放
-    delete[] depth;
-    delete[] point;
-    delete[] uvmap;
-    delete[] color;
-  }
+		// イベントループのスレッドが終了するのを待つ
+		worker.join();
+	}
+
+	// データ転送用のメモリの開放
+	delete[] depth;
+	delete[] color;
 }
 
 // RealSense を有効にする
@@ -91,7 +280,7 @@ void Rs400::enable_device(rs2::device dev)
 	// RealSense のシリアル番号を調べる
 	std::string serial_number(dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
 
-	// デバイスリストをロックする
+	// デバイスをロックする
 	std::lock_guard<std::mutex> lock(deviceMutex);
 
 	// デバイスリストのなかにデバイスがあるか調べる
@@ -109,11 +298,8 @@ void Rs400::enable_device(rs2::device dev)
 		return;
 	}
 
-	// 指定したシリアル番号の RealSense をパイプラインで使用できるようにする
+	// このデバイスのシリアル番号の RealSense をパイプラインで使用できるようにする
 	conf.enable_device(serial_number);
-
-	// パイプラインをその設定で開始する
-	profile = pipe.start(conf);
 
 	// このデバイスを登録する
 	devices.emplace(serial_number, this);
@@ -122,7 +308,7 @@ void Rs400::enable_device(rs2::device dev)
 // RealSense を無効にする
 void Rs400::remove_devices(const rs2::event_information& info)
 {
-	// デバイスリストをロックする
+	// デバイスをロックする
 	std::lock_guard<std::mutex> lock(deviceMutex);
 
 	// デバイスリストのすべてのデバイスについて
@@ -143,13 +329,13 @@ void Rs400::remove_devices(const rs2::event_information& info)
 }
 
 // 接続されている RealSense の数を調べる
-size_t Rs400::device_count()
+int Rs400::device_count()
 {
-	// デバイスリストをロックする
+	// デバイスをロックする
 	std::lock_guard<std::mutex> lock(deviceMutex);
 
 	// デバイスリストの数を返す
-	return devices.size();
+	return static_cast<int>(devices.size());
 }
 
 // RealSense のストリーム数を調べる
@@ -190,7 +376,7 @@ void Rs400::poll_frames()
 		if (view.second->pipe.poll_for_frames(&frameset))
 		{
 			// フレームセットの個々のフレームについて
-			for (int i = 0; i < frameset.size(); ++i)
+			for (size_t i = 0; i < frameset.size(); ++i)
 			{
 				// 一つのフレームを取り出す
 				rs2::frame new_frame = frameset[i];
@@ -208,113 +394,100 @@ void Rs400::poll_frames()
 // デプスデータを取得する
 GLuint Rs400::getDepth()
 {
-	// RealSense からフレームを取り出す
-	frames = pipe.wait_for_frames();
+	// デプスデータのテクスチャを指定する
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
 
-	// 取り出したフレームからデプスデータを切り出す
-	rs2::depth_frame depth = frames.get_depth_frame();
-	std::cout << depth.get_bits_per_pixel() << "\n";
+	// デプスデータが更新されておりデプスデータの取得中でなければ
+	if (depthPtr && deviceMutex.try_lock())
+	{
+		// テクスチャ座標のバッファオブジェクトを指定する
+		glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
-  // デプスデータのテクスチャを指定する
-  glBindTexture(GL_TEXTURE_2D, depthTexture);
+		// テクスチャ座標をバッファオブジェクトに転送する
+		glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
 
-  // デプスデータが更新されておりデプスデータの取得中でなければ
-  if (depthPtr && depthMutex.try_lock())
-  {
-    // テクスチャ座標のバッファオブジェクトを指定する
-    glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+		// デプスデータをテクスチャに転送する
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depthPtr);
 
-    // テクスチャ座標をバッファオブジェクトに転送する
-    glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
+		// 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
+		depthPtr = nullptr;
 
-    // デプスデータをテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depthPtr);
+		// デプスデータをアンロックする
+		deviceMutex.unlock();
+	}
 
-    // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
-    depthPtr = nullptr;
-
-    // デプスデータをアンロックする
-    depthMutex.unlock();
-  }
-
-  return depthTexture;
+	return depthTexture;
 }
 
 // カメラ座標を取得する
 GLuint Rs400::getPoint()
 {
-  // カメラ座標のテクスチャを指定する
-  glBindTexture(GL_TEXTURE_2D, pointTexture);
+	// カメラ座標のテクスチャを指定する
+	glBindTexture(GL_TEXTURE_2D, pointTexture);
 
-  // デプスデータが更新されており DepthSense がデプスデータの取得中でなければ
-  if (depthPtr && depthMutex.try_lock())
-  {
-    // カメラ座標をテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
+	// デプスデータが更新されており RealSense がデプスデータの取得中でなければ
+	if (depthPtr && deviceMutex.try_lock())
+	{
+		// カメラ座標をテクスチャに転送する
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
 
-    // テクスチャ座標のバッファオブジェクトを指定する
-    glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+		// テクスチャ座標のバッファオブジェクトを指定する
+		glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
-    // テクスチャ座標をバッファオブジェクトに転送する
-    glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
+		// テクスチャ座標をバッファオブジェクトに転送する
+		glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
 
-    // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
-    depthPtr = nullptr;
+		// 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
+		depthPtr = nullptr;
 
-    // デプスデータをアンロックする
-    depthMutex.unlock();
-  }
+		// デプスデータをアンロックする
+		deviceMutex.unlock();
+	}
 
-  return pointTexture;
+	return pointTexture;
 }
 
 // カメラ座標を算出する
 GLuint Rs400::getPosition()
 {
-  // テクスチャ座標のバッファオブジェクトを指定する
-  glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+	// テクスチャ座標のバッファオブジェクトを指定する
+	glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
-  // テクスチャ座標をバッファオブジェクトに転送する
-  glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
+	// テクスチャ座標をバッファオブジェクトに転送する
+	glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
 
-  // カメラ座標をシェーダで算出する
-  shader->use();
-  glUniform1f(varianceLoc, variance);
-  const GLuint depthTexture(getDepth());
-  const GLenum depthFormat(GL_R16UI);
-  return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
+	// カメラ座標をシェーダで算出する
+	shader->use();
+	glUniform1f(varianceLoc, variance);
+	const GLuint depthTexture(getDepth());
+	const GLenum depthFormat(GL_R16UI);
+	return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
 }
 
 // カラーデータを取得する
 GLuint Rs400::getColor()
 {
-  // カラーデータのテクスチャを指定する
-  glBindTexture(GL_TEXTURE_2D, colorTexture);
+	// カラーデータのテクスチャを指定する
+	glBindTexture(GL_TEXTURE_2D, colorTexture);
 
-  // カラーデータが更新されておりカラーデータの取得中でなければ
-  if (colorPtr && colorMutex.try_lock())
-  {
-    // カラーデータをテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGR, GL_UNSIGNED_BYTE, colorPtr);
+	// カラーデータが更新されておりカラーデータの取得中でなければ
+	if (colorPtr && deviceMutex.try_lock())
+	{
+		// カラーデータをテクスチャに転送する
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGR, GL_UNSIGNED_BYTE, colorPtr);
 
-    // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
-    colorPtr = nullptr;
+		// 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
+		colorPtr = nullptr;
 
-    // カラーデータをアンロックする
-    colorMutex.unlock();
-  }
+		// カラーデータをアンロックする
+		deviceMutex.unlock();
+	}
 
-  return colorTexture;
+	return colorTexture;
 }
-
-// 接続しているセンサの数
-int Rs400::connected(-1);
 
 // 使用しているセンサの数
 int Rs400::activated(0);
-
-// データ取得用のスレッド
-std::thread Rs400::worker;
 
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> Rs400::shader(nullptr);

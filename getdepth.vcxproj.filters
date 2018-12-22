@@ -137,5 +137,11 @@
     <None Include="position_v2.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
+    <None Include="position_rs.comp">
+      <Filter>シェーダー ファイル</Filter>
+    </None>
+    <None Include="position_rs.frag">
+      <Filter>シェーダー ファイル</Filter>
+    </None>
   </ItemGroup>
 </Project>
