@@ -198,12 +198,6 @@ struct GgApplication
 #  endif
 #endif
 
-    // コピーコンストラクタを封じる
-    Window(const Window &w);
-
-    // 代入を封じる
-    Window &operator=(const Window &w);
-
   public:
 
     //
@@ -515,6 +509,12 @@ struct GgApplication
       resize(window, width, height);
     }
 
+    // コピーコンストラクタを封じる
+    Window(const Window &w) = delete;
+
+    // 代入を封じる
+    Window &operator=(const Window &w) = delete;
+
     //
     // デストラクタ
     //
@@ -765,7 +765,7 @@ struct GgApplication
 #endif
 
     //
-    // ウィンドウの識別子の取得
+    // ウィンドウの識別子を取得する
     //
     GLFWwindow *get() const
     {
@@ -773,12 +773,28 @@ struct GgApplication
     }
 
     //
+    // キーが押されているかどうかを判定する
+    //
+    bool getKey(int key)
+    {
+      return glfwGetKey(window, key) != GLFW_RELEASE;
+    }
+
+    //
     // ウィンドウを閉じるべきかを判定する
     //
     bool shouldClose()
     {
-      // ウィンドウを閉じるか ESC キーがタイプされていれば真を返す
-      return glfwWindowShouldClose(window) || glfwGetKey(window, GLFW_KEY_ESCAPE);
+      // ウィンドウを閉じるべきなら真を返す
+      return glfwWindowShouldClose(window) != GLFW_FALSE;
+    }
+
+    //
+    // ループを継続するなら真
+    //
+    operator bool()
+    {
+      return !shouldClose();
     }
 
     //
@@ -787,7 +803,7 @@ struct GgApplication
     void swapBuffers()
     {
       // エラーチェック
-      _ggError(__FILE__, __LINE__);
+      ggError();
 
 #if defined(USE_OCULUS_RIFT)
 #  if OVR_PRODUCT_VERSION > 0
@@ -997,7 +1013,9 @@ struct GgApplication
           else
           {
             // 左ドラッグ終了
-            std::copy(instance->translation[0][1], instance->translation[0][2], instance->translation[0][0]);
+            instance->translation[0][0][0] = instance->translation[0][1][0];
+            instance->translation[0][0][1] = instance->translation[0][1][1];
+            instance->translation[0][0][2] = instance->translation[0][1][2];
             instance->trackball[0].end(x, y);
           }
           break;
@@ -1011,7 +1029,9 @@ struct GgApplication
           else
           {
             // 右ドラッグ終了
-            std::copy(instance->translation[1][1], instance->translation[1][2], instance->translation[1][0]);
+            instance->translation[1][0][0] = instance->translation[1][1][0];
+            instance->translation[1][0][1] = instance->translation[1][1][1];
+            instance->translation[1][0][2] = instance->translation[1][1][2];
             instance->trackball[1].end(x, y);
           }
           break;
@@ -1294,7 +1314,7 @@ struct GgApplication
       t[0] = (mouse_position[0] - trackball[button].getStart(0)) * trackball[button].getScale(0) * d + translation[button][0][0];
       t[1] = (trackball[button].getStart(1) - mouse_position[1]) * trackball[button].getScale(1) * d + translation[button][0][1];
     }
- 
+
     //
     // 平行移動量を得る
     //
