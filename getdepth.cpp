@@ -176,10 +176,8 @@ void GgApplication::run()
     const GgMatrix mw(window.getTrackball(1) * window.getTranslation(0));
 
     // 描画用のシェーダプログラムの使用開始
-    simple.use();
-    simple.loadMatrix(mp, mw);
-    simple.selectLight(light);
-    simple.selectMaterial(material);
+    simple.use(mp, mw, light);
+    material.select();
 
     // 頂点座標テクスチャ
     glUniform1i(0, 0);

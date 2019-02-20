@@ -205,7 +205,7 @@ struct GgApplication
     //
     Window(const char *title = "GLFW Window", int width = 640, int height = 480,
       int fullscreen = 0, GLFWwindow *share = nullptr)
-      : window(nullptr)
+      : window(nullptr), size{ width, height }
     {
 #if defined(USE_OCULUS_RIFT)
       // Oculus Rift が初期化済なら true
@@ -773,28 +773,54 @@ struct GgApplication
     }
 
     //
-    // キーが押されているかどうかを判定する
+    // ウィンドウを閉じるよう指示する
     //
-    bool getKey(int key)
+    void setClose(bool close) const
     {
-      return glfwGetKey(window, key) != GLFW_RELEASE;
+      glfwSetWindowShouldClose(window, close);
     }
 
     //
     // ウィンドウを閉じるべきかを判定する
     //
-    bool shouldClose()
+    bool shouldClose() const
     {
       // ウィンドウを閉じるべきなら真を返す
       return glfwWindowShouldClose(window) != GLFW_FALSE;
     }
 
     //
-    // ループを継続するなら真
+    // イベントを取得してループを継続するなら真を返す
     //
     operator bool()
     {
-      return !shouldClose();
+      // イベントを取り出す
+      glfwPollEvents();
+
+      // ウィンドウを閉じるべきなら false を返す
+      if (shouldClose()) return false;
+
+      // マウスの位置を調べる
+      double x, y;
+      glfwGetCursorPos(window, &x, &y);
+      mouse_position[0] = static_cast<GLfloat>(x);
+      mouse_position[1] = static_cast<GLfloat>(y);
+
+      // 左ボタンドラッグ
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1))
+      {
+        calcTranslation(translation[GLFW_MOUSE_BUTTON_1][1], GLFW_MOUSE_BUTTON_1);
+        trackball[0].motion(mouse_position[0], mouse_position[1]);
+      }
+
+      // 右ボタンドラッグ
+      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2))
+      {
+        calcTranslation(translation[GLFW_MOUSE_BUTTON_2][1], GLFW_MOUSE_BUTTON_2);
+        trackball[1].motion(mouse_position[0], mouse_position[1]);
+      }
+
+      return true;
     }
 
     //
@@ -851,29 +877,6 @@ struct GgApplication
       // カラーバッファを入れ替える
       glfwSwapBuffers(window);
 #endif
-
-      // イベントを取り出す
-      glfwPollEvents();
-
-      // マウスの位置を調べる
-      double x, y;
-      glfwGetCursorPos(window, &x, &y);
-      mouse_position[0] = static_cast<GLfloat>(x);
-      mouse_position[1] = static_cast<GLfloat>(y);
-
-      // 左ボタンドラッグ
-      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1))
-      {
-        calcTranslation(translation[GLFW_MOUSE_BUTTON_1][1], GLFW_MOUSE_BUTTON_1);
-        trackball[0].motion(mouse_position[0], mouse_position[1]);
-      }
-
-      // 右ボタンドラッグ
-      if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2))
-      {
-        calcTranslation(translation[GLFW_MOUSE_BUTTON_2][1], GLFW_MOUSE_BUTTON_2);
-        trackball[1].motion(mouse_position[0], mouse_position[1]);
-      }
     }
 
     //
@@ -935,6 +938,11 @@ struct GgApplication
 
           case GLFW_KEY_BACKSPACE:
           case GLFW_KEY_DELETE:
+            break;
+
+          case GLFW_KEY_ESCAPE:
+            // ESC キーがタイプされたらウィンドウを閉じる
+            instance->setClose(true);
             break;
 
           case GLFW_KEY_UP:
@@ -1114,6 +1122,14 @@ struct GgApplication
     }
 
     //
+    // キーが押されているかどうかを判定する
+    //
+    bool getKey(int key)
+    {
+      return glfwGetKey(window, key) != GLFW_RELEASE;
+    }
+
+    //
     // 矢印キーの現在の値を得る
     //
     GLfloat getArrow(int direction = 0, int mods = 0) const
@@ -1284,7 +1300,7 @@ struct GgApplication
     //
     // マウスホイールの現在の回転角を得る
     //
-    GLfloat getWheel(int direction = 1) const
+    GLfloat getWheel(int direction) const
     {
       return wheel_rotation[direction & 1];
     }
