@@ -51,6 +51,9 @@ static void check_format(int format)
 	default: break;
 	}
 }
+#  define CHECK_FRAME_FORMAT(format) check_format(format)
+#else
+#  define CHECK_FRAME_FORMAT(format)
 #endif
 
 // コンストラクタ
@@ -104,29 +107,19 @@ Rs400::Rs400()
 	// パイプラインをその設定で開始する
 	profile = pipe.start(conf);
 
-	// 最初のフレームを取り出す
-	frames = pipe.wait_for_frames();
-
-	// デプスフレームを取り出す
-	const auto dframe(frames.get_depth_frame());
-	assert(dframe.get_bits_per_pixel() == 16);
-
 	// デプスストリーム
 	const auto dstream(profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>());
 
 	// デプスストリームの内部パラメータ
-	const auto dintrinsics(dstream.get_intrinsics());
+  depthIntrinsics = dstream.get_intrinsics();
 
 #if defined(DEBUG)
-	// デプスフレームのフォーマットの確認
-	check_format(dframe.get_profile().format());
-
 	// 内部パラメータの確認
-	std::cerr << "Width = " << dintrinsics.width << ", Height = " << dintrinsics.height << "\n";
-	std::cerr << "Principal Point = (" << dintrinsics.ppx << ", " << dintrinsics.ppy << ")\n";
-	std::cerr << "Focal Length = (" << dintrinsics.fx << ", " << dintrinsics.fy << ")\n";
+	std::cerr << "Width = " << depthIntrinsics.width << ", Height = " << depthIntrinsics.height << "\n";
+	std::cerr << "Principal Point = (" << depthIntrinsics.ppx << ", " << depthIntrinsics.ppy << ")\n";
+	std::cerr << "Focal Length = (" << depthIntrinsics.fx << ", " << depthIntrinsics.fy << ")\n";
 	std::cerr << "Distortion coefficients =";
-	for (auto c : dintrinsics.coeffs) std::cout << " " << c;
+	for (auto c : depthIntrinsics.coeffs) std::cout << " " << c;
 	std::cerr << "\n";
 
 	const auto sensor = profile.get_device().first<rs2::depth_sensor>();
@@ -134,48 +127,28 @@ Rs400::Rs400()
 #endif
 
 	// デプスフレームの幅と高さ
-	depthWidth = dintrinsics.width;
-	depthHeight = dintrinsics.height;
-
-	// カメラ座標を求める
-	rs2::points points = pc.calculate(dframe);
-	const GLfloat (*const p)[3] = reinterpret_cast<const GLfloat (*)[3]>(points.get_vertices());
-	for (int i = 0; i < depthCount; ++i)
-	{
-		point[i][0] = p[i][0];
-		point[i][1] = -p[i][1];
-		point[i][2] = -p[i][2];
-	}
-
-	// テクスチャ座標を求める
-	uvmap = reinterpret_cast<const GLfloat(*)[2]>(points.get_texture_coordinates());
-
-	// カラーフレームを取り出す
-	const auto cframe(frames.get_color_frame());
-	assert(cframe.get_bits_per_pixel() == 24);
+	depthWidth = depthIntrinsics.width;
+	depthHeight = depthIntrinsics.height;
 
 	// カラーストリーム
 	const auto cstream(profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>());
 
 	// カラーストリームの内部パラメータ
-	const auto cintrinsics(cstream.get_intrinsics());
+	colorIntrinsics = cstream.get_intrinsics();
 
 #if defined(DEBUG)
-	// カラーフレームのフォーマットの確認
-	check_format(cframe.get_profile().format());
-
 	// 内部パラメータの確認
-	std::cerr << "Width = " << cintrinsics.width << ", Height = " << cintrinsics.height << "\n";
-	std::cerr << "Principal Point = (" << cintrinsics.ppx << ", " << cintrinsics.ppy << ")\n";
-	std::cerr << "Focal Length = (" << cintrinsics.fx << ", " << cintrinsics.fy << ")\n";
+	std::cerr << "Width = " << colorIntrinsics.width << ", Height = " << colorIntrinsics.height << "\n";
+	std::cerr << "Principal Point = (" << colorIntrinsics.ppx << ", " << colorIntrinsics.ppy << ")\n";
+	std::cerr << "Focal Length = (" << colorIntrinsics.fx << ", " << colorIntrinsics.fy << ")\n";
 	std::cerr << "Distortion coefficients =";
-	for (auto c : cintrinsics.coeffs) std::cout << " " << c;
+	for (auto c : colorIntrinsics.coeffs) std::cout << " " << c;
 	std::cerr << "\n";
 #endif
 
 	// カラーフレームの幅と高さ
-	colorWidth = cintrinsics.width;
-	colorHeight = cintrinsics.height;
+	colorWidth = colorIntrinsics.width;
+	colorHeight = colorIntrinsics.height;
 
 	// depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
 	makeTexture();
@@ -185,14 +158,6 @@ Rs400::Rs400()
 	point = new GLfloat[depthCount][3];
 	color = new GLubyte[colorCount][3];
 
-	// 最初のフレームを確保したメモリに格納する
-	memcpy(depth, dframe.get_data(), depthCount * sizeof *depth);
-	memcpy(color, cframe.get_data(), colorCount * sizeof *color);
-
-	// データの到着を知らせる
-	depthPtr = depth;
-	colorPtr = color;
-
 	// まだシェーダが作られていなかったら
 	if (shader.get() == nullptr)
 	{
@@ -201,7 +166,9 @@ Rs400::Rs400()
 
 		// シェーダの uniform 変数の場所を調べる
 		varianceLoc = glGetUniformLocation(shader->get(), "variance");
-	}
+    dppLoc = glGetUniformLocation(shader->get(), "dpp");
+    dfLoc = glGetUniformLocation(shader->get(), "df");
+  }
 
 	// まだスレッドが走っていなかったら
 	if (!worker.joinable())
@@ -223,21 +190,19 @@ Rs400::Rs400()
 				// デプスフレームを取り出す
 				const auto dframe(frames.get_depth_frame());
 
-				// デプスフレームを確保したメモリに格納する
-				memcpy(depth, dframe.get_data(), depthCount * sizeof *depth);
+        // カメラ座標を求める
+        const GLushort *const d(static_cast<const unsigned short *>(dframe.get_data()));
+        for (int i = 0; i < depthCount; ++i)
+        {
+          // 深度を取り出す
+          depth[i] = d[i];
+
+          // 計測不能点だったら最遠点に飛ばす
+          if (depth[i] == 0) depth[i] = maxDepth;
+        }
 
 				// デプスデータの新着を知らせる
 				depthPtr = depth;
-
-				// カメラ座標を求める
-				const rs2::points points(pc.calculate(dframe));
-				const GLfloat (*const p)[3] = reinterpret_cast<const GLfloat (*)[3]>(points.get_vertices());
-				for (int i = 0; i < depthCount; ++i)
-				{
-					point[i][0] = -p[i][0];
-					point[i][1] = -p[i][1];
-					point[i][2] = -p[i][2];
-				}
 
 				// カラーフレームを取り出す
 				const auto cframe(frames.get_color_frame());
@@ -249,8 +214,9 @@ Rs400::Rs400()
 				colorPtr = color;
 
 				// テクスチャ座標を求める
-				pc.map_to(cframe);
-				uvmap = reinterpret_cast<const GLfloat(*)[2]>(points.get_texture_coordinates());
+        const rs2::points points(pc.calculate(dframe));
+        pc.map_to(cframe);
+        uvmap = reinterpret_cast<const GLfloat(*)[2]>(points.get_texture_coordinates());
 			}
 		});
 	}
@@ -350,7 +316,7 @@ int Rs400::stream_count()
 	// すべてのデバイスについて
 	for (auto &&sn_to_dev : devices)
 	{
-		// デバイスごとのストームについて
+		// デバイスごとのストリームについて
 		for (auto &&stream : sn_to_dev.second->frames_per_stream)
 		{
 			// 存在するストリームの数を数える
@@ -428,7 +394,18 @@ GLuint Rs400::getPoint()
 	// デプスデータが更新されており RealSense がデプスデータの取得中でなければ
 	if (depthPtr && deviceMutex.try_lock())
 	{
-		// カメラ座標をテクスチャに転送する
+    // カメラ座標を求める
+    for (int i = 0; i < depthCount; ++i)
+    {
+      // カメラ座標系の z 座標値を m 単位で求める
+      point[i][2] = -0.001f * depth[i];
+
+      // カメラ座標系の x, y 座標値を m 単位で求める
+      point[i][0] = (i % depthWidth - depthIntrinsics.ppx) * point[i][2] / depthIntrinsics.fx;
+      point[i][1] = (i / depthWidth - depthIntrinsics.ppy) * point[i][2] / depthIntrinsics.fy;
+    }
+
+    // カメラ座標をテクスチャに転送する
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
 
 		// テクスチャ座標のバッファオブジェクトを指定する
@@ -456,10 +433,12 @@ GLuint Rs400::getPosition()
 	// テクスチャ座標をバッファオブジェクトに転送する
 	glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
 
-	// カメラ座標をシェーダで算出する
+  // カメラ座標をシェーダで算出する
 	shader->use();
 	glUniform1f(varianceLoc, variance);
-	const GLuint depthTexture(getDepth());
+  glUniform2f(dppLoc, depthIntrinsics.ppx, depthIntrinsics.ppy);
+  glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
+  const GLuint depthTexture(getDepth());
 	const GLenum depthFormat(GL_R16UI);
 	return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
 }
@@ -494,6 +473,9 @@ std::unique_ptr<Calculate> Rs400::shader(nullptr);
 
 // バイラテラルフィルタの分散の uniform 変数 variance の場所
 GLint Rs400::varianceLoc;
+
+// カメラパラメータの uniform 変数の場所
+GLint Rs400::dppLoc, Rs400::dfLoc;
 
 // RealSense のデバイスリスト
 std::map<std::string, Rs400 *> Rs400::devices;

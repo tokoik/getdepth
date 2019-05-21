@@ -56,6 +56,12 @@ class Rs400 : public DepthCamera
 	// バイラテラルフィルタの分散の uniform 変数 variance の場所
 	static GLint varianceLoc;
 
+  // デプスカメラの主点位置の uniform 変数 dpp の場所
+  static GLint dppLoc;
+
+  // デプスカメラの焦点距離の unform 変数 df の場所
+  static GLint dfLoc;
+
 	// データ取得用のスレッド
 	std::thread worker;
 
@@ -77,7 +83,13 @@ class Rs400 : public DepthCamera
 	// RealSense のパイプラインのプロファイル
 	rs2::pipeline_profile profile;
 
-	// ストームごとのフレーム数
+  // RealSense のデプスストリームの内部パラメータ
+  rs2_intrinsics depthIntrinsics;
+
+  // RealSense のカラーストリームの内部パラメータ
+  rs2_intrinsics colorIntrinsics;
+
+  // ストリームごとのフレーム数
 	std::map<int, rs2::frame> frames_per_stream;
 
 	// カラー化されたフレーム
