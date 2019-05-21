@@ -15,8 +15,7 @@ layout (location = 0) out vec4 position;
 in vec2 texcoord;
 
 // カメラパラメータ
-uniform vec2 dc, df;
-uniform vec3 dk;
+uniform vec2 dpp, df;
 
 // 分散
 uniform float variance = 0.1;
@@ -75,12 +74,8 @@ void main(void)
   float z = csum.r / csum.g;
 
   // 画素のスクリーン座標
-  vec2 dp = (texcoord * ds - dc + 0.5f) / df;
-
-  // デプスカメラの歪み補正係数
-  float dr = dot(dp, dp);
-  float dq = (1.0 + dr * (dk.x + dr * (dk.y + dr * dk.z)));
+  vec2 dp = (texcoord * ds - dpp) / df;
 
   // デプス値からカメラ座標値を求める
-  position = vec4(dp * z / dq, z, 1.0);
+  position = vec4(dp * z, z, 1.0);
 }

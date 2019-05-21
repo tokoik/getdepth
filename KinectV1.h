@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 //
-// 深度センサ関連の処理
+// デプスセンサ関連の処理
 //
 
 // Kinect V1 を使う
@@ -19,7 +19,7 @@
 #include <Windows.h>
 #include <NuiApi.h>
 
-// 深度センサ関連の基底クラス
+// デプスセンサ関連の基底クラス
 #include "DepthCamera.h"
 
 // デプス画像のサイズ

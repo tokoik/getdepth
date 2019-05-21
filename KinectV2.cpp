@@ -87,6 +87,10 @@ KinectV2::KinectV2()
   colorDescription->get_Height(&colorHeight);
   colorDescription->Release();
 
+  // カラーテクスチャのスケールを求める
+  colorScale[0] = 1.0f / colorWidth;
+  colorScale[1] = 1.0f / colorHeight;
+
   // 座標のマッピング
   if (sensor->get_CoordinateMapper(&coordinateMapper) != S_OK)
   {

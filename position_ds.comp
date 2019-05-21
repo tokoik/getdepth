@@ -127,7 +127,7 @@ void main(void)
     // 画素のスクリーン座標
     const vec2 dp = (pixel_xy - dc + 0.5f) / df;
 
-    // デプスカメラの歪み補正係数
+    // デプスセンサの歪み補正係数
     const float dr = dot(dp, dp);
     const float dq = (1.0 + dr * (dk.x + dr * (dk.y + dr * dk.z)));
 

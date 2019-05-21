@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 //
-// 深度センサ関連の処理
+// デプスセンサ関連の処理
 //
 
 // Kinect V2 を使う
@@ -19,7 +19,7 @@
 #include <Windows.h>
 #include <Kinect.h>
 
-// 深度センサ関連の基底クラス
+// デプスセンサ関連の基底クラス
 #include "DepthCamera.h"
 
 class KinectV2 : public DepthCamera

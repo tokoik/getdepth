@@ -1,7 +1,7 @@
 ﻿#include "DepthCamera.h"
 
 //
-// 深度センサ関連の基底クラス
+// デプスセンサ関連の基底クラス
 //
 
 // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する

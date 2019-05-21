@@ -150,7 +150,11 @@ Rs400::Rs400()
 	colorWidth = colorIntrinsics.width;
 	colorHeight = colorIntrinsics.height;
 
-	// depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
+  // カラーテクスチャのスケールを求める
+  colorScale[0] = 1.0f;
+  colorScale[1] = 1.0f;
+
+  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
 	makeTexture();
 
 	// データ転送用のメモリを確保する
@@ -194,7 +198,7 @@ Rs400::Rs400()
         const GLushort *const d(static_cast<const unsigned short *>(dframe.get_data()));
         for (int i = 0; i < depthCount; ++i)
         {
-          // 深度を取り出す
+          // デプスを取り出す
           depth[i] = d[i];
 
           // 計測不能点だったら最遠点に飛ばす
@@ -453,9 +457,9 @@ GLuint Rs400::getColor()
 	if (colorPtr && deviceMutex.try_lock())
 	{
 		// カラーデータをテクスチャに転送する
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGR, GL_UNSIGNED_BYTE, colorPtr);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_RGB, GL_UNSIGNED_BYTE, colorPtr);
 
-		// 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
+    // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
 		colorPtr = nullptr;
 
 		// カラーデータをアンロックする

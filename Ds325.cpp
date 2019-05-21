@@ -15,12 +15,12 @@
 
 // コンストラクタ
 Ds325::Ds325(
-  FrameFormat depth_format,           // デプスカメラの解像度
-  unsigned int depth_fps,             // デプスカメラのフレームレート
-  DepthNode::CameraMode depth_mode,   // デプスカメラのモード
-  FrameFormat color_format,           // カラーカメラの解像度
-  unsigned int color_fps,             // カラーカメラのフレームレート
-  CompressionType color_compression,  // カラーカメラの圧縮方式
+  FrameFormat depth_format,           // デプスセンサの解像度
+  unsigned int depth_fps,             // デプスセンサのフレームレート
+  DepthNode::CameraMode depth_mode,   // デプスセンサのモード
+  FrameFormat color_format,           // カラーセンサの解像度
+  unsigned int color_fps,             // カラーセンサのフレームレート
+  CompressionType color_compression,  // カラーセンサの圧縮方式
   PowerLineFrequency frequency        // 電源周波数
   )
   : depth_format(depth_format)
@@ -72,6 +72,10 @@ Ds325::Ds325(
   // DepthSense のフレームフォーマットから解像度を求める
   FrameFormat_toResolution(depth_format, &depthWidth, &depthHeight);
   FrameFormat_toResolution(color_format, &colorWidth, &colorHeight);
+
+  // カラーテクスチャのスケールを求める
+  colorScale[0] = 1.0f / colorWidth;
+  colorScale[1] = 1.0f / colorHeight;
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   makeTexture();
@@ -288,13 +292,13 @@ void Ds325::configureDepthNode(DepthNode &dnode)
 // DepthSense のデプスノードのイベント発生時の処理
 void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData data, Ds325 *sensor)
 {
-  // デプスカメラをロックする
+  // デプスセンサをロックする
   sensor->depthMutex.lock();
 
-  // カラーカメラの内部パラメータを保存する
+  // カラーセンサの内部パラメータを保存する
   sensor->colorIntrinsics = data.stereoCameraParameters.colorIntrinsics;
 
-  // デプスカメラの内部パラメータを保存する
+  // デプスセンサの内部パラメータを保存する
   sensor->depthIntrinsics = data.stereoCameraParameters.depthIntrinsics;
 
   // データ転送
@@ -313,7 +317,7 @@ void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData da
   // デプスデータが更新されたことを記録する
   sensor->depthPtr = sensor->depth;
 
-  // デプスカメラをアンロックする
+  // デプスセンサをアンロックする
   sensor->depthMutex.unlock();
 }
 
@@ -375,7 +379,7 @@ void Ds325::configureColorNode(ColorNode &cnode)
 // DepthSense のカラーノードのイベント発生時の処理
 void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData data, Ds325 *sensor)
 {
-  // カラーカメラをロックする
+  // カラーセンサをロックする
   sensor->colorMutex.lock();
 
   // カラーデータが Motion JPEG でエンコードされていれば
@@ -418,7 +422,7 @@ void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData da
   // カラーデータが更新されたことを記録する
   sensor->colorPtr = sensor->color;
 
-  // カラーカメラをアンロックする
+  // カラーセンサをアンロックする
   sensor->colorMutex.unlock();
 }
 
@@ -459,7 +463,7 @@ GLuint Ds325::getPoint()
   // デプスデータが更新されており DepthSense がデプスデータの取得中でなければ
   if (depthPtr && depthMutex.try_lock())
   {
-    // デプスカメラの内部パラメータ
+    // デプスセンサの内部パラメータ
     const float &dcx(depthIntrinsics.cx);
     const float &dcy(depthIntrinsics.cy);
     const float &dfx(depthIntrinsics.fx);
@@ -468,7 +472,7 @@ GLuint Ds325::getPoint()
     const float &dk2(depthIntrinsics.k2);
     const float &dk3(depthIntrinsics.k3);
 
-    // カラーカメラの内部パラメータ
+    // カラーセンサの内部パラメータ
     const float &ccx(colorIntrinsics.cx);
     const float &ccy(colorIntrinsics.cy);
     const float &cfx(colorIntrinsics.fx);
@@ -487,7 +491,7 @@ GLuint Ds325::getPoint()
       const GLfloat dx((static_cast<GLfloat>(u) - dcx + 0.5f) / dfx);
       const GLfloat dy((static_cast<GLfloat>(v) - dcy + 0.5f) / dfy);
 
-      // デプスカメラの歪み補正係数
+      // デプスセンサの歪み補正係数
       const GLfloat dr(dx * dx + dy * dy);
       const GLfloat dq(1.0f + dr * (dk1 + dr * (dk2 + dr * dk3)));
 
@@ -501,7 +505,7 @@ GLuint Ds325::getPoint()
       point[i][1] = y * z;
       point[i][2] = z;
 
-      // カラーカメラの歪み補正係数
+      // カラーセンサの歪み補正係数
       const GLfloat cr(x * x + y * y);
       const GLfloat cq(1.0f + cr * (ck1 + cr * (ck2 + cr * ck3)));
 
@@ -539,7 +543,7 @@ GLuint Ds325::getPoint()
 // カメラ座標を算出する
 GLuint Ds325::getPosition()
 {
-  // デプスカメラの内部パラメータ
+  // デプスセンサの内部パラメータ
   const float &dcx(depthIntrinsics.cx);
   const float &dcy(depthIntrinsics.cy);
   const float &dfx(depthIntrinsics.fx);
@@ -548,7 +552,7 @@ GLuint Ds325::getPosition()
   const float &dk2(depthIntrinsics.k2);
   const float &dk3(depthIntrinsics.k3);
 
-  // カラーカメラの内部パラメータ
+  // カラーセンサの内部パラメータ
   const float &ccx(colorIntrinsics.cx);
   const float &ccy(colorIntrinsics.cy);
   const float &cfx(colorIntrinsics.fx);
@@ -567,7 +571,7 @@ GLuint Ds325::getPosition()
     const GLfloat dx((static_cast<GLfloat>(u) - dcx + 0.5f) / dfx);
     const GLfloat dy((static_cast<GLfloat>(v) - dcy + 0.5f) / dfy);
 
-    // デプスカメラの歪み補正係数
+    // デプスセンサの歪み補正係数
     const GLfloat dr(dx * dx + dy * dy);
     const GLfloat dq(1.0f + dr * (dk1 + dr * (dk2 + dr * dk3)));
 
@@ -575,7 +579,7 @@ GLuint Ds325::getPosition()
     const GLfloat x(dx / dq);
     const GLfloat y(dy / dq);
 
-    // カラーカメラの歪み補正係数
+    // カラーセンサの歪み補正係数
     const GLfloat cr(x * x + y * y);
     const GLfloat cq(1.0f + cr * (ck1 + cr * (ck2 + cr * ck3)));
 

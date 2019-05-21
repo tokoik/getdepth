@@ -80,13 +80,17 @@ KinectV1::KinectV1()
   // 有効にしたセンサの数を数える
   ++activated;
 
-  // デプスカメラの解像度を初期化する
+  // デプスセンサの解像度を初期化する
   depthWidth = DEPTH_W;
   depthHeight = DEPTH_H;
 
-  // カラーカメラの解像度を初期化する
+  // カラーセンサの解像度を初期化する
   colorWidth = COLOR_W;
   colorHeight = COLOR_H;
+
+  // カラーテクスチャのスケールを求める
+  colorScale[0] = 1.0f / colorWidth;
+  colorScale[1] = 1.0f / colorHeight;
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   makeTexture();

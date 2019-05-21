@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 //
-// 深度センサ関連の基底クラス
+// デプスセンサ関連の基底クラス
 //
 
 // 補助プログラム
@@ -19,7 +19,7 @@ class DepthCamera
 {
 protected:
 
-  // デプスカメラのサイズと画素数
+  // デプスセンサのサイズと画素数
   int depthWidth, depthHeight, depthCount;
 
   // デプスデータを格納するテクスチャ
@@ -28,8 +28,11 @@ protected:
   // デプスデータから変換したポイントのカメラ座標を格納するテクスチャ
   GLuint pointTexture;
 
-  // カラーカメラのサイズと画素数
+  // カラーセンサのサイズと画素数
   int colorWidth, colorHeight, colorCount;
+
+  // カラーテクスチャのスケール
+  GLfloat colorScale[2];
 
   // カラーデータを格納するテクスチャ
   GLuint colorTexture;
@@ -88,18 +91,24 @@ public:
     return message;
   }
 
-  // デプスカメラのサイズを得る
+  // デプスセンサのサイズを得る
   void getDepthResolution(int *width, int *height) const
   {
     *width = depthWidth;
     *height = depthHeight;
   }
 
-  // カラーカメラのサイズを得る
+  // カラーセンサのサイズを得る
   void getColorResolution(int *width, int *height) const
   {
     *width = colorWidth;
     *height = colorHeight;
+  }
+
+  // カラーテクスチャのスケールを得る
+  const GLfloat *getColorScale() const
+  {
+    return colorScale;
   }
 
   // カラーデータのテクスチャ座標を格納するバッファオブジェクトを得る

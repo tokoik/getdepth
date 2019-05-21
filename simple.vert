@@ -26,12 +26,15 @@ uniform mat4 mp;                                      // 投影変換行列
 uniform mat4 mn;                                      // 法線ベクトルの変換行列
 
 // テクスチャ
-layout (location = 0) uniform sampler2D position;     // 頂点位置のテクスチャ
-layout (location = 1) uniform sampler2D normal;       // 法線ベクトルのテクスチャ
-layout (location = 2) uniform sampler2D color;        // カラーのテクスチャ
+uniform sampler2D position;                           // 頂点位置のテクスチャ
+uniform sampler2D normal;                             // 法線ベクトルのテクスチャ
+uniform sampler2D color;                              // カラーのテクスチャ
 
 // 疑似カラー処理
-layout (location = 3) uniform vec2 range = vec2(0.3, 6.0);
+uniform vec2 range = vec2(0.3, 6.0);
+
+// テクスチャ座標のスケール
+uniform vec2 scale = vec2(1.0);
 
 // 頂点属性
 layout (location = 0) in vec2 pc;                     // 頂点のテクスチャ座標
@@ -54,7 +57,7 @@ void main(void)
   gl_Position = mp * p;
 
   // テクスチャ座標
-  texcoord = cc / vec2(textureSize(color, 0));
+  texcoord = cc * scale;
 
   // 法線ベクトル
   vec4 nv = texture(normal, pc);

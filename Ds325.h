@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 //
-// 深度センサ関連の処理
+// デプスセンサ関連の処理
 //
 
 // DepthSense を使う
@@ -26,7 +26,7 @@ using namespace DepthSense;
 #include <thread>
 #include <mutex>
 
-// 深度センサ関連の基底クラス
+// デプスセンサ関連の基底クラス
 #include "DepthCamera.h"
 
 // キャプチャ中のメッセージ出力
@@ -52,10 +52,10 @@ const FrameFormat capture_color_format(FRAME_FORMAT_VGA);
 const CompressionType capture_color_compression(COMPRESSION_TYPE_YUY2);
 #endif
 
-// デプスカメラのフレームレート
+// デプスセンサのフレームレート
 const unsigned int capture_depth_fps(60);
 
-// カラーカメラのフレームレート
+// カラーセンサのフレームレート
 const unsigned int capture_color_fps(30);
 
 // 電源周波数
@@ -70,22 +70,22 @@ class Ds325 : public DepthCamera
   // 使用しているセンサの数
   static int activated;
 
-  // デプスカメラの解像度
+  // デプスセンサの解像度
   const FrameFormat depth_format;
 
-  // デプスカメラのフレームレート
+  // デプスセンサのフレームレート
   const unsigned int depth_fps;
 
-  // デプスカメラのモード
+  // デプスセンサのモード
   const DepthNode::CameraMode depth_mode;
 
-  // カラーカメラの解像度
+  // カラーセンサの解像度
   const FrameFormat color_format;
 
-  // カラーカメラのフレームレート
+  // カラーセンサのフレームレート
   const unsigned int color_fps;
 
-  // カラーカメラのデータ圧縮方式
+  // カラーセンサのデータ圧縮方式
   const CompressionType color_compression;
 
   // 電源周波数
@@ -127,7 +127,7 @@ class Ds325 : public DepthCamera
   // デプスノード用の mutex
   std::mutex depthMutex;
 
-  // デプスカメラの内部パラメータ
+  // デプスセンサの内部パラメータ
   IntrinsicParameters depthIntrinsics;
 
   // デプスデータ転送用のメモリ
@@ -154,7 +154,7 @@ class Ds325 : public DepthCamera
   // カラーノード用の mutex
   std::mutex colorMutex;
 
-  // カラーカメラの内部パラメータ
+  // カラーセンサの内部パラメータ
   IntrinsicParameters colorIntrinsics;
 
   // カラーデータ転送用のメモリ
@@ -176,12 +176,12 @@ public:
 
   // コンストラクタ
   Ds325(
-    FrameFormat depth_format = capture_depth_format,  // デプスカメラの解像度
-    unsigned int depth_fps = capture_depth_fps,       // デプスカメラのフレームレート
-    DepthNode::CameraMode = capture_depth_mode,       // デプスカメラのモード
-    FrameFormat color_format = capture_color_format,  // カラーカメラの解像度
-    unsigned int color_fps = capture_color_fps,       // カラーカメラのフレームレート
-    CompressionType color_compression = capture_color_compression,  // カラーカメラの圧縮方式
+    FrameFormat depth_format = capture_depth_format,  // デプスセンサの解像度
+    unsigned int depth_fps = capture_depth_fps,       // デプスセンサのフレームレート
+    DepthNode::CameraMode = capture_depth_mode,       // デプスセンサのモード
+    FrameFormat color_format = capture_color_format,  // カラーセンサの解像度
+    unsigned int color_fps = capture_color_fps,       // カラーセンサのフレームレート
+    CompressionType color_compression = capture_color_compression,  // カラーセンサの圧縮方式
     PowerLineFrequency frequency = color_frequency    // 電源周波数
     );
 

@@ -77,7 +77,7 @@ void main(void)
   // 画素のスクリーン座標
   vec2 dp = (texcoord * ds - dc + 0.5f) / df;
 
-  // デプスカメラの歪み補正係数
+  // デプスセンサの歪み補正係数
   float dr = dot(dp, dp);
   float dq = (1.0 + dr * (dk.x + dr * (dk.y + dr * dk.z)));
 

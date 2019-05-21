@@ -33,7 +33,7 @@
 #define CAPTURE_DEVICE 1
 
 // 頂点位置の生成をシェーダで行うなら 1
-#define USE_SHADER 0
+#define USE_SHADER 1
 
 // 透明人間にするなら 1
 #define USE_REFRACTION 0
@@ -76,11 +76,11 @@ void GgApplication::run()
   Window window("Depth Map Viewer");
   if (!window.get()) throw std::runtime_error("GLFW のウィンドウが開けません");
 
-  // 深度センサを有効にする
+  // デプスセンサを有効にする
   SENSOR sensor;
   if (!sensor.isOpend()) throw std::runtime_error(sensor.getMessage());
 
-  // 深度センサの解像度
+  // デプスセンサの解像度
   int width, height;
   sensor.getDepthResolution(&width, &height);
 
@@ -109,10 +109,22 @@ void GgApplication::run()
 
   // 透明人間用のシェーダ
   const GgSimpleShader simple("refraction.vert", "refraction.frag");
+  const GLint positionLoc(glGetUniformLocation(simple.get(), "position"));
+  const GLint normalLoc(glGetUniformLocation(simple.get(), "normal"));
+  const GLint backLoc(glGetUniformLocation(simple.get(), "back"));
   const GLint sizeLoc(glGetUniformLocation(simple.get(), "size"));
 #else
+  // カラーセンサの解像度
+  int cwidth, cheight;
+  sensor.getColorResolution(&cwidth, &cheight);
+
   // 描画用のシェーダ
   const GgSimpleShader simple("simple.vert", "simple.frag");
+  const GLint positionLoc(glGetUniformLocation(simple.get(), "position"));
+  const GLint normalLoc(glGetUniformLocation(simple.get(), "normal"));
+  const GLint colorLoc(glGetUniformLocation(simple.get(), "color"));
+  const GLint rangeLoc(glGetUniformLocation(simple.get(), "range"));
+  const GLint scaleLoc(glGetUniformLocation(simple.get(), "scale"));
 #endif
 
   // 光源データ
@@ -180,31 +192,34 @@ void GgApplication::run()
     material.select();
 
     // 頂点座標テクスチャ
-    glUniform1i(0, 0);
+    glUniform1i(positionLoc, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, positionTexture);
 
     // 法線ベクトルテクスチャ
-    glUniform1i(1, 1);
+    glUniform1i(normalLoc, 1);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, normalTexture);
 
 #if USE_REFRACTION
+    // 背景テクスチャ
+    glUniform1i(backLoc, 2);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, bmap);
+
     // ウィンドウサイズ
     glUniform2f(sizeLoc, static_cast<GLfloat>(window.getWidth()), static_cast<GLfloat>(window.getHeight()));
-
-    // 背景テクスチャ
-    glUniform1i(3, 3);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, bmap);
 #else
     // 前景テクスチャ
-    glUniform1i(2, 2);
+    glUniform1i(colorLoc, 2);
     glActiveTexture(GL_TEXTURE2);
     sensor.getColor();
 
     // 疑似カラー処理
-    glUniform2fv(3, 1, sensor.range);
+    glUniform2fv(rangeLoc, 1, sensor.range);
+
+    // テクスチャのスケール
+    glUniform2fv(scaleLoc, 1, sensor.getColorScale());
 #endif
 
     // 図形描画

@@ -26,9 +26,9 @@ uniform mat4 mp;                                      // 投影変換行列
 uniform mat4 mn;                                      // 法線ベクトルの変換行列
 
 // テクスチャ
-layout (location = 0) uniform sampler2D position;     // 頂点位置のテクスチャ
-layout (location = 1) uniform sampler2D normal;       // 法線ベクトルのテクスチャ
-layout (location = 3) uniform sampler2D back;         // 背景のテクスチャ
+uniform sampler2D position;                           // 頂点位置のテクスチャ
+uniform sampler2D normal;                             // 法線ベクトルのテクスチャ
+uniform sampler2D back;                               // 背景のテクスチャ
 
 // 頂点属性
 layout (location = 0) in vec2 pc;                     // 頂点のテクスチャ座標

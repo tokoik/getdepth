@@ -3,7 +3,7 @@
 #extension GL_ARB_explicit_uniform_location : enable
 
 // テクスチャ
-layout (location = 2) uniform sampler2D color;        // カラーのテクスチャ
+uniform sampler2D color;                              // カラーのテクスチャ
 
 // ラスタライザから受け取る頂点属性の補間値
 in vec4 idiff;                                        // 拡散反射光強度

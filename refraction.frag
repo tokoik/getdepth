@@ -3,10 +3,10 @@
 #extension GL_ARB_explicit_uniform_location : enable
 
 // テクスチャ
-layout (location = 3) uniform sampler2D back;		      // 背景のテクスチャ
+uniform sampler2D back;		                            // 背景のテクスチャ
 
 // ウィンドウサイズ
-uniform vec2 size;
+uniform vec2 size = vec2(640.0, 480.0);
 
 // ラスタライザから受け取る頂点属性の補間値
 in vec4 nv;                                           // 法線ベクトル
