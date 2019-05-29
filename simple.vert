@@ -2,6 +2,9 @@
 #extension GL_ARB_explicit_attrib_location : enable
 #extension GL_ARB_explicit_uniform_location : enable
 
+// 疑似カラー処理を行う場合は 1
+#define PSEUDO_COLOR 1
+
 // 光源
 layout (std140) uniform Light
 {
@@ -33,9 +36,6 @@ uniform sampler2D color;                              // カラーのテクス�
 // 疑似カラー処理
 uniform vec2 range = vec2(0.3, 6.0);
 
-// テクスチャ座標のスケール
-uniform vec2 scale = vec2(1.0);
-
 // 頂点属性
 layout (location = 0) in vec2 pc;                     // 頂点のテクスチャ座標
 layout (location = 1) in vec2 cc;                     // カラーのテクスチャ座標
@@ -57,7 +57,7 @@ void main(void)
   gl_Position = mp * p;
 
   // テクスチャ座標
-  texcoord = cc * scale;
+  texcoord = cc / vec2(textureSize(color, 0));
 
   // 法線ベクトル
   vec4 nv = texture(normal, pc);
@@ -68,12 +68,17 @@ void main(void)
   vec3 n = normalize((mn * nv).xyz);                  // 法線ベクトル
   vec3 h = normalize(l - v);                          // 中間ベクトル
 
+#if PSEUDO_COLOR
   // 疑似カラー処理
   float z = -6.0 * (pv.z + range.s) / (range.t - range.s);
   vec4 c = clamp(vec4(z - 2.0, 2.0 - abs(z - 2.0), 2.0 - z, 1.0), 0.0, 1.0);
 
   // 拡散反射光強度
   idiff = c * max(dot(n, l), 0.0) * kdiff * ldiff + kamb * lamb;
+#else
+  // 拡散反射光強度
+  idiff = max(dot(n, l), 0.0) * kdiff * ldiff + kamb * lamb;
+#endif
 
   // 鏡面反射光強度
   ispec = pow(max(dot(n, h), 0.0), kshi) * kspec * lspec;

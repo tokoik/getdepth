@@ -31,17 +31,14 @@ protected:
   // カラーセンサのサイズと画素数
   int colorWidth, colorHeight, colorCount;
 
-  // カラーテクスチャのスケール
-  GLfloat colorScale[2];
-
   // カラーデータを格納するテクスチャ
   GLuint colorTexture;
 
   // デプスデータの画素におけるカラーデータのテクスチャ座標を格納するバッファオブジェクト
   GLuint coordBuffer;
 
-  // バイラテラルフィルタの分散
-  GLfloat variance;
+  // バイラテラルフィルタの位置の分散と明度の分散
+  GLfloat variance1, variance2;
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   void makeTexture();
@@ -71,7 +68,7 @@ public:
     , pointTexture(0)
     , colorTexture(0)
     , coordBuffer(0)
-    , variance(0.1f)
+    , variance2(0.01f)
     , message(nullptr)
   {
   }
@@ -105,22 +102,29 @@ public:
     *height = colorHeight;
   }
 
-  // カラーテクスチャのスケールを得る
-  const GLfloat *getColorScale() const
-  {
-    return colorScale;
-  }
-
   // カラーデータのテクスチャ座標を格納するバッファオブジェクトを得る
   GLuint getCoordBuffer() const
   {
     return coordBuffer;
   }
 
-  // バイラテラルフィルタの分散を設定する
-  void setVariance(GLfloat v)
+  // バイラテラルフィルタの位置の分散と明度の分散を設定する
+  void setVariance(GLfloat v1, GLfloat v2)
   {
-    variance = v;
+    variance1 = v1;
+    variance2 = v2;
+  }
+
+  // バイラテラルフィルタの位置の分散を設定する
+  void setVariance1(GLfloat v)
+  {
+    variance1 = v;
+  }
+
+  // バイラテラルフィルタの明度の分散を設定する
+  void setVariance2(GLfloat v)
+  {
+    variance2 = v;
   }
 
   // デプスデータを取得する

@@ -42,7 +42,7 @@ class Rs400 : public DepthCamera
 	GLfloat (*point)[3];
 
 	// テクスチャ座標転送用のメモリ
-	const GLfloat (*uvmap)[2];
+	GLfloat (*uvmap)[2];
 
 	// カラーデータ転送用のメモリ
 	GLubyte (*color)[3];
@@ -53,8 +53,11 @@ class Rs400 : public DepthCamera
 	// カメラ座標を計算するシェーダ
 	static std::unique_ptr<Calculate> shader;
 
-	// バイラテラルフィルタの分散の uniform 変数 variance の場所
-	static GLint varianceLoc;
+	// バイラテラルフィルタの位置の分散の uniform 変数 variance1 の場所
+	static GLint variance1Loc;
+
+  // バイラテラルフィルタの明度の分散の uniform 変数 variance2 の場所
+  static GLint variance2Loc;
 
   // デプスセンサの主点位置の uniform 変数 dpp の場所
   static GLint dppLoc;

@@ -18,8 +18,8 @@ in vec2 texcoord;
 uniform vec2 dc, df;
 uniform vec3 dk;
 
-// 分散
-uniform float variance = 0.1;
+// バイラテラルフィルタの明度の分散
+uniform float variance2 = 0.01;
 
 // 対象画素の値
 float base;
@@ -28,7 +28,7 @@ float base;
 void f(inout vec2 csum, const in float c, const in float w)
 {
   float d = c - base;
-  float e = exp(-0.5 * d * d / variance) * w;
+  float e = exp(-0.5 * d * d / variance2) * w;
   csum += vec2(c * e, e);
 }
 

@@ -88,10 +88,6 @@ KinectV1::KinectV1()
   colorWidth = COLOR_W;
   colorHeight = COLOR_H;
 
-  // カラーテクスチャのスケールを求める
-  colorScale[0] = 1.0f / colorWidth;
-  colorScale[1] = 1.0f / colorHeight;
-
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   makeTexture();
 
@@ -112,7 +108,7 @@ KinectV1::KinectV1()
     shader.reset(new Calculate(depthWidth, depthHeight, "position_v1" SHADER_EXT));
 
     // シェーダの uniform 変数の場所を調べる
-    varianceLoc = glGetUniformLocation(shader->get(), "variance");
+    variance2Loc = glGetUniformLocation(shader->get(), "variance2");
     scaleLoc = glGetUniformLocation(shader->get(), "scale");
   }
 }
@@ -269,7 +265,7 @@ GLuint KinectV1::getPosition()
 {
   shader->use();
   glUniform2fv(scaleLoc, 1, scale);
-  glUniform1f(varianceLoc, variance);
+  glUniform1f(variance2Loc, variance2);
   const GLuint depthTexture(getDepth());
   const GLenum depthFormat(GL_R16UI);
   return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
@@ -319,8 +315,8 @@ int KinectV1::activated(0);
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> KinectV1::shader(nullptr);
 
-// バイラテラルフィルタの分散の uniform 変数 variance の場所
-GLint KinectV1::varianceLoc;
+// バイラテラルフィルタの明度の分散の uniform 変数 variance2 の場所
+GLint KinectV1::variance2Loc;
 
 // スクリーン座標からカメラ座標に変換する係数の uniform 変数 scale の場所
 GLint KinectV1::scaleLoc;

@@ -64,8 +64,11 @@ constexpr GgSimpleShader::Material materialData =
 // 背景色
 constexpr GLfloat background[] = { 0.2f, 0.3f, 0.4f, 0.0f };
 
-// バイラテラルフィルタのデフォルトの標準偏差
-constexpr GLfloat deviation(100.0f);
+// バイラテラルフィルタのデフォルトの位置の標準偏差 1 の 100 倍
+constexpr int deviation1(100);
+
+// バイラテラルフィルタのデフォルトの明度の標準偏差 0.1 の 1000 倍
+constexpr int deviation2(100);
 
 //
 // アプリケーションの実行
@@ -124,7 +127,6 @@ void GgApplication::run()
   const GLint normalLoc(glGetUniformLocation(simple.get(), "normal"));
   const GLint colorLoc(glGetUniformLocation(simple.get(), "color"));
   const GLint rangeLoc(glGetUniformLocation(simple.get(), "range"));
-  const GLint scaleLoc(glGetUniformLocation(simple.get(), "scale"));
 #endif
 
   // 光源データ
@@ -163,8 +165,10 @@ void GgApplication::run()
 #endif
 
     // 頂点位置の計算
-    const GLfloat sd(deviation + static_cast<GLfloat>(window.getArrowY()));
-    sensor.setVariance(sd * sd);
+    const GLfloat sd1((deviation1 + window.getArrowX()) * 0.01f);
+    sensor.setVariance1(sd1 * sd1);
+    const GLfloat sd2((deviation2 + window.getArrowY()) * 0.001f);
+    sensor.setVariance2(sd2 * sd2);
 #if USE_SHADER
     const GLuint positionTexture(sensor.getPosition());
 #else
@@ -217,9 +221,6 @@ void GgApplication::run()
 
     // 疑似カラー処理
     glUniform2fv(rangeLoc, 1, sensor.range);
-
-    // テクスチャのスケール
-    glUniform2fv(scaleLoc, 1, sensor.getColorScale());
 #endif
 
     // 図形描画

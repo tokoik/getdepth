@@ -15,8 +15,8 @@ layout (binding = 1, rgba32f) writeonly uniform image2D position;
 // スケール
 uniform vec2 scale;
 
-// 分散
-uniform float variance = 100.0;
+// バイラテラルフィルタの明度の分散
+uniform float variance2 = 0.01;
 
 // フィルタのサイズ
 const ivec2 filterSize = ivec2(5, 5);
@@ -45,7 +45,7 @@ float base;
 vec2 f(const in float c, const in float w)
 {
   const float d = c - base;
-  const float e = exp(-0.5 * d * d / variance) * w;
+  const float e = exp(-0.5 * d * d / variance2) * w;
   return vec2(c * e, e);
 }
 

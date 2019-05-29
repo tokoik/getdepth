@@ -71,8 +71,8 @@ class KinectV1 : public DepthCamera
   // カメラ座標を計算するシェーダ
   static std::unique_ptr<Calculate> shader;
 
-  // バイラテラルフィルタの分散の uniform 変数 variance の場所
-  static GLint varianceLoc;
+  // バイラテラルフィルタの明度の分散の uniform 変数 variance2 の場所
+  static GLint variance2Loc;
 
   // スクリーン座標からカメラ座標に変換する係数の uniform 変数 scale の場所
   static GLint scaleLoc;

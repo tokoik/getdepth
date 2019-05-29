@@ -73,10 +73,6 @@ Ds325::Ds325(
   FrameFormat_toResolution(depth_format, &depthWidth, &depthHeight);
   FrameFormat_toResolution(color_format, &colorWidth, &colorHeight);
 
-  // カラーテクスチャのスケールを求める
-  colorScale[0] = 1.0f / colorWidth;
-  colorScale[1] = 1.0f / colorHeight;
-
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   makeTexture();
 
@@ -96,7 +92,7 @@ Ds325::Ds325(
     shader.reset(new Calculate(depthWidth, depthHeight, "position_ds" SHADER_EXT));
 
     // シェーダの uniform 変数の場所を調べる
-    varianceLoc = glGetUniformLocation(shader->get(), "variance");
+    variance2Loc = glGetUniformLocation(shader->get(), "variance2");
     dcLoc = glGetUniformLocation(shader->get(), "dc");
     dfLoc = glGetUniformLocation(shader->get(), "df");
     dkLoc = glGetUniformLocation(shader->get(), "dk");
@@ -603,7 +599,7 @@ GLuint Ds325::getPosition()
 
   // カメラ座標をシェーダで算出する
   shader->use();
-  glUniform1f(varianceLoc, variance);
+  glUniform1f(variance2Loc, variance2);
   glUniform2f(dcLoc, depthIntrinsics.cx, depthIntrinsics.cy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   glUniform3f(dkLoc, depthIntrinsics.k1, depthIntrinsics.k2, depthIntrinsics.k3);
@@ -649,8 +645,8 @@ std::thread Ds325::worker;
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> Ds325::shader(nullptr);
 
-// バイラテラルフィルタの分散の uniform 変数 variance の場所
-GLint Ds325::varianceLoc;
+// バイラテラルフィルタの明度の分散の uniform 変数 variance2 の場所
+GLint Ds325::variance2Loc;
 
 // カメラパラメータの uniform 変数の場所
 GLint Ds325::dcLoc, Ds325::dfLoc, Ds325::dkLoc;
