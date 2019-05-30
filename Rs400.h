@@ -53,11 +53,8 @@ class Rs400 : public DepthCamera
 	// カメラ座標を計算するシェーダ
 	static std::unique_ptr<Calculate> shader;
 
-	// バイラテラルフィルタの位置の分散の uniform 変数 variance1 の場所
-	static GLint variance1Loc;
-
-  // バイラテラルフィルタの明度の分散の uniform 変数 variance2 の場所
-  static GLint variance2Loc;
+  // バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
+  static GLint varianceLoc;
 
   // デプスセンサの主点位置の uniform 変数 dpp の場所
   static GLint dppLoc;
@@ -97,12 +94,6 @@ class Rs400 : public DepthCamera
 
 	// カラー化されたフレーム
 	rs2::colorizer colorize_frame;
-
-	// RealSense から取り出したフレーム
-	rs2::frameset frames;
-
-	// Declare pointcloud object, for calculating pointclouds and texture mappings
-	rs2::pointcloud pc;
 
 	// RealSense を有効にする
 	void enable_device(rs2::device dev);

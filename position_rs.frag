@@ -17,8 +17,8 @@ in vec2 texcoord;
 // カメラパラメータ
 uniform vec2 dpp, df;
 
-// バイラテラルフィルタの明度の分散
-uniform float variance2 = 0.01;
+// バイラテラルフィルタの位置と明度の分散
+uniform vec2 variance = vec2(1.0, 0.01);
 
 // 対象画素の値
 float base;
@@ -27,7 +27,7 @@ float base;
 void f(inout vec2 csum, const in float c, const in float w)
 {
   float d = c - base;
-  float e = exp(-0.5 * d * d / variance2) * w;
+  float e = exp(-0.5 * d * d / variance[1]) * w;
   csum += vec2(c * e, e);
 }
 
@@ -73,7 +73,7 @@ void main(void)
   // デプス値を取り出す
   float z = csum.r / csum.g;
 
-  // 画素のスクリーン座標
+  // 画素のスクリーン座標 (D415/D435 はデプスセンサのゆがみ補正をする必要がない)
   vec2 dp = (texcoord * ds - dpp) / df;
 
   // デプス値からカメラ座標値を求める

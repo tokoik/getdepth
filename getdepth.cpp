@@ -166,9 +166,8 @@ void GgApplication::run()
 
     // 頂点位置の計算
     const GLfloat sd1((deviation1 + window.getArrowX()) * 0.01f);
-    sensor.setVariance1(sd1 * sd1);
     const GLfloat sd2((deviation2 + window.getArrowY()) * 0.001f);
-    sensor.setVariance2(sd2 * sd2);
+    sensor.setVariance(sd1 * sd1, sd2 * sd2);
 #if USE_SHADER
     const GLuint positionTexture(sensor.getPosition());
 #else

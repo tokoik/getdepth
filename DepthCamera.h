@@ -37,8 +37,8 @@ protected:
   // デプスデータの画素におけるカラーデータのテクスチャ座標を格納するバッファオブジェクト
   GLuint coordBuffer;
 
-  // バイラテラルフィルタの位置の分散と明度の分散
-  GLfloat variance1, variance2;
+  // バイラテラルフィルタの位置と明度の分散
+  GLfloat variance[2];
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
   void makeTexture();
@@ -68,7 +68,7 @@ public:
     , pointTexture(0)
     , colorTexture(0)
     , coordBuffer(0)
-    , variance2(0.01f)
+    , variance{ 1.0f, 0.01f }
     , message(nullptr)
   {
   }
@@ -108,23 +108,23 @@ public:
     return coordBuffer;
   }
 
-  // バイラテラルフィルタの位置の分散と明度の分散を設定する
+  // バイラテラルフィルタの位置と明度の分散を設定する
   void setVariance(GLfloat v1, GLfloat v2)
   {
-    variance1 = v1;
-    variance2 = v2;
+    variance[0] = v1;
+    variance[1] = v2;
   }
 
   // バイラテラルフィルタの位置の分散を設定する
   void setVariance1(GLfloat v)
   {
-    variance1 = v;
+    variance[0] = v;
   }
 
   // バイラテラルフィルタの明度の分散を設定する
   void setVariance2(GLfloat v)
   {
-    variance2 = v;
+    variance[1] = v;
   }
 
   // デプスデータを取得する

@@ -12,7 +12,7 @@
 // デプスデータをカラーデータに合わせる場合 1
 #define ALIGN_TO_COLOR 1
 
-	// パイプラインの設定
+// パイプラインの設定
 constexpr int depth_width = 640;		// depth_intr.width;
 constexpr int depth_height = 480;		// depth_intr.height;
 constexpr int depth_fps = 30;				// 30 or 60 due to resolution
@@ -62,8 +62,12 @@ static void check_format(int format)
 // コンストラクタ
 Rs400::Rs400()
 	: run(false)
-	, depth(nullptr)
-	, color(nullptr)
+  , depth(nullptr)
+  , point(nullptr)
+  , uvmap(nullptr)
+  , color(nullptr)
+	, depthPtr(nullptr)
+  , colorPtr(nullptr)
 {
 	// RealSense のコンテキスト
 	static std::unique_ptr<rs2::context> context(nullptr);
@@ -156,6 +160,8 @@ Rs400::Rs400()
 #else
   depthWidth = depthIntrinsics.width;
   depthHeight = depthIntrinsics.height;
+
+  // TODO: デプスセンサとカラーセンサの主点位置の差を知る必要がある
 #endif
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
@@ -167,7 +173,7 @@ Rs400::Rs400()
   uvmap = new GLfloat[depthCount][2];
 	color = new GLubyte[colorCount][3];
 
-
+#if ALIGN_TO_COLOR
   // テクスチャ座標を求める
   for (int i = 0; i < depthCount; ++i)
   {
@@ -175,6 +181,7 @@ Rs400::Rs400()
     uvmap[i][0] = i % depthWidth + 0.5f;
     uvmap[i][1] = i / depthWidth + 0.5f;
   }
+#endif
 
   // まだシェーダが作られていなかったら
 	if (shader.get() == nullptr)
@@ -183,8 +190,7 @@ Rs400::Rs400()
 		shader.reset(new Calculate(depthWidth, depthHeight, "position_rs" SHADER_EXT));
 
 		// シェーダの uniform 変数の場所を調べる
-    variance1Loc = glGetUniformLocation(shader->get(), "variance1");
-    variance2Loc = glGetUniformLocation(shader->get(), "variance2");
+    varianceLoc = glGetUniformLocation(shader->get(), "variance");
     dppLoc = glGetUniformLocation(shader->get(), "dpp");
     dfLoc = glGetUniformLocation(shader->get(), "df");
   }
@@ -215,26 +221,47 @@ Rs400::Rs400()
 
         // デプスフレームを取り出す
         const auto dframe(frames.get_depth_frame());
+        const GLushort *const d(static_cast<const GLushort *>(dframe.get_data()));
 
         // カラーフレームを取り出す
         const auto cframe(frames.get_color_frame());
+        const GLubyte (*const c)[3](static_cast<const GLubyte (*)[3]>(cframe.get_data()));
 
         // デバイスをロックする
 				std::lock_guard<std::mutex> lock(deviceMutex);
 
-        // カメラ座標を求める
-        const GLushort *const d(static_cast<const unsigned short *>(dframe.get_data()));
+        // デプスデータとカラーデータを上下反転して取り出す
         for (int i = 0; i < depthCount; ++i)
         {
+          // 画素位置
+          const int x(i % depthWidth);
+          const int y(i / depthWidth);
+
+          // 格納先
+          const int j((depthHeight - y - 1) * depthWidth + x);
+
           // 計測不能点だったら最遠点に飛ばす
-          depth[i] = d[i] != 0 ? d[i] : maxDepth;
+          depth[j] = d[i] != 0 ? d[i] : maxDepth;
+
+#if !ALIGN_TO_COLOR
+          // デプスデータの画素の画素位置
+          const GLfloat dx((x - depthIntrinsics.ppx) * depthIntrinsics.fx * 2.0f / depthWidth);
+          const GLfloat dy((y - depthIntrinsics.ppy) * depthIntrinsics.fy * 2.0f / depthHeight);
+
+          // デプスデータの画素のカラーデータ上の画素位置
+          // TODO: デプス（距離）に合わせてテクスチャ座標をずらす必要がある
+          uvmap[i][0] = dx * colorWidth / colorIntrinsics.fx + colorIntrinsics.ppx;
+          uvmap[i][1] = dy * colorHeight / colorIntrinsics.fy + colorIntrinsics.ppy;
+#endif
+
+          // カラーフレームを確保したメモリに格納する
+          color[j][0] = c[i][0];
+          color[j][1] = c[i][1];
+          color[j][2] = c[i][2];
         }
 
 				// デプスデータの新着を知らせる
 				depthPtr = depth;
-
-				// カラーフレームを確保したメモリに格納する
-				memcpy(color, cframe.get_data(), colorCount * sizeof *color);
 
 				// カラーデータの新着を知らせる
 				colorPtr = color;
@@ -360,7 +387,7 @@ void Rs400::poll_frames()
 	// すべてのデバイスについて
 	for (auto &&view : devices)
 	{
-		// そのパイプラインからフレームセット全体を取り出す
+    // そのパイプラインからフレームセット全体を取り出す
 		rs2::frameset frameset;
 		if (view.second->pipe.poll_for_frames(&frameset))
 		{
@@ -423,7 +450,7 @@ GLuint Rs400::getPoint()
       // カメラ座標系の z 座標値を m 単位で求める
       point[i][2] = -0.001f * depth[i];
 
-      // カメラ座標系の x, y 座標値を m 単位で求める
+      // カメラ座標系の x, y 座標値を m 単位で求める (D415/D435 はデプスセンサのゆがみ補正が不要)
       point[i][0] = (i % depthWidth - depthIntrinsics.ppx) * point[i][2] / depthIntrinsics.fx;
       point[i][1] = (i / depthWidth - depthIntrinsics.ppy) * point[i][2] / depthIntrinsics.fy;
     }
@@ -450,7 +477,7 @@ GLuint Rs400::getPoint()
 // カメラ座標を算出する
 GLuint Rs400::getPosition()
 {
-	// テクスチャ座標のバッファオブジェクトを指定する
+  // テクスチャ座標のバッファオブジェクトを指定する
 	glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
 	// テクスチャ座標をバッファオブジェクトに転送する
@@ -458,8 +485,7 @@ GLuint Rs400::getPosition()
 
   // カメラ座標をシェーダで算出する
 	shader->use();
-  glUniform1f(variance1Loc, variance1);
-  glUniform1f(variance2Loc, variance2);
+  glUniform2fv(varianceLoc, 1, variance);
   glUniform2f(dppLoc, depthIntrinsics.ppx, depthIntrinsics.ppy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   const GLuint depthTexture(getDepth());
@@ -495,11 +521,8 @@ int Rs400::activated(0);
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> Rs400::shader(nullptr);
 
-// バイラテラルフィルタの位置の分散の uniform 変数 variance1 の場所
-GLint Rs400::variance1Loc;
-
-// バイラテラルフィルタの明度の分散の uniform 変数 variance2 の場所
-GLint Rs400::variance2Loc;
+// バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
+GLint Rs400::varianceLoc;
 
 // カメラパラメータの uniform 変数の場所
 GLint Rs400::dppLoc, Rs400::dfLoc;

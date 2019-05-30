@@ -15,11 +15,8 @@ layout (binding = 1, rgba32f) writeonly uniform image2D position;
 // カメラパラメータ
 uniform vec2 dpp, df;
 
-// バイラテラルフィルタの位置の分散
-uniform float variance1 = 1.0;
-
-// バイラテラルフィルタの明度の分散
-uniform float variance2 = 0.01;
+// バイラテラルフィルタの位置と明度の分散
+uniform vec2 variance = vec2(1.0, 0.01);
 
 // フィルタのサイズ
 const ivec2 filterSize = ivec2(5, 5);
@@ -37,10 +34,6 @@ const ivec2 neighborhoodSize = tileSize + filterOffset * 2;
 shared float pixel[neighborhoodSize.y][neighborhoodSize.x];
 shared float row[neighborhoodSize.y][tileSize.x]; 
 
-// 重み (variance2 = 1 のとき，不使用)
-const float rowWeight[filterSize.x] = { 0.135335283, 0.60653066, 1.0, 0.60653066, 0.135335283 };
-const float columnWeight[filterSize.y] = { 0.135335283, 0.60653066, 1.0, 0.60653066, 0.135335283 };
-
 // 対象画素の値
 float base;
 
@@ -48,7 +41,7 @@ float base;
 vec2 f(const in float c, const in float w)
 {
   const float d = c - base;
-  const float e = exp(-0.5 * d * d / variance2) * w;
+  const float e = exp(-0.5 * d * d / variance[1]) * w;
   return vec2(c * e, e);
 }
 
@@ -67,6 +60,20 @@ void retirePhase()
 
 void main(void)
 {
+  // 重み
+  // TODO: uniform にして事前に CPU で計算しておくべき
+  float rowWeight[filterSize.x], columnWeight[filterSize.y];
+  for(int i = 0; i < filterSize.x; ++i)
+  {
+    float dx = i - filterOffset.x;
+    rowWeight[i] = exp(-0.5 * dx * dx / variance[0]);
+  }
+  for (int j = 0; j < filterSize.y; ++j)
+  {
+    float dy = j - filterOffset.y;
+    columnWeight[j] = exp(-0.5 * dy * dy / variance[0]);
+  }
+
   // ワークグループが処理する領域の基準位置
   const ivec2 tile_xy = ivec2(gl_WorkGroupID);
 
@@ -99,10 +106,10 @@ void main(void)
   // 対象画素の値とその重みのペアを作る
   vec2 csum = vec2(0.0);
 
+  // 列方向の重み付け和を求める
   for(int i = 0; i < filterSize.x; ++i)
   {
-    float dx = i - filterOffset.x;
-    csum += f(pixel[y][x + i], exp(-0.5 * dx * dx / variance1));
+    csum += f(pixel[y][x + i], rowWeight[i]);
   }
 
   // デプス値を取り出す
@@ -116,10 +123,10 @@ void main(void)
     // 対象画素の値とその重みのペアを作る
     vec2 csum = vec2(0.0);
 
+    // 行方向の重み付け和を求める
     for (int j = 0; j < filterSize.y; ++j)
     {
-      float dy = j - filterOffset.y;
-      csum += f(row[y + j][x], exp(-0.5 * dy * dy / variance1));
+      csum += f(row[y + j][x], columnWeight[j]);
     }
 
     // デプス値を取り出す
@@ -128,8 +135,8 @@ void main(void)
     // 結果を保存する画素位置を求める
     const ivec2 pixel_xy = tile_xy * tileSize + thread_xy; 
 
-    // 画素のスクリーン座標
-    const vec2 dp = (pixel_xy - dpp) / df;
+    // 画素のスクリーン座標 (D415/D435 はデプスセンサのゆがみ補正をする必要がない)
+    const vec2 dp = (dpp - pixel_xy) / df;
 
     // デプス値からカメラ座標値を求める
     imageStore(position, pixel_xy, vec4(dp * z, z, 1.0));

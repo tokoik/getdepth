@@ -34,6 +34,8 @@ Ds325::Ds325(
   , color_compression(color_compression)
 	, color(nullptr)
   , power_line_frequency(frequency)
+  , depthPtr(nullptr)
+  , colorPtr(nullptr)
 {
   // スレッドが走っていなかったら
   if (!worker.joinable())
@@ -92,7 +94,7 @@ Ds325::Ds325(
     shader.reset(new Calculate(depthWidth, depthHeight, "position_ds" SHADER_EXT));
 
     // シェーダの uniform 変数の場所を調べる
-    variance2Loc = glGetUniformLocation(shader->get(), "variance2");
+    varianceLoc = glGetUniformLocation(shader->get(), "variance");
     dcLoc = glGetUniformLocation(shader->get(), "dc");
     dfLoc = glGetUniformLocation(shader->get(), "df");
     dkLoc = glGetUniformLocation(shader->get(), "dk");
@@ -513,6 +515,7 @@ GLuint Ds325::getPoint()
       const int j((depthHeight - v) * depthWidth - u - 1);
 
       // 歪みを補正したポイントのテクスチャ座標値
+      // TODO: デプス（距離）に合わせてテクスチャ座標をずらす必要がある
       uvmap[j][0] = ccx + cx * cfx;
       uvmap[j][1] = ccy - cy * cfy;
     }
@@ -599,7 +602,7 @@ GLuint Ds325::getPosition()
 
   // カメラ座標をシェーダで算出する
   shader->use();
-  glUniform1f(variance2Loc, variance2);
+  glUniform2fv(varianceLoc, 1, variance);
   glUniform2f(dcLoc, depthIntrinsics.cx, depthIntrinsics.cy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   glUniform3f(dkLoc, depthIntrinsics.k1, depthIntrinsics.k2, depthIntrinsics.k3);
@@ -645,8 +648,8 @@ std::thread Ds325::worker;
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> Ds325::shader(nullptr);
 
-// バイラテラルフィルタの明度の分散の uniform 変数 variance2 の場所
-GLint Ds325::variance2Loc;
+// バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
+GLint Ds325::varianceLoc;
 
 // カメラパラメータの uniform 変数の場所
 GLint Ds325::dcLoc, Ds325::dfLoc, Ds325::dkLoc;

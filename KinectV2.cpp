@@ -110,7 +110,7 @@ KinectV2::KinectV2()
   shader.reset(new Calculate(depthWidth, depthHeight, "position_v2" SHADER_EXT));
 
   // シェーダの uniform 変数の場所を調べる
-  variance2Loc = glGetUniformLocation(shader->get(), "variance2");
+  varianceLoc = glGetUniformLocation(shader->get(), "variance");
 
   // デプス値に対するカメラ座標の変換テーブルのテクスチャを作成する
   glGenTextures(1, &mapperTexture);
@@ -263,7 +263,7 @@ GLuint KinectV2::getPoint()
 GLuint KinectV2::getPosition()
 {
   shader->use();
-  glUniform1f(variance2Loc, variance2);
+  glUniform2fv(varianceLoc, 1, variance);
   const GLuint texture[] = { getDepth(), mapperTexture };
   const GLenum format[] = { GL_R16UI, GL_RG32F };
   return shader->execute(2, texture, format, 16, 16)[0];
@@ -299,7 +299,7 @@ IKinectSensor *KinectV2::sensor(nullptr);
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> KinectV2::shader(nullptr);
 
-// バイラテラルフィルタの明度の分散の uniform 変数 variance2 の場所
-GLint KinectV2::variance2Loc;
+// バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
+GLint KinectV2::varianceLoc;
 
 #endif
