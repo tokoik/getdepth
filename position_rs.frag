@@ -74,7 +74,7 @@ void main(void)
   float z = csum.r / csum.g;
 
   // 画素のスクリーン座標 (D415/D435 はデプスセンサのゆがみ補正をする必要がない)
-  vec2 dp = (texcoord * ds - dpp) / df;
+  vec2 dp = (dpp - texcoord * ds) / df;
 
   // デプス値からカメラ座標値を求める
   position = vec4(dp * z, z, 1.0);
