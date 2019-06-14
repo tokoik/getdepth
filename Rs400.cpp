@@ -7,7 +7,14 @@
 #if USE_REAL_SENSE
 
 // RealSense 関連
-#pragma comment (lib, "realsense2.lib")
+#ifdef _WIN32
+#  ifdef _DEBUG
+#    define RS_EXT_STR "d.lib"
+#  else
+#    define RS_EXT_STR ".lib"
+#  endif
+#  pragma comment (lib, "realsense2" RS_EXT_STR)
+#endif
 
 // デプスデータをカラーデータに合わせる場合 1
 #define ALIGN_TO_COLOR 1

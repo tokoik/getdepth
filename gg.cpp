@@ -54,14 +54,14 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #  endif
 // コンフィギュレーションを調べる
 #  if defined(_DEBUG)
-#    define GLFW3_CONFIGURATION "Debug"
+#    define GLFW3_EXT_STR "d.lib"
 #  else
-#    define GLFW3_CONFIGURATION "Release"
+#    define GLFW3_EXT_STR ".lib"
 // Visual Studio のリリースビルドではコンソールを出さない
 #    pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
 #  endif
 // リンクするライブラリ
-#  pragma comment(lib, "lib\\" GLFW3_PLATFORM "\\" GLFW3_CONFIGURATION "\\glfw3.lib")
+#  pragma comment(lib, "lib\\" GLFW3_PLATFORM "\\glfw3" GLFW3_EXT_STR)
 #endif
 
 // OpenGL 3.2 の API のエントリポイント
