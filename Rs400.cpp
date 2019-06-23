@@ -89,13 +89,13 @@ Rs400::Rs400()
 		context->set_devices_changed_callback([&](rs2::event_information &info)
 		{
 			// 取り外されたデバイスがあればそれを削除する
-			remove_devices(info);
+			remove_device(info);
 
 			// すべての新しく取り付けられたデバイスについて
 			for (auto &&device : info.get_new_devices())
 			{
 				// それを有効にする
-				enable_device(device);
+				add_device(device);
 			}
 		});
 
@@ -103,23 +103,43 @@ Rs400::Rs400()
 		for (auto &&device : context->query_devices())
 		{
 			// それを有効にする
-			enable_device(device);
+			add_device(device);
 		}
 	}
 
 	// RealSense の使用台数が接続台数に達していれば戻る
-	if (++activated > device_count())
+	if (activated >= count_device())
 	{
 		setMessage("RealSense の数が足りません");
 		return;
 	}
 
-	// パイプラインの設定
-	conf.enable_stream(RS2_STREAM_DEPTH, depth_width, depth_height, RS2_FORMAT_Z16, depth_fps);
-	conf.enable_stream(RS2_STREAM_COLOR, color_width, color_height, RS2_FORMAT_RGB8, color_fps);
+  // デバイスの番号
+  int id(0);
 
-	// パイプラインをその設定で開始する
-	profile = pipe.start(conf);
+  for (const auto &device : devices)
+  {
+    // 未使用のデバイスがあったら
+    if (id++ == activated)
+    {
+      // 使用中のデバイスをカウントする
+      ++activated;
+
+      // パイプラインの設定
+      rs2::config conf;
+
+      // このデバイスのシリアル番号の RealSense をパイプラインで使用できるようにする
+      conf.enable_device(device.first);
+
+      // キャプチャするデータのフォーマットを指定する
+      conf.enable_stream(RS2_STREAM_DEPTH, depth_width, depth_height, RS2_FORMAT_Z16, depth_fps);
+      conf.enable_stream(RS2_STREAM_COLOR, color_width, color_height, RS2_FORMAT_RGB8, color_fps);
+
+      // この設定でパイプラインを開始する
+      profile = pipe.start(conf);
+      break;
+    }
+  }
 
 	// デプスストリーム
 	const auto dstream(profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>());
@@ -174,7 +194,12 @@ Rs400::Rs400()
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
 	makeTexture();
 
-	// データ転送用のメモリを確保する
+  shader.reset(new Calculate(depthWidth, depthHeight, "position_rs" SHADER_EXT));
+  varianceLoc = glGetUniformLocation(shader->get(), "variance");
+  dppLoc = glGetUniformLocation(shader->get(), "dpp");
+  dfLoc = glGetUniformLocation(shader->get(), "df");
+
+  // データ転送用のメモリを確保する
 	depth = new GLushort[depthCount];
 	point = new GLfloat[depthCount][3];
   uvmap = new GLfloat[depthCount][2];
@@ -189,18 +214,6 @@ Rs400::Rs400()
     uvmap[i][1] = i / depthWidth + 0.5f;
   }
 #endif
-
-  // まだシェーダが作られていなかったら
-	if (shader.get() == nullptr)
-	{
-		// カメラ座標算出用のシェーダを作成する
-		shader.reset(new Calculate(depthWidth, depthHeight, "position_rs" SHADER_EXT));
-
-		// シェーダの uniform 変数の場所を調べる
-    varianceLoc = glGetUniformLocation(shader->get(), "variance");
-    dppLoc = glGetUniformLocation(shader->get(), "dpp");
-    dfLoc = glGetUniformLocation(shader->get(), "df");
-  }
 
 	// まだスレッドが走っていなかったら
 	if (!worker.joinable())
@@ -248,7 +261,7 @@ Rs400::Rs400()
           const int j((depthHeight - y - 1) * depthWidth + x);
 
           // 計測不能点だったら最遠点に飛ばす
-          depth[j] = d[i] != 0 ? d[i] : maxDepth;
+          depth[j] = (d[i] != 0 && d[i] < maxDepth) ? d[i] : maxDepth;
 
 #if !ALIGN_TO_COLOR
           // デプスデータの画素の画素位置
@@ -297,9 +310,16 @@ Rs400::~Rs400()
 	delete[] color;
 }
 
-// RealSense を有効にする
-void Rs400::enable_device(rs2::device dev)
+// RealSense を追加する
+void Rs400::add_device(rs2::device &dev)
 {
+	// RealSense 以外のカメラでないか調べる
+	if (dev.get_info(RS2_CAMERA_INFO_NAME) == "Platform Camera")
+	{
+		// RealSense ではない
+		return;
+	}
+
 	// RealSense のシリアル番号を調べる
 	std::string serial_number(dev.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER));
 
@@ -313,23 +333,12 @@ void Rs400::enable_device(rs2::device dev)
 		return;
 	}
 
-	// RealSense 以外のカメラかどうか調べる
-	const std::string platform_camera_name = "Platform Camera";
-	if (platform_camera_name == dev.get_info(RS2_CAMERA_INFO_NAME))
-	{
-		// RealSense ではない
-		return;
-	}
-
-	// このデバイスのシリアル番号の RealSense をパイプラインで使用できるようにする
-	conf.enable_device(serial_number);
-
-	// このデバイスを登録する
-	devices.emplace(serial_number, this);
+	// このデバイスをリストに登録する
+	devices.emplace(serial_number, &dev);
 }
 
 // RealSense を無効にする
-void Rs400::remove_devices(const rs2::event_information& info)
+void Rs400::remove_device(const rs2::event_information &info)
 {
 	// デバイスをロックする
 	std::lock_guard<std::mutex> lock(deviceMutex);
@@ -338,7 +347,7 @@ void Rs400::remove_devices(const rs2::event_information& info)
 	for (auto device = devices.begin(); device != devices.end();)
 	{
 		// そのデバイスが削除されていたら
-		if (info.was_removed(device->second->profile.get_device()))
+		if (info.was_removed(*device->second))
 		{
 			// そのデバイスをデバイスリストから削除して先に進む
 			device = devices.erase(device);
@@ -352,66 +361,13 @@ void Rs400::remove_devices(const rs2::event_information& info)
 }
 
 // 接続されている RealSense の数を調べる
-int Rs400::device_count()
+int Rs400::count_device()
 {
 	// デバイスをロックする
 	std::lock_guard<std::mutex> lock(deviceMutex);
 
 	// デバイスリストの数を返す
 	return static_cast<int>(devices.size());
-}
-
-// RealSense のストリーム数を調べる
-int Rs400::stream_count()
-{
-	// デバイスリストをロックする
-	std::lock_guard<std::mutex> lock(deviceMutex);
-
-	// ストリームの数
-	int count(0);
-
-	// すべてのデバイスについて
-	for (auto &&sn_to_dev : devices)
-	{
-		// デバイスごとのストリームについて
-		for (auto &&stream : sn_to_dev.second->frames_per_stream)
-		{
-			// 存在するストリームの数を数える
-			if (stream.second) count++;
-		}
-	}
-
-	// ストリームの数を返す
-	return count;
-}
-
-// RealSense からフレームを取り出す
-void Rs400::poll_frames()
-{
-	// デバイスリストをロックする
-	std::lock_guard<std::mutex> lock(deviceMutex);
-
-	// すべてのデバイスについて
-	for (auto &&view : devices)
-	{
-    // そのパイプラインからフレームセット全体を取り出す
-		rs2::frameset frameset;
-		if (view.second->pipe.poll_for_frames(&frameset))
-		{
-			// フレームセットの個々のフレームについて
-			for (size_t i = 0; i < frameset.size(); ++i)
-			{
-				// 一つのフレームを取り出す
-				rs2::frame new_frame = frameset[i];
-
-				// ストリームの番号を求める
-				int stream_id = new_frame.get_profile().unique_id();
-
-				// そのストリームのフレームを更新する
-				view.second->frames_per_stream[stream_id] = view.second->colorize_frame.process(new_frame);
-			}
-		}
-	}
 }
 
 // デプスデータを取得する
@@ -525,16 +481,7 @@ GLuint Rs400::getColor()
 // 使用しているセンサの数
 int Rs400::activated(0);
 
-// カメラ座標を計算するシェーダ
-std::unique_ptr<Calculate> Rs400::shader(nullptr);
-
-// バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
-GLint Rs400::varianceLoc;
-
-// カメラパラメータの uniform 変数の場所
-GLint Rs400::dppLoc, Rs400::dfLoc;
-
 // RealSense のデバイスリスト
-std::map<std::string, Rs400 *> Rs400::devices;
+std::map<std::string, rs2::device *> Rs400::devices;
 
 #endif

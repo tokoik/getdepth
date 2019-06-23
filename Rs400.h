@@ -51,16 +51,16 @@ class Rs400 : public DepthCamera
 	const GLubyte (*colorPtr)[3];
 
 	// カメラ座標を計算するシェーダ
-	static std::unique_ptr<Calculate> shader;
+	std::unique_ptr<Calculate> shader;
 
   // バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
-  static GLint varianceLoc;
+  GLint varianceLoc;
 
   // デプスセンサの主点位置の uniform 変数 dpp の場所
-  static GLint dppLoc;
+  GLint dppLoc;
 
   // デプスセンサの焦点距離の unform 変数 df の場所
-  static GLint dfLoc;
+  GLint dfLoc;
 
 	// データ取得用のスレッド
 	std::thread worker;
@@ -72,10 +72,7 @@ class Rs400 : public DepthCamera
 	std::mutex deviceMutex;
 
 	// RealSense のデバイスリスト
-	static std::map<std::string, Rs400 *> devices;
-
-	// RealSense の設定情報
-	rs2::config conf;
+	static std::map<std::string, rs2::device *> devices;
 
 	// RealSense のパイプライン
 	rs2::pipeline pipe;
@@ -89,27 +86,14 @@ class Rs400 : public DepthCamera
   // RealSense のカラーストリームの内部パラメータ
   rs2_intrinsics colorIntrinsics;
 
-  // ストリームごとのフレーム数
-	std::map<int, rs2::frame> frames_per_stream;
-
-	// カラー化されたフレーム
-	rs2::colorizer colorize_frame;
-
 	// RealSense を有効にする
-	void enable_device(rs2::device dev);
+	void add_device(rs2::device &dev);
 
 	// RealSense を無効にする
-	void remove_devices(const rs2::event_information& info);
+	void remove_device(const rs2::event_information &info);
 
 	// 接続されている RealSense の数を調べる
-	int device_count();
-
-	// RealSense のストリーム数を調べる
-	int stream_count();
-
-	// RealSense からフレームを取り出す
-	void poll_frames();
-
+	int count_device();
 
 public:
 
@@ -120,10 +104,10 @@ public:
   virtual ~Rs400();
 
   // 計測不能点のデフォルト距離
-  static constexpr GLushort maxDepth = 10000;
+  static constexpr GLushort maxDepth = 5000;
 
   // 疑似カラー処理の範囲
-  static constexpr GLfloat range[2] = { 0.4f, 10.0f };
+  static constexpr GLfloat range[2] = { 0.4f, 4.0f };
 
   // デプスデータを取得する
   GLuint getDepth();
