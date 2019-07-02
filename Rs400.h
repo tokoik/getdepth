@@ -86,6 +86,9 @@ class Rs400 : public DepthCamera
   // RealSense のカラーストリームの内部パラメータ
   rs2_intrinsics colorIntrinsics;
 
+  // RealSense のカラーセンサに対するデプスセンサの外部パラメータ
+  rs2_extrinsics extrinsics;
+
 	// RealSense を有効にする
 	void add_device(rs2::device &dev);
 

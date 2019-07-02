@@ -16,7 +16,7 @@ layout (binding = 1, rgba32f) writeonly uniform image2D position;
 uniform vec2 dpp, df;
 
 // バイラテラルフィルタの位置と明度の分散
-uniform vec2 variance = vec2(1.0, 0.01);
+uniform vec2 variance = vec2(2.0, 100.0);
 
 // フィルタのサイズ
 const ivec2 filterSize = ivec2(5, 5);

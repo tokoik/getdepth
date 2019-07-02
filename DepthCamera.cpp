@@ -7,6 +7,9 @@
 // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
 void DepthCamera::makeTexture()
 {
+  // カラーデータの境界色
+  static const GLfloat border[] = { 0.5f, 0.5f, 0.5f, 0.0f };
+
   // デプスデータとカラーデータのデータ数を求める
   depthCount = depthWidth * depthHeight;
   colorCount = colorWidth * colorHeight;
@@ -37,6 +40,7 @@ void DepthCamera::makeTexture()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 
   // デプスデータの画素位置のカラーのテクスチャ座標を格納するバッファオブジェクトを準備する
   glGenBuffers(1, &coordBuffer);

@@ -17,7 +17,7 @@
 #endif
 
 // デプスデータをカラーデータに合わせる場合 1
-#define ALIGN_TO_COLOR 1
+#define ALIGN_TO_COLOR 0
 
 // パイプラインの設定
 constexpr int depth_width = 640;		// depth_intr.width;
@@ -191,6 +191,9 @@ Rs400::Rs400()
   // TODO: デプスセンサとカラーセンサの主点位置の差を知る必要がある
 #endif
 
+  // カラーセンサに対するデプスセンサの外部パラメータ
+  extrinsics = dstream.get_extrinsics_to(cstream);
+
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
 	makeTexture();
 
@@ -265,13 +268,18 @@ Rs400::Rs400()
 
 #if !ALIGN_TO_COLOR
           // デプスデータの画素の画素位置
-          const GLfloat dx((x - depthIntrinsics.ppx) * depthIntrinsics.fx * 2.0f / depthWidth);
-          const GLfloat dy((y - depthIntrinsics.ppy) * depthIntrinsics.fy * 2.0f / depthHeight);
+          const GLfloat dz(depth[j]);
+          const GLfloat dx(dz * (x - depthIntrinsics.ppx) / depthIntrinsics.fx);
+          const GLfloat dy(dz * (y - depthIntrinsics.ppy) / depthIntrinsics.fy);
+
+          // カラーデータの画素の画素位置
+          const GLfloat cx(extrinsics.rotation[0] * dx + extrinsics.rotation[3] * dy + extrinsics.rotation[6] * dz + extrinsics.translation[0]);
+          const GLfloat cy(extrinsics.rotation[1] * dx + extrinsics.rotation[4] * dy + extrinsics.rotation[7] * dz + extrinsics.translation[1]);
+          const GLfloat cz(extrinsics.rotation[2] * dx + extrinsics.rotation[5] * dy + extrinsics.rotation[8] * dz + extrinsics.translation[2]);
 
           // デプスデータの画素のカラーデータ上の画素位置
-          // TODO: デプス（距離）に合わせてテクスチャ座標をずらす必要がある
-          uvmap[i][0] = dx * colorWidth / colorIntrinsics.fx + colorIntrinsics.ppx;
-          uvmap[i][1] = dy * colorHeight / colorIntrinsics.fy + colorIntrinsics.ppy;
+          uvmap[i][0] = cx * colorIntrinsics.fx / cz + colorIntrinsics.ppx;
+          uvmap[i][1] = cy * colorIntrinsics.fy / cz + colorIntrinsics.ppy;
 #endif
 
           // カラーフレームを確保したメモリに格納する
