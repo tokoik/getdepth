@@ -33,7 +33,7 @@ constexpr int color_fps = 30;				// 30 or 60
 #include <cassert>
 
 #if defined(DEBUG)
-static void check_format(int format)
+static void check_frame_format(int format)
 {
 	switch (format)
 	{
@@ -61,9 +61,34 @@ static void check_format(int format)
 	default: break;
 	}
 }
-#  define CHECK_FRAME_FORMAT(format) check_format(format)
+#  define CHECK_FRAME_FORMAT(format) check_frame_format(format)
+static void check_intrinsics(const rs2_intrinsics &intrinsics)
+{
+  std::cerr << "Width = " << intrinsics.width << ", Height = " << intrinsics.height << "\n";
+  std::cerr << "Principal Point = (" << intrinsics.ppx << ", " << intrinsics.ppy << ")\n";
+  std::cerr << "Focal Length = (" << intrinsics.fx << ", " << intrinsics.fy << ")\n";
+  std::cerr << "Distortion coefficients =";
+  for (auto c : intrinsics.coeffs) std::cout << " " << c;
+  std::cerr << "\n";
+  switch (intrinsics.model)
+  {
+  case RS2_DISTORTION_INVERSE_BROWN_CONRADY:
+    std::cerr << "RS2_DISTORTION_INVERSE_BROWN_CONRADY\n";
+    break;
+  case RS2_DISTORTION_KANNALA_BRANDT4:
+    std::cerr << "RS2_DISTORTION_KANNALA_BRANDT4\n";
+    break;
+  case RS2_DISTORTION_FTHETA:
+    std::cerr << "RS2_DISTORTION_FTHETA\n";
+    break;
+  default:
+    break;
+  }
+}
+#  define CHECK_INTRINSICS(intrinsics) check_intrinsics(intrinsics)
 #else
 #  define CHECK_FRAME_FORMAT(format)
+#  define CHECK_INTRINSICS(intrinsics)
 #endif
 
 // コンストラクタ
@@ -148,16 +173,10 @@ Rs400::Rs400()
   depthIntrinsics = dstream.get_intrinsics();
 
 #if defined(DEBUG)
-	// 内部パラメータの確認
-	std::cerr << "Width = " << depthIntrinsics.width << ", Height = " << depthIntrinsics.height << "\n";
-	std::cerr << "Principal Point = (" << depthIntrinsics.ppx << ", " << depthIntrinsics.ppy << ")\n";
-	std::cerr << "Focal Length = (" << depthIntrinsics.fx << ", " << depthIntrinsics.fy << ")\n";
-	std::cerr << "Distortion coefficients =";
-	for (auto c : depthIntrinsics.coeffs) std::cout << " " << c;
-	std::cerr << "\n";
-
-	const auto sensor = profile.get_device().first<rs2::depth_sensor>();
-	std::cerr << "Scale = " << sensor.get_depth_scale() <<"\n";
+	// デプスセンサの内部パラメータの確認
+  check_intrinsics(depthIntrinsics);
+  const auto sensor(profile.get_device().first<rs2::depth_sensor>());
+  std::cerr << "Scale = " << sensor.get_depth_scale() << "\n";
 #endif
 
 	// カラーストリーム
@@ -167,13 +186,8 @@ Rs400::Rs400()
 	colorIntrinsics = cstream.get_intrinsics();
 
 #if defined(DEBUG)
-	// 内部パラメータの確認
-	std::cerr << "Width = " << colorIntrinsics.width << ", Height = " << colorIntrinsics.height << "\n";
-	std::cerr << "Principal Point = (" << colorIntrinsics.ppx << ", " << colorIntrinsics.ppy << ")\n";
-	std::cerr << "Focal Length = (" << colorIntrinsics.fx << ", " << colorIntrinsics.fy << ")\n";
-	std::cerr << "Distortion coefficients =";
-	for (auto c : colorIntrinsics.coeffs) std::cout << " " << c;
-	std::cerr << "\n";
+	// カラーセンサの内部パラメータの確認
+  check_intrinsics(colorIntrinsics);
 #endif
 
 	// カラーフレームの幅と高さ
@@ -267,17 +281,22 @@ Rs400::Rs400()
           depth[j] = (d[i] != 0 && d[i] < maxDepth) ? d[i] : maxDepth;
 
 #if !ALIGN_TO_COLOR
-          // デプスデータの画素の画素位置
-          const GLfloat dz(depth[j]);
+          // デプスセンサのカメラ座標を m 単位で求める
+          const GLfloat dz(depth[j] * 0.001f);
           const GLfloat dx(dz * (x - depthIntrinsics.ppx) / depthIntrinsics.fx);
           const GLfloat dy(dz * (y - depthIntrinsics.ppy) / depthIntrinsics.fy);
 
-          // カラーデータの画素の画素位置
+          // デプスセンサのカメラ座標を保存する
+          point[j][0] = dx;
+          point[j][1] = dy;
+          point[j][2] = dz;
+
+          // カラーセンサから見たカメラ座標を求める
           const GLfloat cx(extrinsics.rotation[0] * dx + extrinsics.rotation[3] * dy + extrinsics.rotation[6] * dz + extrinsics.translation[0]);
           const GLfloat cy(extrinsics.rotation[1] * dx + extrinsics.rotation[4] * dy + extrinsics.rotation[7] * dz + extrinsics.translation[1]);
           const GLfloat cz(extrinsics.rotation[2] * dx + extrinsics.rotation[5] * dy + extrinsics.rotation[8] * dz + extrinsics.translation[2]);
 
-          // デプスデータの画素のカラーデータ上の画素位置
+          // カラーセンサのカメラ座標をテクスチャ座標に変換して保存する
           uvmap[i][0] = cx * colorIntrinsics.fx / cz + colorIntrinsics.ppx;
           uvmap[i][1] = cy * colorIntrinsics.fy / cz + colorIntrinsics.ppy;
 #endif
@@ -415,17 +434,6 @@ GLuint Rs400::getPoint()
 	// デプスデータが更新されており RealSense がデプスデータの取得中でなければ
 	if (depthPtr && deviceMutex.try_lock())
 	{
-    // カメラ座標を求める
-    for (int i = 0; i < depthCount; ++i)
-    {
-      // カメラ座標系の z 座標値を m 単位で求める
-      point[i][2] = -0.001f * depth[i];
-
-      // カメラ座標系の x, y 座標値を m 単位で求める (D415/D435 はデプスセンサのゆがみ補正が不要)
-      point[i][0] = (i % depthWidth - depthIntrinsics.ppx) * point[i][2] / depthIntrinsics.fx;
-      point[i][1] = (i / depthWidth - depthIntrinsics.ppy) * point[i][2] / depthIntrinsics.fy;
-    }
-
     // カメラ座標をテクスチャに転送する
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
 
