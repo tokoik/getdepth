@@ -48,7 +48,7 @@ vec2 f(const in float c, const in float w)
 // インデックスがイメージの領域から外れないようにする
 ivec2 clampLocation(ivec2 xy)
 {
-  return clamp(xy, ivec2(0, 0), ds);
+  return clamp(xy, ivec2(0), ds);
 }
 
 // 他のスレッドの共有メモリへのアクセス完了と他のワークグループの処理完了を待つ

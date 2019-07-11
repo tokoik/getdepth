@@ -150,34 +150,37 @@ GLuint KinectV1::getDepth()
       // ロックに成功したら
       if (rect.Pitch)
       {
+        // カラーデータのテクスチャ座標のバッファオブジェクトをメインメモリにマップする
+        glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+        GLfloat(*const uvmap)[2](static_cast<GLfloat(*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
+
         // すべての点について
         for (int i = 0; i < depthCount; ++i)
         {
+          // キャプチャデータの画素値を取り出す
+          const USHORT p(reinterpret_cast<USHORT *>(rect.pBits)[i]);
+
+          // デプスの画素位置からカラーの画素位置を求める
+          LONG tx, ty;
+          sensor->NuiImageGetColorPixelCoordinatesFromDepthPixel(COLOR_RESOLUTION,
+            NULL, i % depthWidth, i / depthWidth, p, &tx, &ty);
+
+          // カラーデータのテクスチャ座標に変換する
+          uvmap[i][0] = static_cast<GLfloat>(tx) + 0.5f;
+          uvmap[i][1] = static_cast<GLfloat>(ty) + 0.5f;
+
           // その点のデプス値を取り出す
-          const USHORT d(reinterpret_cast<USHORT *>(rect.pBits)[i] >> NUI_IMAGE_PLAYER_INDEX_SHIFT);
+          const USHORT d(p >> NUI_IMAGE_PLAYER_INDEX_SHIFT);
 
           // デプス値を (計測不能点は maxDepth にして) 転送する
           if ((depth[i] = d) == 0) depth[i] = maxDepth;
         }
 
+        // カラーデータのテクスチャっ座標のバッファオブジェクトをメインメモリからアンマップする
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+
         // pBits に入っているデータをテクスチャに転送する
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depth);
-
-        // カラーデータのテクスチャ座標を求めてバッファオブジェクトに転送する
-        glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-        GLfloat(*const uvmap)[2](static_cast<GLfloat(*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
-        for (int i = 0; i < depthCount; ++i)
-        {
-          // デプスの画素位置からカラーの画素位置を求める
-          LONG x, y;
-          sensor->NuiImageGetColorPixelCoordinatesFromDepthPixel(COLOR_RESOLUTION,
-            NULL, i % depthWidth, i / depthWidth, reinterpret_cast<USHORT *>(rect.pBits)[i], &x, &y);
-
-          // カラーデータのテクスチャ座標に変換する
-          uvmap[i][0] = static_cast<GLfloat>(x) + 0.5f;
-          uvmap[i][1] = static_cast<GLfloat>(y) + 0.5f;
-        }
-        glUnmapBuffer(GL_ARRAY_BUFFER);
       }
     }
 
@@ -210,27 +213,27 @@ GLuint KinectV1::getPoint()
       // ロックに成功したら
       if (rect.Pitch)
       {
-        // カラーデータのテクスチャ座標を求めてバッファオブジェクトに転送する
+        // カラーデータのテクスチャ座標のバッファオブジェクトをメインメモリにマップする
         glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-        GLfloat (*const uvmap)[2](static_cast<GLfloat (*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
-        for (int i = 0; i < depthCount; ++i)
-        {
-          // デプスの画素位置からカラーの画素位置を求める
-          LONG x, y;
-          sensor->NuiImageGetColorPixelCoordinatesFromDepthPixel(COLOR_RESOLUTION,
-            NULL, i % depthWidth, i / depthWidth, reinterpret_cast<USHORT *>(rect.pBits)[i], &x, &y);
-
-          // カラーデータのテクスチャ座標に変換する
-          uvmap[i][0] = static_cast<GLfloat>(x) + 0.5f;
-          uvmap[i][1] = static_cast<GLfloat>(y) + 0.5f;
-        }
-        glUnmapBuffer(GL_ARRAY_BUFFER);
+        GLfloat(*const uvmap)[2](static_cast<GLfloat(*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
 
         // すべての点について
         for (int i = 0; i < depthCount; ++i)
         {
+          // キャプチャデータの画素値を取り出す
+          const USHORT p(reinterpret_cast<USHORT *>(rect.pBits)[i]);
+
+          // デプスの画素位置からカラーの画素位置を求める
+          LONG tx, ty;
+          sensor->NuiImageGetColorPixelCoordinatesFromDepthPixel(COLOR_RESOLUTION,
+            NULL, i % depthWidth, i / depthWidth, p, &tx, &ty);
+
+          // カラーデータのテクスチャ座標に変換する
+          uvmap[i][0] = static_cast<GLfloat>(tx) + 0.5f;
+          uvmap[i][1] = static_cast<GLfloat>(ty) + 0.5f;
+
           // その点のデプス値を得る
-          const USHORT d(reinterpret_cast<USHORT *>(rect.pBits)[i] >> NUI_IMAGE_PLAYER_INDEX_SHIFT);
+          const USHORT d(p >> NUI_IMAGE_PLAYER_INDEX_SHIFT);
 
           // デプス値の単位をメートルに換算する (計測不能点は maxDepth / 1000 にする)
           const GLfloat z(-0.001f * static_cast<GLfloat>(d > 0 ? d : maxDepth));
@@ -239,14 +242,17 @@ GLuint KinectV1::getPoint()
           const GLfloat s(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * z);
 
           // その点のスクリーン上の位置を求める
-          const GLfloat x(float(i % depthWidth - depthWidth / 2) + 0.5f);
-          const GLfloat y(float(i / depthWidth - depthHeight / 2) + 0.5f);
+          const GLfloat x(static_cast<float>(i % depthWidth - depthWidth / 2) + 0.5f);
+          const GLfloat y(static_cast<float>(i / depthWidth - depthHeight / 2) + 0.5f);
 
           // その点のカメラ座標を求める
           position[i][0] = x * s;
           position[i][1] = y * s;
           position[i][2] = z;
         }
+
+        // カラーデータのテクスチャっ座標のバッファオブジェクトをメインメモリからアンマップする
+        glUnmapBuffer(GL_ARRAY_BUFFER);
 
         // カメラ座標をテクスチャに転送する
         glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, position);

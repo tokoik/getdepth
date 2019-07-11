@@ -282,14 +282,14 @@ Rs400::Rs400()
 
 #if !ALIGN_TO_COLOR
           // デプスセンサのカメラ座標を m 単位で求める
-          const GLfloat dz(depth[j] * 0.001f);
+          const GLfloat dz(0.001f * depth[j]);
           const GLfloat dx(dz * (x - depthIntrinsics.ppx) / depthIntrinsics.fx);
           const GLfloat dy(dz * (y - depthIntrinsics.ppy) / depthIntrinsics.fy);
 
           // デプスセンサのカメラ座標を保存する
           point[j][0] = dx;
-          point[j][1] = dy;
-          point[j][2] = dz;
+          point[j][1] = -dy;
+          point[j][2] = -dz;
 
           // カラーセンサから見たカメラ座標を求める
           const GLfloat cx(extrinsics.rotation[0] * dx + extrinsics.rotation[3] * dy + extrinsics.rotation[6] * dz + extrinsics.translation[0]);

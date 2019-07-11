@@ -17,7 +17,7 @@ uniform vec2 dc, df;
 uniform vec3 dk;
 
 // バイラテラルフィルタの位置と明度の分散
-uniform vec2 variance = vec2(1.0, 0.01);
+uniform vec2 variance = vec2(2.0, 100.0);
 
 // フィルタのサイズ
 const ivec2 filterSize = ivec2(5, 5);
@@ -49,7 +49,7 @@ vec2 f(const in float c, const in float w)
 // インデックスがイメージの領域から外れないようにする
 ivec2 clampLocation(ivec2 xy)
 {
-  return clamp(xy, ivec2(0, 0), ds);
+  return clamp(xy, ivec2(0), ds);
 }
 
 // 他のスレッドの共有メモリへのアクセス完了と他のワークグループの処理完了を待つ
