@@ -14,8 +14,6 @@ KinectV1::KinectV1()
   : nextDepthFrameEvent(CreateEvent(NULL, TRUE, FALSE, NULL))
   , nextColorFrameEvent(CreateEvent(NULL, TRUE, FALSE, NULL))
   , sensor(nullptr)
-  , depth(nullptr)
-  , position(nullptr)
 {
   // 最初のインスタンスを生成するときだけ
   if (activated == 0)
@@ -88,19 +86,6 @@ KinectV1::KinectV1()
   colorWidth = COLOR_W;
   colorHeight = COLOR_H;
 
-  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-  makeTexture();
-
-  // デプスデータの計測不能点を変換するために用いる一次メモリを確保する
-  depth = new GLushort[depthCount];
-
-  // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
-  position = new GLfloat[depthCount][3];
-
-  // デプスマップのテクスチャ座標に対する頂点座標の拡大率
-  scale[0] = static_cast<GLfloat>(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * depthWidth);
-  scale[1] = static_cast<GLfloat>(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * depthHeight);
-
   // まだシェーダが作られていなかったら
   if (shader.get() == nullptr)
   {
@@ -108,9 +93,22 @@ KinectV1::KinectV1()
     shader.reset(new Calculate(depthWidth, depthHeight, "position_v1" SHADER_EXT));
 
     // シェーダの uniform 変数の場所を調べる
-    varianceLoc = glGetUniformLocation(shader->get(), "variance");
     scaleLoc = glGetUniformLocation(shader->get(), "scale");
   }
+
+  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
+  int depthCount, colorCount;
+  makeTexture(&depthCount, &colorCount);
+
+  // デプスデータの計測不能点を変換するために用いる一次メモリを確保する
+  depth.resize(depthCount);
+
+  // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
+  point.resize(depthCount);
+
+  // デプスマップのテクスチャ座標に対する頂点座標の拡大率
+  scale[0] = static_cast<GLfloat>(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * depthWidth);
+  scale[1] = static_cast<GLfloat>(NUI_CAMERA_DEPTH_NOMINAL_INVERSE_FOCAL_LENGTH_IN_PIXELS * depthHeight);
 }
 
 // デストラクタ
@@ -119,10 +117,6 @@ KinectV1::~KinectV1()
   // イベントハンドルを閉じる
   CloseHandle(nextDepthFrameEvent);
   CloseHandle(nextColorFrameEvent);
-
-  // データ変換用のメモリを削除する
-  delete[] depth;
-  delete[] position;
 
   // センサをシャットダウンする
   if (sensor)  sensor->NuiShutdown();
@@ -155,7 +149,7 @@ GLuint KinectV1::getDepth()
         GLfloat(*const uvmap)[2](static_cast<GLfloat(*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
 
         // すべての点について
-        for (int i = 0; i < depthCount; ++i)
+        for (int i = 0; i < depth.size(); ++i)
         {
           // キャプチャデータの画素値を取り出す
           const USHORT p(reinterpret_cast<USHORT *>(rect.pBits)[i]);
@@ -180,7 +174,7 @@ GLuint KinectV1::getDepth()
         glUnmapBuffer(GL_ARRAY_BUFFER);
 
         // pBits に入っているデータをテクスチャに転送する
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depth);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depth.data());
       }
     }
 
@@ -218,7 +212,7 @@ GLuint KinectV1::getPoint()
         GLfloat(*const uvmap)[2](static_cast<GLfloat(*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
 
         // すべての点について
-        for (int i = 0; i < depthCount; ++i)
+        for (int i = 0; i < depth.size(); ++i)
         {
           // キャプチャデータの画素値を取り出す
           const USHORT p(reinterpret_cast<USHORT *>(rect.pBits)[i]);
@@ -246,16 +240,16 @@ GLuint KinectV1::getPoint()
           const GLfloat y(static_cast<float>(i / depthWidth - depthHeight / 2) + 0.5f);
 
           // その点のカメラ座標を求める
-          position[i][0] = x * s;
-          position[i][1] = y * s;
-          position[i][2] = z;
+          point[i][0] = x * s;
+          point[i][1] = y * s;
+          point[i][2] = z;
         }
 
         // カラーデータのテクスチャっ座標のバッファオブジェクトをメインメモリからアンマップする
         glUnmapBuffer(GL_ARRAY_BUFFER);
 
         // カメラ座標をテクスチャに転送する
-        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, position);
+        glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point.data());
       }
     }
 
@@ -269,11 +263,11 @@ GLuint KinectV1::getPoint()
 // カメラ座標を算出する
 GLuint KinectV1::getPosition()
 {
-  shader->use();
-  glUniform2fv(scaleLoc, 1, scale);
-  glUniform2fv(varianceLoc, 1, variance);
   const GLuint depthTexture(getDepth());
   const GLenum depthFormat(GL_R16UI);
+  shader->use();
+  glUniform2fv(scaleLoc, 1, scale);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
   return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
 }
 
@@ -320,9 +314,6 @@ int KinectV1::activated(0);
 
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> KinectV1::shader(nullptr);
-
-// バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
-GLint KinectV1::varianceLoc;
 
 // スクリーン座標からカメラ座標に変換する係数の uniform 変数 scale の場所
 GLint KinectV1::scaleLoc;

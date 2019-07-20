@@ -1,18 +1,18 @@
 ﻿#include "DepthCamera.h"
-
+#include <iostream>
 //
 // デプスセンサ関連の基底クラス
 //
 
 // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-void DepthCamera::makeTexture()
+void DepthCamera::makeTexture(int *depthCount, int *colorCount)
 {
   // カラーデータの境界色
   static const GLfloat border[] = { 0.5f, 0.5f, 0.5f, 0.0f };
 
   // デプスデータとカラーデータのデータ数を求める
-  depthCount = depthWidth * depthHeight;
-  colorCount = colorWidth * colorHeight;
+  *depthCount = depthWidth * depthHeight;
+  *colorCount = colorWidth * colorHeight;
 
   // デプスデータを格納するテクスチャを準備する
   glGenTextures(1, &depthTexture);
@@ -45,7 +45,12 @@ void DepthCamera::makeTexture()
   // デプスデータの画素位置のカラーのテクスチャ座標を格納するバッファオブジェクトを準備する
   glGenBuffers(1, &coordBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-  glBufferData(GL_ARRAY_BUFFER, depthCount * 2 * sizeof (GLfloat), nullptr, GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, *depthCount * 2 * sizeof (GLfloat), nullptr, GL_DYNAMIC_DRAW);
+
+  // バイラテラルフィルタの重みを格納するバッファオブジェクトを準備する
+  glGenBuffers(1, &weightBuffer);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, weightBuffer);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof (Weight), nullptr, GL_STATIC_DRAW);
 }
 
 // デストラクタ
@@ -58,4 +63,35 @@ DepthCamera::~DepthCamera()
 
   // バッファオブジェクトを削除する
   if (coordBuffer > 0) glDeleteBuffers(1, &coordBuffer);
+  if (weightBuffer > 0) glDeleteBuffers(1, &weightBuffer);
+}
+
+// バイラテラルフィルタの分散を設定する
+void DepthCamera::setVariance(float columnVariance, float rowVariance, float valueVariance)
+{
+  // バイラテラルフィルタの距離に対する重み
+  Weight weight;
+
+  // バイラテラルフィルタの距離に対する桁方向の重みを求める
+  const float offset1x(0.5f * static_cast<float>(weight.columnWeight.size() - 1));
+  for (size_t i = 0; i < weight.columnWeight.size(); ++i)
+  {
+    const float d(static_cast<float>(i) - offset1x);
+    weight.columnWeight[i] = exp(-0.5f * d * d / columnVariance);
+  }
+
+  // バイラテラルフィルタの距離に対する行方向の重みを求める
+  const float offset1y(0.5f * static_cast<float>(weight.rowWeight.size() - 1));
+  for (size_t i = 0; i < weight.rowWeight.size(); ++i)
+  {
+    const float d(static_cast<float>(i) - offset1y);
+    weight.rowWeight[i] = exp(-0.5f * d * d / rowVariance);
+  }
+
+  // バイラテラルフィルタの値に対する分散を設定する
+  weight.variance = valueVariance;
+
+  // バイラテラルフィルタの距離に対する重みと値に対する分散を転送する
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, weightBuffer);
+  glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof weight, &weight);
 }

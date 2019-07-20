@@ -94,10 +94,6 @@ static void check_intrinsics(const rs2_intrinsics &intrinsics)
 // コンストラクタ
 Rs400::Rs400()
 	: run(false)
-  , depth(nullptr)
-  , point(nullptr)
-  , uvmap(nullptr)
-  , color(nullptr)
 	, depthPtr(nullptr)
   , colorPtr(nullptr)
 {
@@ -208,23 +204,30 @@ Rs400::Rs400()
   // カラーセンサに対するデプスセンサの外部パラメータ
   extrinsics = dstream.get_extrinsics_to(cstream);
 
-  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-	makeTexture();
+  // まだシェーダが作られていなかったら
+  if (shader.get() == nullptr)
+  {
+    // 頂点位置計算用のシェーダ
+    shader.reset(new Calculate(depthWidth, depthHeight, "position_rs" SHADER_EXT));
 
-  shader.reset(new Calculate(depthWidth, depthHeight, "position_rs" SHADER_EXT));
-  varianceLoc = glGetUniformLocation(shader->get(), "variance");
-  dppLoc = glGetUniformLocation(shader->get(), "dpp");
-  dfLoc = glGetUniformLocation(shader->get(), "df");
+    // uniform block の場所を取得する
+    dppLoc = glGetUniformLocation(shader->get(), "dpp");
+    dfLoc = glGetUniformLocation(shader->get(), "df");
+  }
+
+  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
+  int depthCount, colorCount;
+  makeTexture(&depthCount, &colorCount);
 
   // データ転送用のメモリを確保する
-	depth = new GLushort[depthCount];
-	point = new GLfloat[depthCount][3];
-  uvmap = new GLfloat[depthCount][2];
-	color = new GLubyte[colorCount][3];
+	depth.resize(depthCount);
+	point.resize(depthCount);
+  uvmap.resize(depthCount);
+	color.resize(colorCount);
 
 #if ALIGN_TO_COLOR
   // テクスチャ座標を求める
-  for (int i = 0; i < depthCount; ++i)
+  for (int i = 0; i < depth.size(); ++i)
   {
     // 画素位置
     uvmap[i][0] = i % depthWidth + 0.5f;
@@ -268,7 +271,7 @@ Rs400::Rs400()
 				std::lock_guard<std::mutex> lock(deviceMutex);
 
         // デプスデータとカラーデータを上下反転して取り出す
-        for (int i = 0; i < depthCount; ++i)
+        for (int i = 0; i < depth.size(); ++i)
         {
           // 画素位置
           const int x(i % depthWidth);
@@ -308,10 +311,10 @@ Rs400::Rs400()
         }
 
 				// デプスデータの新着を知らせる
-				depthPtr = depth;
+				depthPtr = depth.data();
 
 				// カラーデータの新着を知らせる
-				colorPtr = color;
+				colorPtr = color.data();
 			}
 		});
 	}
@@ -329,12 +332,6 @@ Rs400::~Rs400()
 		// イベントループのスレッドが終了するのを待つ
 		worker.join();
 	}
-
-	// データ転送用のメモリの開放
-	delete[] depth;
-  delete[] point;
-  delete[] uvmap;
-	delete[] color;
 }
 
 // RealSense を追加する
@@ -410,7 +407,7 @@ GLuint Rs400::getDepth()
 		glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
 		// テクスチャ座標をバッファオブジェクトに転送する
-		glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
 
 		// デプスデータをテクスチャに転送する
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depthPtr);
@@ -435,13 +432,13 @@ GLuint Rs400::getPoint()
 	if (depthPtr && deviceMutex.try_lock())
 	{
     // カメラ座標をテクスチャに転送する
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point.data());
 
 		// テクスチャ座標のバッファオブジェクトを指定する
 		glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
 		// テクスチャ座標をバッファオブジェクトに転送する
-		glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof(GLfloat), uvmap);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
 
 		// 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
 		depthPtr = nullptr;
@@ -460,16 +457,16 @@ GLuint Rs400::getPosition()
 	glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
 	// テクスチャ座標をバッファオブジェクトに転送する
-	glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
 
   // カメラ座標をシェーダで算出する
-	shader->use();
-  glUniform2fv(varianceLoc, 1, variance);
-  glUniform2f(dppLoc, depthIntrinsics.ppx, depthIntrinsics.ppy);
-  glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   const GLuint depthTexture(getDepth());
 	const GLenum depthFormat(GL_R16UI);
-	return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
+  shader->use();
+  glUniform2f(dppLoc, depthIntrinsics.ppx, depthIntrinsics.ppy);
+  glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
+  return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
 }
 
 // カラーデータを取得する
@@ -496,6 +493,12 @@ GLuint Rs400::getColor()
 
 // 使用しているセンサの数
 int Rs400::activated(0);
+
+// カメラ座標を計算するシェーダ
+std::unique_ptr<Calculate> Rs400::shader(nullptr);
+
+// カメラパラメータの uniform 変数の場所
+GLint Rs400::dppLoc, Rs400::dfLoc;
 
 // RealSense のデバイスリスト
 std::map<std::string, rs2::device *> Rs400::devices;

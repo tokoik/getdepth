@@ -12,12 +12,6 @@ const ivec2 ds = imageSize(depth) - 1;
 // 出力
 layout (binding = 1, rgba32f) writeonly uniform image2D position;
 
-// スケール
-uniform vec2 scale;
-
-// バイラテラルフィルタの位置と明度の分散
-uniform vec2 variance = vec2(2.0, 100.0);
-
 // フィルタのサイズ
 const ivec2 filterSize = ivec2(5, 5);
 
@@ -30,6 +24,17 @@ const ivec2 tileSize = ivec2(gl_WorkGroupSize) - ivec2(0, filterOffset.y * 2);
 // 近傍を含む領域のサイズ
 const ivec2 neighborhoodSize = tileSize + filterOffset * 2;
 
+// バイラテラルフィルタの距離に対する重みの Shader Storage Buffer Object
+layout(binding = 2, std430) buffer Weight
+{
+  readonly float columnWeight[filterSize.y];
+  readonly float rowWeight[filterSize.x];
+  readonly float variance;
+};
+
+// スケール
+uniform vec2 scale;
+
 // 処理する領域の近傍を含めたコピー
 shared float pixel[neighborhoodSize.y][neighborhoodSize.x];
 shared float row[neighborhoodSize.y][tileSize.x]; 
@@ -41,7 +46,7 @@ float base;
 vec2 f(const in float c, const in float w)
 {
   const float d = c - base;
-  const float e = exp(-0.5 * d * d / variance[1]) * w;
+  const float e = exp(-0.5 * d * d / variance) * w;
   return vec2(c * e, e);
 }
 
@@ -60,20 +65,6 @@ void retirePhase()
 
 void main(void)
 {
-  // 重み
-  // TODO: uniform にして事前に CPU で計算しておくべき
-  float rowWeight[filterSize.x], columnWeight[filterSize.y];
-  for(int i = 0; i < filterSize.x; ++i)
-  {
-    float dx = i - filterOffset.x;
-    rowWeight[i] = exp(-0.5 * dx * dx / variance[0]);
-  }
-  for (int j = 0; j < filterSize.y; ++j)
-  {
-    float dy = j - filterOffset.y;
-    columnWeight[j] = exp(-0.5 * dy * dy / variance[0]);
-  }
-
   // ワークグループが処理する領域の基準位置
   const ivec2 tile_xy = ivec2(gl_WorkGroupID);
 

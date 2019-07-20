@@ -4,6 +4,9 @@
 // デプスセンサ関連の処理
 //
 
+// デプスセンサ関連の基底クラス
+#include "DepthCamera.h"
+
 // RealSense を使う
 #if !defined(USE_REAL_SENSE)
 #  define USE_REAL_SENSE 1
@@ -24,43 +27,37 @@
 #include <string>
 #include <map>
 
-// デプスセンサ関連の基底クラス
-#include "DepthCamera.h"
-
 class Rs400 : public DepthCamera
 {
   // 使用しているセンサの数
   static int activated;
 
 	// デプスデータ転送用のメモリ
-	GLushort *depth;
+	std::vector<GLushort> depth;
 
 	// 新着のデプスデータ
 	const GLushort *depthPtr;
 
 	// カメラ座標転送用のメモリ
-	GLfloat (*point)[3];
+	std::vector<std::array<GLfloat, 3>> point;
 
 	// テクスチャ座標転送用のメモリ
-	GLfloat (*uvmap)[2];
+	std::vector<std::array<GLfloat, 2>> uvmap;
 
 	// カラーデータ転送用のメモリ
-	GLubyte (*color)[3];
+	std::vector<std::array<GLubyte, 3>> color;
 
 	// 新着のカラーデータ
-	const GLubyte (*colorPtr)[3];
+	const std::array<GLubyte, 3> *colorPtr;
 
 	// カメラ座標を計算するシェーダ
-	std::unique_ptr<Calculate> shader;
-
-  // バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
-  GLint varianceLoc;
+	static std::unique_ptr<Calculate> shader;
 
   // デプスセンサの主点位置の uniform 変数 dpp の場所
-  GLint dppLoc;
+  static GLint dppLoc;
 
   // デプスセンサの焦点距離の unform 変数 df の場所
-  GLint dfLoc;
+  static GLint dfLoc;
 
 	// データ取得用のスレッド
 	std::thread worker;

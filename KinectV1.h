@@ -54,10 +54,10 @@ class KinectV1 : public DepthCamera
   const HANDLE nextDepthFrameEvent;
 
   // デプスデータの計測不能点を変換するために用いる一次メモリ
-  GLushort *depth;
+  std::vector<GLushort> depth;
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
-  GLfloat (*position)[3];
+  std::vector<std::array<GLfloat, 3>> point;
 
   // カラーデータのストリームハンドル
   HANDLE colorStream;
@@ -70,9 +70,6 @@ class KinectV1 : public DepthCamera
 
   // カメラ座標を計算するシェーダ
   static std::unique_ptr<Calculate> shader;
-
-  // バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
-  static GLint varianceLoc;
 
   // スクリーン座標からカメラ座標に変換する係数の uniform 変数 scale の場所
   static GLint scaleLoc;

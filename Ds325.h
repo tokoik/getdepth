@@ -131,16 +131,16 @@ class Ds325 : public DepthCamera
   IntrinsicParameters depthIntrinsics;
 
   // デプスデータ転送用のメモリ
-	GLushort *depth;
+	std::vector<GLushort> depth;
 
 	// 新着のデプスデータ
 	const GLushort *depthPtr;
 
   // カメラ座標転送用のメモリ
-  GLfloat (*point)[3];
+  std::vector<std::array<GLfloat, 3>> point;
 
   // テクスチャ座標転送用のメモリ
-  GLfloat (*uvmap)[2];
+  std::vector<std::array<GLfloat, 2>> uvmap;
 
   // カラーノード
   ColorNode colorNode;
@@ -158,16 +158,13 @@ class Ds325 : public DepthCamera
   IntrinsicParameters colorIntrinsics;
 
   // カラーデータ転送用のメモリ
-	GLubyte (*color)[3];
+	std::vector<std::array<GLubyte, 3>> color;
 
 	// 新着のカラーデータ
-	const GLubyte (*colorPtr)[3];
+	const std::array<GLubyte, 3> *colorPtr;
 
   // カメラ座標を計算するシェーダ
   static std::unique_ptr<Calculate> shader;
-
-  // バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
-  static GLint varianceLoc;
 
   // カメラパラメータの uniform 変数の場所
   static GLint dcLoc, dfLoc, dkLoc;

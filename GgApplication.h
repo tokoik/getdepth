@@ -4,7 +4,7 @@
 ** ゲームグラフィックス特論の宿題用補助プログラム GLFW3 版
 **
 
-Copyright (c) 2011-2018 Kohe Tokoi. All Rights Reserved.
+Copyright (c) 2011-2019 Kohe Tokoi. All Rights Reserved.
 
 Permission is hereby granted, free of charge,  to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -198,6 +198,217 @@ struct GgApplication
 #  endif
 #endif
 
+    //
+    // ユーザー定義のコールバック関数へのポインタ
+    //
+    void *userPointer;
+    void (*resizeFunc)(const Window *window, int width, int height);
+    void (*keyboardFunc)(const Window *window, int key, int scancode, int action, int mods);
+    void (*mouseFunc)(const Window *window, int button, int action, int mods);
+    void (*wheelFunc)(const Window *window, double x, double y);
+
+    //
+    // ウィンドウのサイズ変更時の処理
+    //
+    static void resize(GLFWwindow *window, int width, int height)
+    {
+      // このインスタンスの this ポインタを得る
+      Window *const instance(static_cast<Window *>(glfwGetWindowUserPointer(window)));
+
+      if (instance)
+      {
+        // ウィンドウのサイズを保存する
+        instance->size[0] = width;
+        instance->size[1] = height;
+
+        // トラックボール処理の範囲を設定する
+        instance->trackball[0].region(width, height);
+        instance->trackball[1].region(width, height);
+
+#if !USE_OCULUS_RIFT
+        // ウィンドウのアスペクト比を保存する
+        instance->aspect = static_cast<GLfloat>(width) / static_cast<GLfloat>(height);
+
+        // ウィンドウ全体に描画する
+        glViewport(0, 0, width, height);
+#endif
+
+        // ユーザー定義のコールバック関数の呼び出し
+        if (instance->resizeFunc) (*instance->resizeFunc)(instance, width, height);
+      }
+    }
+
+    //
+    // キーボードをタイプした時の処理
+    //
+    static void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods)
+    {
+      // このインスタンスの this ポインタを得る
+      Window *const instance(static_cast<Window *>(glfwGetWindowUserPointer(window)));
+
+      if (instance && action)
+      {
+        switch (key)
+        {
+        case GLFW_KEY_R:
+          // 矢印キーの設定値とマウスホイールの回転量をリセットする
+          for (auto a : instance->arrow) a[0] = a[1] = 0;
+          std::fill(*(*instance->translation), *(*(instance->translation + 2)), 0.0f);
+          instance->wheel_rotation[0] = instance->wheel_rotation[1] = 0.0f;
+
+        case GLFW_KEY_O:
+          // トラックボールをリセットする
+          instance->trackball[0].reset();
+          instance->trackball[1].reset();
+          break;
+
+        case GLFW_KEY_SPACE:
+          break;
+
+        case GLFW_KEY_BACKSPACE:
+        case GLFW_KEY_DELETE:
+          break;
+
+        case GLFW_KEY_ESCAPE:
+          // ESC キーがタイプされたらウィンドウを閉じる
+          instance->setClose(true);
+          break;
+
+        case GLFW_KEY_UP:
+          if (mods & GLFW_MOD_SHIFT)
+            instance->arrow[1][1]++;
+          else if (mods & GLFW_MOD_CONTROL)
+            instance->arrow[2][1]++;
+          else if (mods & GLFW_MOD_ALT)
+            instance->arrow[3][1]++;
+          else
+            instance->arrow[0][1]++;
+          break;
+
+        case GLFW_KEY_DOWN:
+          if (mods & GLFW_MOD_SHIFT)
+            instance->arrow[1][1]--;
+          else if (mods & GLFW_MOD_CONTROL)
+            instance->arrow[2][1]--;
+          else if (mods & GLFW_MOD_ALT)
+            instance->arrow[3][1]--;
+          else
+            instance->arrow[0][1]--;
+          break;
+
+        case GLFW_KEY_RIGHT:
+          if (mods & GLFW_MOD_SHIFT)
+            instance->arrow[1][0]++;
+          else if (mods & GLFW_MOD_CONTROL)
+            instance->arrow[2][0]++;
+          else if (mods & GLFW_MOD_ALT)
+            instance->arrow[3][0]++;
+          else
+            instance->arrow[0][0]++;
+          break;
+
+        case GLFW_KEY_LEFT:
+          if (mods & GLFW_MOD_SHIFT)
+            instance->arrow[1][0]--;
+          else if (mods & GLFW_MOD_CONTROL)
+            instance->arrow[2][0]--;
+          else if (mods & GLFW_MOD_ALT)
+            instance->arrow[3][0]--;
+          else
+            instance->arrow[0][0]--;
+          break;
+
+        default:
+          break;
+        }
+
+        // ユーザー定義のコールバック関数の呼び出し
+        if (instance->keyboardFunc) (*instance->keyboardFunc)(instance, key, scancode, action, mods);
+      }
+    }
+
+    //
+    // マウスボタンを操作したときの処理
+    //
+    static void mouse(GLFWwindow *window, int button, int action, int mods)
+    {
+      // このインスタンスの this ポインタを得る
+      Window *const instance(static_cast<Window *>(glfwGetWindowUserPointer(window)));
+
+      if (instance)
+      {
+        // マウスの現在位置を得る
+        const GLfloat x(instance->mouse_position[0]);
+        const GLfloat y(instance->mouse_position[1]);
+
+        switch (button)
+        {
+        case GLFW_MOUSE_BUTTON_1:
+          if (action)
+          {
+            // 左ドラッグ開始
+            instance->trackball[0].begin(x, y);
+          }
+          else
+          {
+            // 左ドラッグ終了
+            instance->translation[0][0][0] = instance->translation[0][1][0];
+            instance->translation[0][0][1] = instance->translation[0][1][1];
+            instance->translation[0][0][2] = instance->translation[0][1][2];
+            instance->trackball[0].end(x, y);
+          }
+          break;
+
+        case GLFW_MOUSE_BUTTON_2:
+          if (action)
+          {
+            // 右ドラッグ開始
+            instance->trackball[1].begin(x, y);
+          }
+          else
+          {
+            // 右ドラッグ終了
+            instance->translation[1][0][0] = instance->translation[1][1][0];
+            instance->translation[1][0][1] = instance->translation[1][1][1];
+            instance->translation[1][0][2] = instance->translation[1][1][2];
+            instance->trackball[1].end(x, y);
+          }
+          break;
+
+        case GLFW_MOUSE_BUTTON_3:
+          break;
+
+        default:
+          break;
+        }
+
+        // ユーザー定義のコールバック関数の呼び出し
+        if (instance->mouseFunc) (*instance->mouseFunc)(instance, button, action, mods);
+      }
+    }
+
+    //
+    // マウスホイールを操作した時の処理
+    //
+    static void wheel(GLFWwindow *window, double x, double y)
+    {
+      // このインスタンスの this ポインタを得る
+      Window *const instance(static_cast<Window *>(glfwGetWindowUserPointer(window)));
+
+      if (instance)
+      {
+        // マウスホイールの回転量の保存
+        instance->wheel_rotation[0] += static_cast<GLfloat>(x);
+        instance->wheel_rotation[1] += static_cast<GLfloat>(y);
+
+        // マウスによる平行移動量の z 値の更新
+        instance->translation[0][1][2] = instance->translation[1][1][2] = instance->getWheelY() * 0.05f;
+
+        // ユーザー定義のコールバック関数の呼び出し
+        if (instance->wheelFunc) (*instance->wheelFunc)(instance, x, y);
+      }
+    }
+
   public:
 
     //
@@ -206,6 +417,7 @@ struct GgApplication
     Window(const char *title = "GLFW Window", int width = 640, int height = 480,
       int fullscreen = 0, GLFWwindow *share = nullptr)
       : window(nullptr), size{ width, height }
+      , userPointer(nullptr), resizeFunc(nullptr), keyboardFunc(nullptr), mouseFunc(nullptr), wheelFunc(nullptr)
     {
 #if USE_OCULUS_RIFT
       // Oculus Rift が初期化済なら true
@@ -890,196 +1102,6 @@ struct GgApplication
     }
 
     //
-    // ウィンドウのサイズ変更時の処理
-    //
-    static void resize(GLFWwindow *window, int width, int height)
-    {
-      // このインスタンスの this ポインタを得る
-      Window *const instance(static_cast<Window *>(glfwGetWindowUserPointer(window)));
-
-      if (instance)
-      {
-        // ウィンドウのサイズを保存する
-        instance->size[0] = width;
-        instance->size[1] = height;
-
-        // トラックボール処理の範囲を設定する
-        instance->trackball[0].region(width, height);
-        instance->trackball[1].region(width, height);
-
-#if !USE_OCULUS_RIFT
-        // ウィンドウのアスペクト比を保存する
-        instance->aspect = static_cast<GLfloat>(width) / static_cast<GLfloat>(height);
-
-        // ウィンドウ全体に描画する
-        glViewport(0, 0, width, height);
-#endif
-      }
-    }
-
-    //
-    // キーボードをタイプした時の処理
-    //
-    static void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods)
-    {
-      // このインスタンスの this ポインタを得る
-      Window *const instance(static_cast<Window *>(glfwGetWindowUserPointer(window)));
-
-      if (instance)
-      {
-        if (action)
-        {
-          switch (key)
-          {
-          case GLFW_KEY_R:
-            // 矢印キーの設定値とマウスホイールの回転量をリセットする
-            for (auto a : instance->arrow) a[0] = a[1] = 0;
-            std::fill(*(*instance->translation), *(*(instance->translation + 2)), 0.0f);
-            instance->wheel_rotation[0] = instance->wheel_rotation[1] = 0.0f;
-
-          case GLFW_KEY_O:
-            // トラックボールをリセットする
-            instance->trackball[0].reset();
-            instance->trackball[1].reset();
-            break;
-
-          case GLFW_KEY_SPACE:
-            break;
-
-          case GLFW_KEY_BACKSPACE:
-          case GLFW_KEY_DELETE:
-            break;
-
-          case GLFW_KEY_ESCAPE:
-            // ESC キーがタイプされたらウィンドウを閉じる
-            instance->setClose(true);
-            break;
-
-          case GLFW_KEY_UP:
-            if (mods & GLFW_MOD_SHIFT)
-              instance->arrow[1][1]++;
-            else if (mods & GLFW_MOD_CONTROL)
-              instance->arrow[2][1]++;
-            else if (mods & GLFW_MOD_ALT)
-              instance->arrow[3][1]++;
-            else
-              instance->arrow[0][1]++;
-            break;
-
-          case GLFW_KEY_DOWN:
-            if (mods & GLFW_MOD_SHIFT)
-              instance->arrow[1][1]--;
-            else if (mods & GLFW_MOD_CONTROL)
-              instance->arrow[2][1]--;
-            else if (mods & GLFW_MOD_ALT)
-              instance->arrow[3][1]--;
-            else
-              instance->arrow[0][1]--;
-            break;
-
-          case GLFW_KEY_RIGHT:
-            if (mods & GLFW_MOD_SHIFT)
-              instance->arrow[1][0]++;
-            else if (mods & GLFW_MOD_CONTROL)
-              instance->arrow[2][0]++;
-            else if (mods & GLFW_MOD_ALT)
-              instance->arrow[3][0]++;
-            else
-              instance->arrow[0][0]++;
-            break;
-
-          case GLFW_KEY_LEFT:
-            if (mods & GLFW_MOD_SHIFT)
-              instance->arrow[1][0]--;
-            else if (mods & GLFW_MOD_CONTROL)
-              instance->arrow[2][0]--;
-            else if (mods & GLFW_MOD_ALT)
-              instance->arrow[3][0]--;
-            else
-              instance->arrow[0][0]--;
-            break;
-
-          default:
-            break;
-          }
-        }
-      }
-    }
-
-    //
-    // マウスボタンを操作したときの処理
-    //
-    static void mouse(GLFWwindow *window, int button, int action, int mods)
-    {
-      // このインスタンスの this ポインタを得る
-      Window *const instance(static_cast<Window *>(glfwGetWindowUserPointer(window)));
-
-      if (instance)
-      {
-        // マウスの現在位置を得る
-        const GLfloat x(instance->mouse_position[0]);
-        const GLfloat y(instance->mouse_position[1]);
-
-        switch (button)
-        {
-        case GLFW_MOUSE_BUTTON_1:
-          if (action)
-          {
-            // 左ドラッグ開始
-            instance->trackball[0].begin(x, y);
-          }
-          else
-          {
-            // 左ドラッグ終了
-            instance->translation[0][0][0] = instance->translation[0][1][0];
-            instance->translation[0][0][1] = instance->translation[0][1][1];
-            instance->translation[0][0][2] = instance->translation[0][1][2];
-            instance->trackball[0].end(x, y);
-          }
-          break;
-
-        case GLFW_MOUSE_BUTTON_2:
-          if (action)
-          {
-            // 右ドラッグ開始
-            instance->trackball[1].begin(x, y);
-          }
-          else
-          {
-            // 右ドラッグ終了
-            instance->translation[1][0][0] = instance->translation[1][1][0];
-            instance->translation[1][0][1] = instance->translation[1][1][1];
-            instance->translation[1][0][2] = instance->translation[1][1][2];
-            instance->trackball[1].end(x, y);
-          }
-          break;
-
-        case GLFW_MOUSE_BUTTON_3:
-          break;
-
-        default:
-          break;
-        }
-      }
-    }
-
-    //
-    // マウスホイールを操作した時の処理
-    //
-    static void wheel(GLFWwindow *window, double x, double y)
-    {
-      // このインスタンスの this ポインタを得る
-      Window *const instance(static_cast<Window *>(glfwGetWindowUserPointer(window)));
-
-      if (instance)
-      {
-        instance->wheel_rotation[0] += static_cast<GLfloat>(x);
-        instance->wheel_rotation[1] += static_cast<GLfloat>(y);
-        instance->translation[0][1][2] = instance->translation[1][1][2] = instance->getWheelY() * 0.05f;
-      }
-    }
-
-    //
     // ウィンドウの横幅を得る
     //
     GLsizei getWidth() const
@@ -1355,6 +1377,54 @@ struct GgApplication
     GgMatrix getTrackball(int button = GLFW_MOUSE_BUTTON_1) const
     {
       return trackball[button].getMatrix();
+    }
+
+    //
+    // ユーザーポインタを取り出す
+    //
+    void *getUserPointer() const
+    {
+      return userPointer;
+    }
+
+    //
+    // 任意のユーザポインタを保存する
+    //
+    void setUserPointer(void *pointer)
+    {
+      userPointer = pointer;
+    }
+
+    //
+    // ユーザ定義の resize 関数を設定する
+    //
+    void setResizeFunc(void (*func)(const Window *window, int width, int height))
+    {
+      resizeFunc = func;
+    }
+
+    //
+    // ユーザ定義の keyboard 関数を設定する
+    //
+    void setKeyboardFunc(void (*func)(const Window *window, int key, int scancode, int action, int mods))
+    {
+      keyboardFunc = func;
+    }
+
+    //
+    // ユーザ定義の mouse 関数を設定する
+    //
+    void setMouseFunc(void (*func)(const Window *window, int button, int action, int mods))
+    {
+      mouseFunc = func;
+    }
+
+    //
+    // ユーザ定義の wheel 関数を設定する
+    //
+    void setResizeFunc(void (*func)(const Window *window, double x, double y))
+    {
+      wheelFunc = func;
     }
   };
 };

@@ -68,7 +68,26 @@ constexpr GLfloat background[] = { 0.2f, 0.3f, 0.4f, 0.0f };
 constexpr float deviation1(2.0f);
 
 // バイラテラルフィルタのデフォルトの明度の標準偏差
-constexpr float deviation2(100.0f);
+constexpr float deviation2(10.0f);
+
+// バイラテラルフィルタの重みの更新
+static void updateVariance(const GgApplication::Window *window, int key, int scancode, int action, int mods)
+{
+  // このインスタンスの this ポインタを得る
+  SENSOR *const sensor(static_cast<SENSOR *>(window->getUserPointer()));
+
+  if (sensor && action)
+  {
+    // バイラテラルフィルタの分散
+    const GLfloat sd1(window->getArrowX() * deviation1 * 0.1f + deviation1);
+    const GLfloat sd2(window->getArrowY() * deviation2 * 0.1f + deviation2);
+    sensor->setVariance(sd1 * sd1, sd1 * sd1, sd2 * sd2);
+
+#if defined(_DEBUG)
+    std::cerr << "sd1 =" << sd1 << ", sd2 =" << sd2 << "\n";
+#endif
+  }
+}
 
 //
 // アプリケーションの実行
@@ -82,6 +101,13 @@ void GgApplication::run()
   // デプスセンサを有効にする
   SENSOR sensor;
   if (!sensor.isOpend()) throw std::runtime_error(sensor.getMessage());
+
+  // バイラテラルフィルタの初期値を設定する
+  sensor.setVariance(deviation1 * deviation1, deviation1 * deviation1, deviation2 * deviation2);
+
+  // キーボード操作のコールバック関数を登録する
+  window.setUserPointer(&sensor);
+  window.setKeyboardFunc(updateVariance);
 
   // デプスセンサの解像度
   int width, height;
@@ -164,10 +190,6 @@ void GgApplication::run()
     }
 #endif
 
-    // バイラテラルフィルタの分散
-    const GLfloat sd1(window.getArrowX() * deviation1 * 0.1f + deviation1);
-    const GLfloat sd2(window.getArrowY() * deviation2 * 0.1f + deviation2);
-    sensor.setVariance(sd1 * sd1, sd2 * sd2);
 #if USE_SHADER
     const GLuint positionTexture(sensor.getPosition());
 #else

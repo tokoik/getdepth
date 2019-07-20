@@ -26,13 +26,9 @@ Ds325::Ds325(
   : depth_format(depth_format)
   , depth_fps(depth_fps)
   , depth_mode(depth_mode)
-	, depth(nullptr)
-	, point(nullptr)
-	, uvmap(nullptr)
   , color_format(color_format)
   , color_fps(color_fps)
   , color_compression(color_compression)
-	, color(nullptr)
   , power_line_frequency(frequency)
   , depthPtr(nullptr)
   , colorPtr(nullptr)
@@ -75,18 +71,6 @@ Ds325::Ds325(
   FrameFormat_toResolution(depth_format, &depthWidth, &depthHeight);
   FrameFormat_toResolution(color_format, &colorWidth, &colorHeight);
 
-  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-  makeTexture();
-
-  // データ転送用のメモリを確保する
-  depth = new GLushort[depthCount];
-  point = new GLfloat[depthCount][3];
-  uvmap = new GLfloat[depthCount][2];
-  color = new GLubyte[colorCount][3];
-
-  // DepthSense の各ノードを初期化する
-  for (Node &node : device.getNodes()) configureNode(node);
-
   // まだシェーダが作られていなかったら
   if (shader.get() == nullptr)
   {
@@ -94,11 +78,23 @@ Ds325::Ds325(
     shader.reset(new Calculate(depthWidth, depthHeight, "position_ds" SHADER_EXT));
 
     // シェーダの uniform 変数の場所を調べる
-    varianceLoc = glGetUniformLocation(shader->get(), "variance");
     dcLoc = glGetUniformLocation(shader->get(), "dc");
     dfLoc = glGetUniformLocation(shader->get(), "df");
     dkLoc = glGetUniformLocation(shader->get(), "dk");
   }
+
+  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
+  int depthCount, colorCount;
+  makeTexture(&depthCount, &colorCount);
+
+  // データ転送用のメモリを確保する
+  depth.resize(depthCount);
+  point.resize(depthCount);
+  uvmap.resize(depthCount);
+  color.resize(colorCount);
+
+  // DepthSense の各ノードを初期化する
+  for (Node &node : device.getNodes()) configureNode(node);
 }
 
 // デストラクタ
@@ -123,12 +119,6 @@ Ds325::~Ds325()
       unregisterNode(colorNode);
       unregisterNode(depthNode);
     }
-
-    // データ転送用のメモリの開放
-    delete[] depth;
-    delete[] point;
-    delete[] uvmap;
-    delete[] color;
   }
 }
 
@@ -300,7 +290,7 @@ void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData da
   sensor->depthIntrinsics = data.stereoCameraParameters.depthIntrinsics;
 
   // データ転送
-  for (int i = 0; i < sensor->depthCount; ++i)
+  for (int i = 0; i < sensor->depth.size(); ++i)
   {
     // その点のデプス値を取り出す
     const int u(i % sensor->depthWidth);
@@ -313,7 +303,7 @@ void Ds325::onNewDepthSample(DepthNode node, DepthNode::NewSampleReceivedData da
   }
 
   // デプスデータが更新されたことを記録する
-  sensor->depthPtr = sensor->depth;
+  sensor->depthPtr = sensor->depth.data();
 
   // デプスセンサをアンロックする
   sensor->depthMutex.unlock();
@@ -384,7 +374,7 @@ void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData da
   if (sensor->color_compression == COMPRESSION_TYPE_MJPEG)
   {
     // カラーデータをそのまま転送する
-    memcpy(sensor->color, data.colorMap, sensor->colorCount * 3 * sizeof (GLubyte));
+    memcpy(sensor->color.data(), data.colorMap, sensor->color.size() * sizeof sensor->color[0]);
   }
   else
   {
@@ -402,7 +392,7 @@ void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData da
     //   G = Y - 0.187324 × Cb - 0.468124 × Cr
     //   B = Y + 1.8556 × Cb
 
-    for (int i = 0; i < sensor->colorCount; ++i)
+    for (int i = 0; i < sensor->color.size(); ++i)
     {
       const int iy(i * 2), iu((iy & ~3) + 1), iv(iu + 2), j(i * 3);
       const float y(static_cast<float>(data.colorMap[iy] - 16));
@@ -418,7 +408,7 @@ void Ds325::onNewColorSample(ColorNode node, ColorNode::NewSampleReceivedData da
   }
 
   // カラーデータが更新されたことを記録する
-  sensor->colorPtr = sensor->color;
+  sensor->colorPtr = sensor->color.data();
 
   // カラーセンサをアンロックする
   sensor->colorMutex.unlock();
@@ -437,7 +427,7 @@ GLuint Ds325::getDepth()
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
     // テクスチャ座標をバッファオブジェクトに転送する
-    glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
 
     // デプスデータをテクスチャに転送する
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depthPtr);
@@ -479,7 +469,7 @@ GLuint Ds325::getPoint()
     const float &ck2(colorIntrinsics.k2);
     const float &ck3(colorIntrinsics.k3);
 
-    for (int i = 0; i < depthCount; ++i)
+    for (int i = 0; i < depth.size(); ++i)
     {
       // デプスマップの画素位置
       const int u(i % depthWidth);
@@ -521,13 +511,13 @@ GLuint Ds325::getPoint()
     }
 
     // カメラ座標をテクスチャに転送する
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point.data());
 
     // テクスチャ座標のバッファオブジェクトを指定する
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
     // テクスチャ座標をバッファオブジェクトに転送する
-    glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
 
     // 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
     depthPtr = nullptr;
@@ -560,7 +550,7 @@ GLuint Ds325::getPosition()
   const float &ck2(colorIntrinsics.k2);
   const float &ck3(colorIntrinsics.k3);
 
-  for (int i = 0; i < depthCount; ++i)
+  for (int i = 0; i < depth.size(); ++i)
   {
     // デプスマップの画素位置
     const int u(i % depthWidth);
@@ -598,16 +588,16 @@ GLuint Ds325::getPosition()
   glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
   // テクスチャ座標をバッファオブジェクトに転送する
-  glBufferSubData(GL_ARRAY_BUFFER, 0, depthCount * 2 * sizeof (GLfloat), uvmap);
+  glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
 
   // カメラ座標をシェーダで算出する
+  const GLuint depthTexture(getDepth());
+  const GLenum depthFormat(GL_R16UI);
   shader->use();
-  glUniform2fv(varianceLoc, 1, variance);
   glUniform2f(dcLoc, depthIntrinsics.cx, depthIntrinsics.cy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   glUniform3f(dkLoc, depthIntrinsics.k1, depthIntrinsics.k2, depthIntrinsics.k3);
-  const GLuint depthTexture(getDepth());
-  const GLenum depthFormat(GL_R16UI);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
   return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
 }
 
@@ -647,9 +637,6 @@ std::thread Ds325::worker;
 
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> Ds325::shader(nullptr);
-
-// バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
-GLint Ds325::varianceLoc;
 
 // カメラパラメータの uniform 変数の場所
 GLint Ds325::dcLoc, Ds325::dfLoc, Ds325::dkLoc;

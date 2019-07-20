@@ -11,10 +11,7 @@
 
 // コンストラクタ
 KinectV2::KinectV2()
-  : depth(nullptr)
-  , point(nullptr)
-  , color(nullptr)
-  , mapperTexture(0)
+  : mapperTexture(0)
 {
   // センサが既に使用されていたら戻る
   if (sensor)
@@ -94,23 +91,25 @@ KinectV2::KinectV2()
     return;
   }
 
+  // まだシェーダが作られていなかったら
+  if (shader.get() == nullptr)
+  {
+    // カメラ座標算出用のシェーダを作成する
+    shader.reset(new Calculate(depthWidth, depthHeight, "position_v2" SHADER_EXT));
+  }
+
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-  makeTexture();
+  int depthCount, colorCount;
+  makeTexture(&depthCount, &colorCount);
 
   // デプスデータの計測不能点を変換するために用いる一次メモリを確保する
-  depth = new GLushort[depthCount];
+  depth.resize(depthCount);
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリを確保する
-  point = new GLfloat[depthCount][3];
+  point.resize(depthCount);
 
   // カラーデータを変換する用いる一時メモリを確保する
-  color = new GLubyte[colorCount * 4];
-
-  // カメラ座標算出用のシェーダを作成する
-  shader.reset(new Calculate(depthWidth, depthHeight, "position_v2" SHADER_EXT));
-
-  // シェーダの uniform 変数の場所を調べる
-  varianceLoc = glGetUniformLocation(shader->get(), "variance");
+  color.resize(colorCount * 4);
 
   // デプス値に対するカメラ座標の変換テーブルのテクスチャを作成する
   glGenTextures(1, &mapperTexture);
@@ -128,11 +127,6 @@ KinectV2::~KinectV2()
   // コンストラクタが正常に実行されセンサが有効なら
   if (mapperTexture > 0 && sensor)
   {
-    // データ変換用のメモリを削除する
-    delete[] depth;
-    delete[] point;
-    delete[] color;
-
     // 変換テーブルのテクスチャを削除する
      glDeleteTextures(1, &mapperTexture);
 
@@ -166,7 +160,7 @@ GLuint KinectV2::getDepth()
     // カラーのテクスチャ座標を求めてバッファオブジェクトに転送する
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
     ColorSpacePoint *const uvmap(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
-    coordinateMapper->MapDepthFrameToColorSpace(depthSize, depthBuffer, depthCount, uvmap);
+    coordinateMapper->MapDepthFrameToColorSpace(depthSize, depthBuffer, static_cast<UINT>(depth.size()), uvmap);
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
     // すべての点について
@@ -180,7 +174,7 @@ GLuint KinectV2::getDepth()
     }
 
     // デプスデータをテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depth);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depth.data());
 
     // カメラ座標への変換テーブルを得る
     UINT32 entry;
@@ -219,7 +213,7 @@ GLuint KinectV2::getPoint()
     // カラーのテクスチャ座標を求めてバッファオブジェクトに転送する
     glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
     ColorSpacePoint *const uvmap(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
-    coordinateMapper->MapDepthFrameToColorSpace(depthSize, depthBuffer, depthCount, uvmap);
+    coordinateMapper->MapDepthFrameToColorSpace(depthSize, depthBuffer, static_cast<UINT>(depth.size()), uvmap);
     glUnmapBuffer(GL_ARRAY_BUFFER);
 
     // カメラ座標への変換テーブルを得る
@@ -247,7 +241,7 @@ GLuint KinectV2::getPoint()
     }
 
     // カメラ座標を転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point.data());
 
     // テーブルに使ったメモリを開放する
     CoTaskMemFree(table);
@@ -262,10 +256,10 @@ GLuint KinectV2::getPoint()
 // カメラ座標を算出する
 GLuint KinectV2::getPosition()
 {
-  shader->use();
-  glUniform2fv(varianceLoc, 1, variance);
   const GLuint texture[] = { getDepth(), mapperTexture };
   const GLenum format[] = { GL_R16UI, GL_RG32F };
+  shader->use();
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
   return shader->execute(2, texture, format, 16, 16)[0];
 }
 
@@ -280,14 +274,14 @@ GLuint KinectV2::getColor()
   if (colorReader->AcquireLatestFrame(&colorFrame) == S_OK)
   {
     // カラーデータを取得して RGBA 形式に変換する
-    colorFrame->CopyConvertedFrameDataToArray(colorCount * 4,
-      static_cast<BYTE *>(color), ColorImageFormat::ColorImageFormat_Bgra);
+    colorFrame->CopyConvertedFrameDataToArray(static_cast<UINT>(color.size()),
+      static_cast<BYTE *>(color.data()), ColorImageFormat::ColorImageFormat_Bgra);
 
     // カラーフレームを開放する
     colorFrame->Release();
 
     // カラーデータをテクスチャに転送する
-    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGRA, GL_UNSIGNED_BYTE, color);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, colorWidth, colorHeight, GL_BGRA, GL_UNSIGNED_BYTE, color.data());
   }
 
   return colorTexture;
@@ -298,8 +292,5 @@ IKinectSensor *KinectV2::sensor(nullptr);
 
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> KinectV2::shader(nullptr);
-
-// バイラテラルフィルタの位置と明度の分散の uniform 変数 variance の場所
-GLint KinectV2::varianceLoc;
 
 #endif
