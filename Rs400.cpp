@@ -16,6 +16,9 @@
 #  pragma comment (lib, "realsense2" RS_EXT_STR)
 #endif
 
+// テクスチャ座標を CPU 側で計算する
+#define CALC_TEXCOORD 0
+
 // デプスデータをカラーデータに合わせる場合 1
 #define ALIGN_TO_COLOR 0
 
@@ -213,6 +216,10 @@ Rs400::Rs400()
     // uniform block の場所を取得する
     dppLoc = glGetUniformLocation(shader->get(), "dpp");
     dfLoc = glGetUniformLocation(shader->get(), "df");
+    cppLoc = glGetUniformLocation(shader->get(), "cpp");
+    cfLoc = glGetUniformLocation(shader->get(), "cf");
+    extRotationLoc = glGetUniformLocation(shader->get(), "extRotation");
+    extTranslationLoc = glGetUniformLocation(shader->get(), "extTranslation");
   }
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
@@ -270,6 +277,7 @@ Rs400::Rs400()
         // デバイスをロックする
 				std::lock_guard<std::mutex> lock(deviceMutex);
 
+#if CALC_TEXCOORD
         // デプスデータとカラーデータを上下反転して取り出す
         for (int i = 0; i < depth.size(); ++i)
         {
@@ -309,12 +317,13 @@ Rs400::Rs400()
           color[j][1] = c[i][1];
           color[j][2] = c[i][2];
         }
+#endif
 
 				// デプスデータの新着を知らせる
-				depthPtr = depth.data();
+        depthPtr = static_cast<const GLushort *>(dframe.get_data());// depth.data();
 
 				// カラーデータの新着を知らせる
-				colorPtr = color.data();
+        colorPtr = static_cast<const std::array<GLubyte, 3> *>(cframe.get_data());// color.data();
 			}
 		});
 	}
@@ -403,11 +412,13 @@ GLuint Rs400::getDepth()
 	// デプスデータが更新されておりデプスデータの取得中でなければ
 	if (depthPtr && deviceMutex.try_lock())
 	{
+#if CALC_TEXCOORD
 		// テクスチャ座標のバッファオブジェクトを指定する
 		glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
 
 		// テクスチャ座標をバッファオブジェクトに転送する
 		glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
+#endif
 
 		// デプスデータをテクスチャに転送する
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depthPtr);
@@ -453,19 +464,18 @@ GLuint Rs400::getPoint()
 // カメラ座標を算出する
 GLuint Rs400::getPosition()
 {
-  // テクスチャ座標のバッファオブジェクトを指定する
-	glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-
-	// テクスチャ座標をバッファオブジェクトに転送する
-	glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
-
   // カメラ座標をシェーダで算出する
   const GLuint depthTexture(getDepth());
 	const GLenum depthFormat(GL_R16UI);
   shader->use();
   glUniform2f(dppLoc, depthIntrinsics.ppx, depthIntrinsics.ppy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
+  glUniform2f(cppLoc, colorIntrinsics.ppx, colorIntrinsics.ppy);
+  glUniform2f(cfLoc, colorIntrinsics.fx, colorIntrinsics.fy);
+  glUniformMatrix3fv(extRotationLoc, 1, GL_FALSE, extrinsics.rotation);
+  glUniform3fv(extTranslationLoc, 1, extrinsics.translation);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding + 1, coordBuffer);
   return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
 }
 
@@ -497,8 +507,14 @@ int Rs400::activated(0);
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Calculate> Rs400::shader(nullptr);
 
-// カメラパラメータの uniform 変数の場所
+// デプスセンサのカメラパラメータの uniform 変数の場所
 GLint Rs400::dppLoc, Rs400::dfLoc;
+
+// カラーセンサのカメラパラメータの uniform 変数の場所
+GLint Rs400::cppLoc, Rs400::cfLoc;
+
+// RealSense のカラーセンサに対するデプスセンサの外部パラメータの uniform 変数の場所
+GLint Rs400::extRotationLoc, Rs400::extTranslationLoc;
 
 // RealSense のデバイスリスト
 std::map<std::string, rs2::device *> Rs400::devices;

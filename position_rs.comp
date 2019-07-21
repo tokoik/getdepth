@@ -10,7 +10,11 @@ layout (binding = 0, r16ui) readonly uniform uimage2D depth;
 const ivec2 ds = imageSize(depth) - 1;
 
 // 出力
-layout (binding = 1, rgba32f) writeonly uniform image2D position;
+layout (binding = 1, rgba32f) writeonly uniform image2D point;
+layout (binding = 3, std430) writeonly buffer Texture
+{
+  vec2 uvmap[];
+};
 
 // フィルタのサイズ
 const ivec2 filterSize = ivec2(5, 5);
@@ -32,23 +36,19 @@ layout(binding = 2, std430) buffer Weight
   readonly float variance;
 };
 
-// カメラパラメータ
+// デプスセンサのカメラパラメータ
 uniform vec2 dpp, df;
+
+// カラーセンサのカメラパラメータ
+uniform vec2 cpp, cf;
+
+// RealSense のカラーセンサに対するデプスセンサの外部パラメータ
+uniform mat3 extRotation;
+uniform vec3 extTranslation;
 
 // 処理する領域の近傍を含めたコピー
 shared float pixel[neighborhoodSize.y][neighborhoodSize.x];
 shared float row[neighborhoodSize.y][tileSize.x]; 
-
-// 対象画素の値
-float base;
-
-// 重み付き画素値の合計と重みの合計を求める
-vec2 f(const in float c, const in float w)
-{
-  const float d = c - base;
-  const float e = exp(-0.5 * d * d / variance) * w;
-  return vec2(c * e, e);
-}
 
 // インデックスがイメージの領域から外れないようにする
 ivec2 clampLocation(ivec2 xy)
@@ -92,7 +92,7 @@ void main(void)
   retirePhase();
 
   // 対象画素の値を基準値とする
-  base = pixel[y][x + filterOffset.x];
+  float base = pixel[y][x + filterOffset.x];
 
   // 対象画素の値とその重みのペアを作る
   vec2 csum = vec2(0.0);
@@ -100,11 +100,16 @@ void main(void)
   // 列方向の重み付け和を求める
   for(int i = 0; i < filterSize.x; ++i)
   {
-    csum += f(pixel[y][x + i], rowWeight[i]);
+    const float c = pixel[y][x + i];
+    if (c == 0.0) continue;
+    const float d = c - base;
+    const float e = exp(-0.5 * d * d / variance) * rowWeight[i];
+    csum += vec2(c * e, e);
   }
 
   // デプス値を取り出す
-  row[y][x] = csum.r / csum.g;
+  //row[y][x] = mix(csum.r / csum.g, 0.0, step(0.0, -csum.r));
+  row[y][x] = csum.r > 0.0 ? csum.r / csum.g : 0.0;
 
   // 他のスレッドの共有メモリへのアクセス完了と他のワークグループの処理完了を待つ
   retirePhase();
@@ -117,11 +122,16 @@ void main(void)
     // 行方向の重み付け和を求める
     for (int j = 0; j < filterSize.y; ++j)
     {
-      csum += f(row[y + j][x], columnWeight[j]);
+      const float c = row[y + j][x];
+      if (c == 0.0) continue;
+      const float d = c - base;
+      const float e = exp(-0.5 * d * d / variance) * columnWeight[j];
+      csum += vec2(c * e, e);
     }
 
     // デプス値を取り出す
-    const float z = -0.001 * csum.r / csum.g;
+    //const float z = mix(-0.001 * csum.r / csum.g, -5.0, step(0.0, -csum.r));
+    const float z = csum.g > 0.0 ? 0.001 * csum.r / csum.g : 5.0;
 
     // 結果を保存する画素位置を求める
     const ivec2 pixel_xy = tile_xy * tileSize + thread_xy; 
@@ -130,6 +140,15 @@ void main(void)
     const vec2 dp = (dpp - pixel_xy) / df;
 
     // デプス値からカメラ座標値を求める
-    imageStore(position, pixel_xy, vec4(dp * z, z, 1.0));
+    const vec3 p = vec3(dp * z, z);
+
+    // カメラ座標を出力する
+    imageStore(point, pixel_xy, vec4(p * vec3(1.0, -1.0, -1.0), 1.0));
+
+    // カメラ座標からテクスチャ座標を求める
+    const vec3 t = extRotation * p + extTranslation;
+
+    // テクスチャ座標を出力する
+    uvmap[pixel_xy.y * 640 + pixel_xy.x] = cf * t.xy / t.z + cpp;
   }
 }

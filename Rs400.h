@@ -59,7 +59,13 @@ class Rs400 : public DepthCamera
   // デプスセンサの焦点距離の unform 変数 df の場所
   static GLint dfLoc;
 
-	// データ取得用のスレッド
+  // カラーセンサの主点位置の uniform 変数 dpp の場所
+  static GLint cppLoc;
+
+  // カラーセンサの焦点距離の unform 変数 df の場所
+  static GLint cfLoc;
+
+  // データ取得用のスレッド
 	std::thread worker;
 
 	// スレッドの継続フラグ
@@ -85,6 +91,9 @@ class Rs400 : public DepthCamera
 
   // RealSense のカラーセンサに対するデプスセンサの外部パラメータ
   rs2_extrinsics extrinsics;
+
+  // RealSense のカラーセンサに対するデプスセンサの外部パラメータの uniform 変数の場所
+  static GLint extRotationLoc, extTranslationLoc;
 
 	// RealSense を有効にする
 	void add_device(rs2::device &dev);

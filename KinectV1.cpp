@@ -146,7 +146,7 @@ GLuint KinectV1::getDepth()
       {
         // カラーデータのテクスチャ座標のバッファオブジェクトをメインメモリにマップする
         glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-        GLfloat(*const uvmap)[2](static_cast<GLfloat(*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
+        GLfloat (*const uvmap)[2](static_cast<GLfloat (*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
 
         // すべての点について
         for (int i = 0; i < depth.size(); ++i)
@@ -209,7 +209,7 @@ GLuint KinectV1::getPoint()
       {
         // カラーデータのテクスチャ座標のバッファオブジェクトをメインメモリにマップする
         glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
-        GLfloat(*const uvmap)[2](static_cast<GLfloat(*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
+        GLfloat (*const uvmap)[2](static_cast<GLfloat (*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
 
         // すべての点について
         for (int i = 0; i < depth.size(); ++i)
