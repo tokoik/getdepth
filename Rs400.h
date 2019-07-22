@@ -32,9 +32,6 @@ class Rs400 : public DepthCamera
   // 使用しているセンサの数
   static int activated;
 
-	// デプスデータ転送用のメモリ
-	std::vector<GLushort> depth;
-
 	// 新着のデプスデータ
 	const GLushort *depthPtr;
 
@@ -65,13 +62,10 @@ class Rs400 : public DepthCamera
   // カラーセンサの焦点距離の unform 変数 df の場所
   static GLint cfLoc;
 
-  // データ取得用のスレッド
-	std::thread worker;
+  // 奥行きの最大値の uniform 変数 maxDepth の場所
+  static GLint maxDepthLoc;
 
-	// スレッドの継続フラグ
-	bool run;
-
-	// デバイスの mutex
+  // デバイスの mutex
 	std::mutex deviceMutex;
 
 	// RealSense のデバイスリスト
@@ -113,10 +107,10 @@ public:
   virtual ~Rs400();
 
   // 計測不能点のデフォルト距離
-  static constexpr GLushort maxDepth = 5000;
+  static constexpr GLushort maxDepth = 10000;
 
   // 疑似カラー処理の範囲
-  static constexpr GLfloat range[2] = { 0.4f, 4.0f };
+  static constexpr GLfloat range[2] = { 0.3f, 5.0f };
 
   // デプスデータを取得する
   GLuint getDepth();

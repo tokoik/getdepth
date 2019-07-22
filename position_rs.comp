@@ -46,6 +46,9 @@ uniform vec2 cpp, cf;
 uniform mat3 extRotation;
 uniform vec3 extTranslation;
 
+// 深度の最大値
+uniform float maxDepth = 5000.0;
+
 // 処理する領域の近傍を含めたコピー
 shared float pixel[neighborhoodSize.y][neighborhoodSize.x];
 shared float row[neighborhoodSize.y][tileSize.x]; 
@@ -71,8 +74,11 @@ void main(void)
   // スレッドが処理する画素のワークグループにおける相対位置
   const ivec2 thread_xy = ivec2(gl_LocalInvocationID);
 
-  // イメージ上の画素位置
-  const ivec2 pixel_xy = tile_xy * tileSize + thread_xy - ivec2(0, filterOffset.y);
+  // 書き込み先のイメージ上の画素位置
+  const ivec2 dst_xy = tile_xy * tileSize + thread_xy;
+
+  // 読み込み元のイメージ上の画素位置（上下反転＋
+  const ivec2 src_xy = ivec2(dst_xy.x, ds.y - dst_xy.y + filterOffset.y);
 
   // スレッドが処理する画素位置
   const uint x = thread_xy.x;
@@ -83,7 +89,8 @@ void main(void)
   {
     if (x + i < neighborhoodSize.x)
     {
-      const ivec2 read_at = clampLocation(pixel_xy + ivec2(i - filterOffset.x, 0));
+      // 上限を反転した位置から読み込む
+      const ivec2 read_at = clampLocation(ivec2(src_xy.x + i - filterOffset.x, src_xy.y));
       pixel[y][x + i] = float(imageLoad(depth, read_at).r);
     }
   }
@@ -130,25 +137,22 @@ void main(void)
     }
 
     // デプス値を取り出す
-    //const float z = mix(-0.001 * csum.r / csum.g, -5.0, step(0.0, -csum.r));
-    const float z = csum.g > 0.0 ? 0.001 * csum.r / csum.g : 5.0;
-
-    // 結果を保存する画素位置を求める
-    const ivec2 pixel_xy = tile_xy * tileSize + thread_xy; 
+    //const float z = 0.001 * mix(csum.r / csum.g, maxDepth, step(0.0, -csum.r));
+    const float z = 0.001 * (csum.g > 0.0 ? csum.r / csum.g : maxDepth);
 
     // 画素のスクリーン座標 (D415/D435 はデプスセンサのゆがみ補正をする必要がない)
-    const vec2 dp = (dpp - pixel_xy) / df;
+    const vec2 dp = (src_xy - dpp) / df;
 
     // デプス値からカメラ座標値を求める
     const vec3 p = vec3(dp * z, z);
 
     // カメラ座標を出力する
-    imageStore(point, pixel_xy, vec4(p * vec3(1.0, -1.0, -1.0), 1.0));
+    imageStore(point, dst_xy, vec4(p.x, -p.yz, 1.0));
 
     // カメラ座標からテクスチャ座標を求める
     const vec3 t = extRotation * p + extTranslation;
 
     // テクスチャ座標を出力する
-    uvmap[pixel_xy.y * 640 + pixel_xy.x] = cf * t.xy / t.z + cpp;
+    uvmap[dst_xy.y * imageSize(depth).x + dst_xy.x] = cf * t.xy / t.z + cpp;
   }
 }

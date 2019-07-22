@@ -16,9 +16,6 @@
 #  pragma comment (lib, "realsense2" RS_EXT_STR)
 #endif
 
-// テクスチャ座標を CPU 側で計算する
-#define CALC_TEXCOORD 0
-
 // デプスデータをカラーデータに合わせる場合 1
 #define ALIGN_TO_COLOR 0
 
@@ -96,8 +93,7 @@ static void check_intrinsics(const rs2_intrinsics &intrinsics)
 
 // コンストラクタ
 Rs400::Rs400()
-	: run(false)
-	, depthPtr(nullptr)
+	: depthPtr(nullptr)
   , colorPtr(nullptr)
 {
 	// RealSense のコンテキスト
@@ -200,8 +196,6 @@ Rs400::Rs400()
 #else
   depthWidth = depthIntrinsics.width;
   depthHeight = depthIntrinsics.height;
-
-  // TODO: デプスセンサとカラーセンサの主点位置の差を知る必要がある
 #endif
 
   // カラーセンサに対するデプスセンサの外部パラメータ
@@ -218,6 +212,7 @@ Rs400::Rs400()
     dfLoc = glGetUniformLocation(shader->get(), "df");
     cppLoc = glGetUniformLocation(shader->get(), "cpp");
     cfLoc = glGetUniformLocation(shader->get(), "cf");
+    maxDepthLoc = glGetUniformLocation(shader->get(), "maxDepth");
     extRotationLoc = glGetUniformLocation(shader->get(), "extRotation");
     extTranslationLoc = glGetUniformLocation(shader->get(), "extTranslation");
   }
@@ -227,120 +222,14 @@ Rs400::Rs400()
   makeTexture(&depthCount, &colorCount);
 
   // データ転送用のメモリを確保する
-	depth.resize(depthCount);
-	point.resize(depthCount);
+  point.resize(depthCount);
   uvmap.resize(depthCount);
 	color.resize(colorCount);
-
-#if ALIGN_TO_COLOR
-  // テクスチャ座標を求める
-  for (int i = 0; i < depth.size(); ++i)
-  {
-    // 画素位置
-    uvmap[i][0] = i % depthWidth + 0.5f;
-    uvmap[i][1] = i / depthWidth + 0.5f;
-  }
-#endif
-
-	// まだスレッドが走っていなかったら
-	if (!worker.joinable())
-	{
-		// ループが回るようにする
-		run = true;
-
-		// イベントループを開始する
-		worker = std::thread([&]()
-		{
-#if ALIGN_TO_COLOR
-      // デプスデータをカラーデータに合わせる
-      rs2::align align_to_color(RS2_STREAM_COLOR);
-#endif
-
-      while (run)
-			{
-				// フレームを取り出す
-				auto frames(pipe.wait_for_frames());
-
-#if ALIGN_TO_COLOR
-        // デプスデータをカラーデータに合わせる
-        frames = align_to_color.process(frames);
-#endif
-
-        // デプスフレームを取り出す
-        const auto dframe(frames.get_depth_frame());
-        const GLushort *const d(static_cast<const GLushort *>(dframe.get_data()));
-
-        // カラーフレームを取り出す
-        const auto cframe(frames.get_color_frame());
-        const GLubyte (*const c)[3](static_cast<const GLubyte (*)[3]>(cframe.get_data()));
-
-        // デバイスをロックする
-				std::lock_guard<std::mutex> lock(deviceMutex);
-
-#if CALC_TEXCOORD
-        // デプスデータとカラーデータを上下反転して取り出す
-        for (int i = 0; i < depth.size(); ++i)
-        {
-          // 画素位置
-          const int x(i % depthWidth);
-          const int y(i / depthWidth);
-
-          // 格納先
-          const int j((depthHeight - y - 1) * depthWidth + x);
-
-          // 計測不能点だったら最遠点に飛ばす
-          depth[j] = (d[i] != 0 && d[i] < maxDepth) ? d[i] : maxDepth;
-
-#if !ALIGN_TO_COLOR
-          // デプスセンサのカメラ座標を m 単位で求める
-          const GLfloat dz(0.001f * depth[j]);
-          const GLfloat dx(dz * (x - depthIntrinsics.ppx) / depthIntrinsics.fx);
-          const GLfloat dy(dz * (y - depthIntrinsics.ppy) / depthIntrinsics.fy);
-
-          // デプスセンサのカメラ座標を保存する
-          point[j][0] = dx;
-          point[j][1] = -dy;
-          point[j][2] = -dz;
-
-          // カラーセンサから見たカメラ座標を求める
-          const GLfloat cx(extrinsics.rotation[0] * dx + extrinsics.rotation[3] * dy + extrinsics.rotation[6] * dz + extrinsics.translation[0]);
-          const GLfloat cy(extrinsics.rotation[1] * dx + extrinsics.rotation[4] * dy + extrinsics.rotation[7] * dz + extrinsics.translation[1]);
-          const GLfloat cz(extrinsics.rotation[2] * dx + extrinsics.rotation[5] * dy + extrinsics.rotation[8] * dz + extrinsics.translation[2]);
-
-          // カラーセンサのカメラ座標をテクスチャ座標に変換して保存する
-          uvmap[i][0] = cx * colorIntrinsics.fx / cz + colorIntrinsics.ppx;
-          uvmap[i][1] = cy * colorIntrinsics.fy / cz + colorIntrinsics.ppy;
-#endif
-
-          // カラーフレームを確保したメモリに格納する
-          color[j][0] = c[i][0];
-          color[j][1] = c[i][1];
-          color[j][2] = c[i][2];
-        }
-#endif
-
-				// デプスデータの新着を知らせる
-        depthPtr = static_cast<const GLushort *>(dframe.get_data());// depth.data();
-
-				// カラーデータの新着を知らせる
-        colorPtr = static_cast<const std::array<GLubyte, 3> *>(cframe.get_data());// color.data();
-			}
-		});
-	}
 }
 
 // デストラクタ
 Rs400::~Rs400()
 {
-	// イベントループを停止する
-	if (worker.joinable())
-	{
-		// イベントループを停止する
-		run = false;
-
-		// イベントループのスレッドが終了するのを待つ
-		worker.join();
-	}
 }
 
 // RealSense を追加する
@@ -409,39 +298,87 @@ GLuint Rs400::getDepth()
 	// デプスデータのテクスチャを指定する
 	glBindTexture(GL_TEXTURE_2D, depthTexture);
 
-	// デプスデータが更新されておりデプスデータの取得中でなければ
-	if (depthPtr && deviceMutex.try_lock())
-	{
-#if CALC_TEXCOORD
-		// テクスチャ座標のバッファオブジェクトを指定する
-		glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+  // センサから取得するフレームの格納先
+  rs2::frameset frames;
 
-		// テクスチャ座標をバッファオブジェクトに転送する
-		glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
+  // 新しいフレームが到着していれば
+  if (pipe.poll_for_frames(&frames) && deviceMutex.try_lock())
+  {
+#if ALIGN_TO_COLOR
+    // デプスデータをカラーデータに合わせる
+    rs2::align align_to_color(RS2_STREAM_COLOR);
+    frames = align_to_color.process(frames);
 #endif
 
-		// デプスデータをテクスチャに転送する
-		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depthPtr);
+    // デプスフレームを取り出す
+    const auto dframe(frames.get_depth_frame());
+    depthPtr = static_cast<const GLushort *>(dframe.get_data());
 
-		// 一度送ってしまえば更新されるまで送る必要がないのでデータは不要
-		depthPtr = nullptr;
+    // デプスデータをテクスチャに転送する
+    glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depthPtr);
 
-		// デプスデータをアンロックする
-		deviceMutex.unlock();
-	}
+    // カラーフレームを取り出す
+    const auto cframe(frames.get_color_frame());
+    colorPtr = static_cast<const std::array<GLubyte, 3> *>(cframe.get_data());
 
-	return depthTexture;
+    // デプスデータをアンロックする
+    deviceMutex.unlock();
+  }
+
+  return depthTexture;
 }
 
 // カメラ座標を取得する
 GLuint Rs400::getPoint()
 {
-	// カメラ座標のテクスチャを指定する
+  // デプスデータの読み込み
+  getDepth();
+
+  // カメラ座標のテクスチャを指定する
 	glBindTexture(GL_TEXTURE_2D, pointTexture);
 
 	// デプスデータが更新されており RealSense がデプスデータの取得中でなければ
 	if (depthPtr && deviceMutex.try_lock())
 	{
+    // デプスデータからテクスチャ座標を求める
+    for (int i = 0; i < depthWidth * depthHeight; ++i)
+    {
+      // 画素位置
+      const int x(i % depthWidth);
+      const int y(i / depthWidth);
+
+      // 格納先
+      const int j((depthHeight - y - 1) * depthWidth + x);
+
+      // カラーデータを格納する
+      color[j] = colorPtr[i];
+
+#if ALIGN_TO_COLOR
+      // テクスチャ座標を求める
+      uvmap[j][0] = x + 0.5f;
+      uvmap[j][1] = y + 0.5f;
+#else
+      // デプスセンサのカメラ座標を m 単位で求める (計測不能点だったら最遠点に飛ばす)
+      const GLfloat dz(0.001f * ((depthPtr[i] != 0 && depthPtr[i] < maxDepth) ? depthPtr[i] : maxDepth));
+      const GLfloat dx(dz * (x - depthIntrinsics.ppx) / depthIntrinsics.fx);
+      const GLfloat dy(dz * (y - depthIntrinsics.ppy) / depthIntrinsics.fy);
+
+      // デプスセンサのカメラ座標を保存する
+      point[j][0] = dx;
+      point[j][1] = -dy;
+      point[j][2] = -dz;
+
+      // カラーセンサから見たカメラ座標を求める
+      const GLfloat cx(extrinsics.rotation[0] * dx + extrinsics.rotation[3] * dy + extrinsics.rotation[6] * dz + extrinsics.translation[0]);
+      const GLfloat cy(extrinsics.rotation[1] * dx + extrinsics.rotation[4] * dy + extrinsics.rotation[7] * dz + extrinsics.translation[1]);
+      const GLfloat cz(extrinsics.rotation[2] * dx + extrinsics.rotation[5] * dy + extrinsics.rotation[8] * dz + extrinsics.translation[2]);
+
+      // カラーセンサのカメラ座標をテクスチャ座標に変換して保存する
+      uvmap[j][0] = cx * colorIntrinsics.fx / cz + colorIntrinsics.ppx;
+      uvmap[j][1] = cy * colorIntrinsics.fy / cz + colorIntrinsics.ppy;
+#endif
+    }
+
     // カメラ座標をテクスチャに転送する
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point.data());
 
@@ -472,6 +409,7 @@ GLuint Rs400::getPosition()
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   glUniform2f(cppLoc, colorIntrinsics.ppx, colorIntrinsics.ppy);
   glUniform2f(cfLoc, colorIntrinsics.fx, colorIntrinsics.fy);
+  glUniform1f(maxDepthLoc, maxDepth);
   glUniformMatrix3fv(extRotationLoc, 1, GL_FALSE, extrinsics.rotation);
   glUniform3fv(extTranslationLoc, 1, extrinsics.translation);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
@@ -512,6 +450,9 @@ GLint Rs400::dppLoc, Rs400::dfLoc;
 
 // カラーセンサのカメラパラメータの uniform 変数の場所
 GLint Rs400::cppLoc, Rs400::cfLoc;
+
+// 奥行きの最大値 の uniform 変数 maxDepth の場所
+GLint Rs400::maxDepthLoc;
 
 // RealSense のカラーセンサに対するデプスセンサの外部パラメータの uniform 変数の場所
 GLint Rs400::extRotationLoc, Rs400::extTranslationLoc;
