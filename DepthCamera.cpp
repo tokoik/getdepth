@@ -4,6 +4,34 @@
 // デプスセンサ関連の基底クラス
 //
 
+// コンストラクタ
+DepthCamera::DepthCamera()
+: message(nullptr)
+, depthTexture(0), pointTexture(0), colorTexture(0)
+, uvmapBuffer(0), weightBuffer(0), normalBuffer(0)
+{
+  // まだシェーダが作られていなかったら
+  if (normal.get() == nullptr)
+  {
+    // 法線ベクトル算出用のシェーダを作成する
+    normal.reset(new Compute("normal.comp"));
+  }
+}
+
+// デストラクタ
+DepthCamera::~DepthCamera()
+{
+  // テクスチャを削除する
+  if (depthTexture > 0) glDeleteTextures(1, &depthTexture);
+  if (pointTexture > 0) glDeleteTextures(1, &pointTexture);
+  if (colorTexture > 0) glDeleteTextures(1, &colorTexture);
+
+  // バッファオブジェクトを削除する
+  if (uvmapBuffer > 0) glDeleteBuffers(1, &uvmapBuffer);
+  if (normalBuffer > 0) glDeleteBuffers(1, &normalBuffer);
+  if (weightBuffer > 0) glDeleteBuffers(1, &weightBuffer);
+}
+
 // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
 void DepthCamera::makeTexture(int *depthCount, int *colorCount)
 {
@@ -45,25 +73,17 @@ void DepthCamera::makeTexture(int *depthCount, int *colorCount)
   // デプスデータの画素位置のカラーのテクスチャ座標を格納するバッファオブジェクトを準備する
   glGenBuffers(1, &uvmapBuffer);
   glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
-  glBufferData(GL_ARRAY_BUFFER, *depthCount * 2 * sizeof (GLfloat), nullptr, GL_DYNAMIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, *depthCount * sizeof (Uvmap), NULL, GL_DYNAMIC_DRAW);
+
+  // カメラ座標の法線ベクトルを格納するバッファオブジェクトを準備する
+  glGenBuffers(1, &normalBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, normalBuffer);
+  glBufferData(GL_ARRAY_BUFFER, *depthCount * sizeof (Normal), nullptr, GL_DYNAMIC_DRAW);
 
   // バイラテラルフィルタの重みを格納するバッファオブジェクトを準備する
   glGenBuffers(1, &weightBuffer);
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, weightBuffer);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof (Weight), nullptr, GL_STATIC_DRAW);
-}
-
-// デストラクタ
-DepthCamera::~DepthCamera()
-{
-  // テクスチャを削除する
-  if (depthTexture > 0) glDeleteTextures(1, &depthTexture);
-  if (pointTexture > 0) glDeleteTextures(1, &pointTexture);
-  if (colorTexture > 0) glDeleteTextures(1, &colorTexture);
-
-  // バッファオブジェクトを削除する
-  if (uvmapBuffer > 0) glDeleteBuffers(1, &uvmapBuffer);
-  if (weightBuffer > 0) glDeleteBuffers(1, &weightBuffer);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof (Weight), NULL, GL_STATIC_DRAW);
 }
 
 // バイラテラルフィルタの分散を設定する
@@ -95,3 +115,17 @@ void DepthCamera::setVariance(float columnVariance, float rowVariance, float val
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, weightBuffer);
   glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof weight, &weight);
 }
+
+// 法線ベクトルの計算
+GLuint DepthCamera::getNormal()
+{
+  normal->use();
+  glBindImageTexture(0, pointTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, normalBuffer);
+  normal->execute(depthWidth, depthHeight);
+
+  return normalBuffer;
+}
+
+// カメラ座標を計算するシェーダ
+std::unique_ptr<Compute> DepthCamera::normal(nullptr);

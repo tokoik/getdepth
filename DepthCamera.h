@@ -21,6 +21,12 @@ class DepthCamera
 
 protected:
 
+  // エラーメッセージをセットする
+  void setMessage(const char *message)
+  {
+    this->message = message;
+  }
+
   // 結合ポイント
   enum Binding
   {
@@ -34,11 +40,17 @@ protected:
   // フィルターのサイズ
   static constexpr int filterSize[] = { 5, 5 };
 
-  // エラーメッセージをセットする
-  void setMessage(const char *message)
-  {
-    this->message = message;
-  }
+  // カメラ座標のデータ型
+  using Point = std::array<GLfloat, 3>;
+
+  // テクスチャ座標のデータ型
+  using Uvmap = std::array<GLfloat, 2>;
+
+  // 法線ベクトルのデータ型
+  using Normal = std::array<GLfloat, 3>;
+
+  // カラーのデータ型
+  using Color = std::array<GLubyte, 3>;
 
   // デプスセンサのサイズ
   int depthWidth, depthHeight;
@@ -46,26 +58,23 @@ protected:
   // デプスデータを格納するテクスチャ
   GLuint depthTexture;
 
-  // デプスデータから変換したカメラ座標を格納するテクスチャ
-  GLuint pointTexture;
-
   // カラーセンサのサイズ
   int colorWidth, colorHeight;
 
   // カラーデータを格納するテクスチャ
   GLuint colorTexture;
 
-  // デプスデータの画素におけるカラーデータのテクスチャ座標を格納するバッファオブジェクト
+  // デプスデータから変換したカメラ座標を格納するテクスチャ
+  GLuint pointTexture;
+
+  // カメラ座標に対応したカラーデータのテクスチャ座標を格納するバッファオブジェクト
   GLuint uvmapBuffer;
 
-  // カメラ座標のデータ型
-  using Point = std::array<GLfloat, 3>;
+  // カメラ座標における法線ベクトルを格納するバッファオブジェクト
+  GLuint normalBuffer;
 
-  // テクスチャ座標のデータ型
-  using Uvmap = std::array<GLfloat, 2>;
-
-  // カラーのデータ型
-  using Color = std::array<GLubyte, 3>;
+  // 法線ベクトルを計算するシェーダ
+  static std::unique_ptr<Compute> normal;
 
   // バイラテラルフィルタの距離に対する重みと値に対する分散
   struct Weight
@@ -84,11 +93,7 @@ protected:
 public:
 
   // コンストラクタ
-  DepthCamera()
-    : depthTexture(0), pointTexture(0), colorTexture(0), uvmapBuffer(0), weightBuffer(0)
-    , message(nullptr)
-  {
-  }
+  DepthCamera();
 
   // コピーコンストラクタ (コピー禁止)
   DepthCamera(const DepthCamera &w) = delete;
@@ -133,6 +138,9 @@ public:
 
   // バイラテラルフィルタの分散を設定する
   void setVariance(float columnVariance, float rowVariance, float valueVariance);
+
+  // 法線ベクトルの計算
+  GLuint getNormal();
 
   // デプスデータを取得する
   virtual GLuint getDepth()

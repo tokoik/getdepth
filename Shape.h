@@ -18,6 +18,11 @@ public:
   // コンストラクタ
   Shape();
 
+  // コピーコンストラクタを封じる
+  Shape(const Shape &shape) = delete;
+
+  // 代入演算子を封じる
+
   // デストラクタ
   virtual ~Shape();
 

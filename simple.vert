@@ -30,7 +30,6 @@ uniform mat4 mn;                                      // 法線ベクトルの�
 
 // テクスチャ
 uniform sampler2D position;                           // 頂点位置のテクスチャ
-uniform sampler2D normal;                             // 法線ベクトルのテクスチャ
 uniform sampler2D color;                              // カラーのテクスチャ
 
 // 疑似カラー処理
@@ -39,6 +38,7 @@ uniform vec2 range = vec2(0.3, 6.0);
 // 頂点属性
 layout (location = 0) in vec2 pc;                     // 頂点のテクスチャ座標
 layout (location = 1) in vec2 cc;                     // カラーのテクスチャ座標
+layout (location = 2) in vec3 nv;                     // 法線ベクトル
 
 // ラスタライザに送る頂点属性
 out vec4 idiff;                                       // 拡散反射光強度
@@ -59,13 +59,10 @@ void main(void)
   // テクスチャ座標
   texcoord = cc / vec2(textureSize(color, 0));
 
-  // 法線ベクトル
-  vec4 nv = texture(normal, pc);
-
   // 陰影計算
   vec3 v = normalize(p.xyz);                          // 視線ベクトル
   vec3 l = normalize((lpos * p.w - p * lpos.w).xyz);  // 光線ベクトル
-  vec3 n = normalize((mn * nv).xyz);                  // 法線ベクトル
+  vec3 n = normalize(vec3(mn) * nv);                  // 法線ベクトル
   vec3 h = normalize(l - v);                          // 中間ベクトル
 
 #if PSEUDO_COLOR

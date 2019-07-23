@@ -17,9 +17,8 @@ void Mesh::genCoord()
 }
 
 // コンストラクタ
-Mesh::Mesh(int slices, int stacks, GLuint coordBuffer)
-  : slices(slices)
-  , stacks(stacks)
+Mesh::Mesh(int slices, int stacks, GLuint coordBuffer, GLuint normalBuffer)
+  : slices(slices), stacks(stacks)
   , vertices(slices * stacks)
   , indexes((slices - 1) * (stacks - 1) * 3 * 2)
 {

@@ -161,19 +161,6 @@ void GgApplication::run()
   // 材質データ
   const GgSimpleShader::MaterialBuffer material(materialData);
 
-  // 頂点位置から法線ベクトルを計算するシェーダ
-  const Compute normal("normal.comp");
-
-  // カメラ座標の法線ベクトルを格納するテクスチャを準備する
-  GLuint normalTexture;
-  glGenTextures(1, &normalTexture);
-  glBindTexture(GL_TEXTURE_2D, normalTexture);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGB, GL_FLOAT, NULL);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
   // 背景色を設定する
   glClearColor(background[0], background[1], background[2], background[3]);
 
@@ -207,10 +194,7 @@ void GgApplication::run()
 #endif
 
     // 法線ベクトルの計算
-    normal.use();
-    glBindImageTexture(0, positionTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-    glBindImageTexture(1, normalTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-    normal.execute(width, height);
+    const GLuint normalBuffer(sensor.getNormal());
 
     // 画面消去
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -236,7 +220,7 @@ void GgApplication::run()
     // 法線ベクトルテクスチャ
     glUniform1i(normalLoc, 1);
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normalTexture);
+    glBindTexture(GL_TEXTURE_2D, normalBuffer);
 
 #if USE_REFRACTION
     // 背景テクスチャ

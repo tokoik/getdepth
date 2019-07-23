@@ -4,10 +4,13 @@
 layout(local_size_x = 1, local_size_y = 1) in;
 
 // 入力
-layout (binding = 0, rgba32f) readonly uniform image2D position;
+layout (binding = 0, rgba32f) readonly uniform image2D point;
 
 // 出力
-layout (binding = 1, rgba32f) writeonly uniform image2D normal;
+layout (binding = 1, std430) buffer Normal
+{
+  vec3 normal[];
+}
 
 void main(void)
 {
@@ -15,9 +18,12 @@ void main(void)
   ivec2 p = ivec2(gl_GlobalInvocationID.xy);
 
   // 近傍の勾配を求める
-  vec3 vx = vec3(imageLoad(position, p + ivec2(1, 0)) - imageLoad(position, p + ivec2(-1, 0)));
-  vec3 vy = vec3(imageLoad(position, p + ivec2(0, 1)) - imageLoad(position, p + ivec2(0, -1)));
+  vec3 vx = vec3(imageLoad(point, p + ivec2(1, 0)) - imageLoad(point, p + ivec2(-1, 0)));
+  vec3 vy = vec3(imageLoad(point, p + ivec2(0, 1)) - imageLoad(point, p + ivec2(0, -1)));
+
+  // 頂点インデックス
+  int i = p.y * imageSize(point).x + p.x;
 
   // 勾配からから法線ベクトルを求める
-  imageStore(normal, p, vec4(normalize(cross(vx, vy)), 0.0));
+  normal[i] = cross(vx, vy);
 }

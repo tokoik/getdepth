@@ -33,7 +33,7 @@ class Mesh : public Shape
 public:
 
   // コンストラクタ
-  Mesh(int stacks, int slices, GLuint coordBuffer = 0);
+  Mesh(int stacks, int slices, GLuint coordBuffer = 0, GLuint normalBuffer = 0);
 
   // デストラクタ
   virtual ~Mesh();
