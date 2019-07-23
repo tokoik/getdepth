@@ -1,7 +1,7 @@
 #version 430 core
 
 // ワークグループのサイズ
-layout(local_size_x = 1, local_size_y = 1) in;
+layout (local_size_x = 1, local_size_y = 1) in;
 
 // 入力
 layout (binding = 0, rgba32f) readonly uniform image2D point;
@@ -9,21 +9,21 @@ layout (binding = 0, rgba32f) readonly uniform image2D point;
 // 出力
 layout (binding = 1, std430) buffer Normal
 {
-  vec3 normal[];
-}
+  vec4 normal[];
+};
 
 void main(void)
 {
   // 画素位置
-  ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+  const ivec2 p = ivec2(gl_GlobalInvocationID.xy);
 
   // 近傍の勾配を求める
-  vec3 vx = vec3(imageLoad(point, p + ivec2(1, 0)) - imageLoad(point, p + ivec2(-1, 0)));
-  vec3 vy = vec3(imageLoad(point, p + ivec2(0, 1)) - imageLoad(point, p + ivec2(0, -1)));
+  const vec3 vx = vec3(imageLoad(point, p + ivec2(1, 0)) - imageLoad(point, p + ivec2(-1, 0)));
+  const vec3 vy = vec3(imageLoad(point, p + ivec2(0, 1)) - imageLoad(point, p + ivec2(0, -1)));
 
   // 頂点インデックス
-  int i = p.y * imageSize(point).x + p.x;
+  const int i = p.y * imageSize(point).x + p.x;
 
   // 勾配からから法線ベクトルを求める
-  normal[i] = cross(vx, vy);
+  normal[i] = vec4(cross(vx, vy), 0.0);
 }

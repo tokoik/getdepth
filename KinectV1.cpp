@@ -96,9 +96,8 @@ KinectV1::KinectV1()
     scaleLoc = glGetUniformLocation(shader->get(), "scale");
   }
 
-  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-  int depthCount, colorCount;
-  makeTexture(&depthCount, &colorCount);
+  // テクスチャとバッファオブジェクトを作成してポイント数を返す
+  const int depthCount(makeTexture());
 
   // デプスデータの計測不能点を変換するために用いる一次メモリを確保する
   depth.resize(depthCount);
@@ -144,7 +143,7 @@ GLuint KinectV1::getDepth()
       // ロックに成功したら
       if (rect.Pitch)
       {
-        // カラーデータのテクスチャ座標のバッファオブジェクトをメインメモリにマップする
+        // テクスチャ座標のバッファオブジェクトをメインメモリにマップする
         glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
         GLfloat (*const uvmap)[2](static_cast<GLfloat (*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
 
@@ -159,7 +158,7 @@ GLuint KinectV1::getDepth()
           sensor->NuiImageGetColorPixelCoordinatesFromDepthPixel(COLOR_RESOLUTION,
             NULL, i % depthWidth, i / depthWidth, p, &tx, &ty);
 
-          // カラーデータのテクスチャ座標に変換する
+          // テクスチャ座標に変換する
           uvmap[i][0] = static_cast<GLfloat>(tx) + 0.5f;
           uvmap[i][1] = static_cast<GLfloat>(ty) + 0.5f;
 
@@ -207,7 +206,7 @@ GLuint KinectV1::getPoint()
       // ロックに成功したら
       if (rect.Pitch)
       {
-        // カラーデータのテクスチャ座標のバッファオブジェクトをメインメモリにマップする
+        // テクスチャ座標のバッファオブジェクトをメインメモリにマップする
         glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
         GLfloat (*const uvmap)[2](static_cast<GLfloat (*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
 
@@ -222,7 +221,7 @@ GLuint KinectV1::getPoint()
           sensor->NuiImageGetColorPixelCoordinatesFromDepthPixel(COLOR_RESOLUTION,
             NULL, i % depthWidth, i / depthWidth, p, &tx, &ty);
 
-          // カラーデータのテクスチャ座標に変換する
+          // テクスチャ座標に変換する
           uvmap[i][0] = static_cast<GLfloat>(tx) + 0.5f;
           uvmap[i][1] = static_cast<GLfloat>(ty) + 0.5f;
 

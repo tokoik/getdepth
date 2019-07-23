@@ -47,7 +47,7 @@ protected:
   using Uvmap = std::array<GLfloat, 2>;
 
   // 法線ベクトルのデータ型
-  using Normal = std::array<GLfloat, 3>;
+  using Normal = std::array<GLfloat, 4>;
 
   // カラーのデータ型
   using Color = std::array<GLubyte, 3>;
@@ -67,7 +67,7 @@ protected:
   // デプスデータから変換したカメラ座標を格納するテクスチャ
   GLuint pointTexture;
 
-  // カメラ座標に対応したカラーデータのテクスチャ座標を格納するバッファオブジェクト
+  // カメラ座標に対応したテクスチャ座標を格納するバッファオブジェクト
   GLuint uvmapBuffer;
 
   // カメラ座標における法線ベクトルを格納するバッファオブジェクト
@@ -87,8 +87,8 @@ protected:
   // バイラテラルフィルタの距離に対する重みを格納する Shader Storage Buffer Objec
   GLuint weightBuffer;
 
-  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-  void makeTexture(int *depthCount, int *colorCcount);
+  // テクスチャとバッファオブジェクトを作成してポイント数を返す
+  int makeTexture();
 
 public:
 
@@ -130,17 +130,23 @@ public:
     *height = colorHeight;
   }
 
-  // カラーデータのテクスチャ座標を格納するバッファオブジェクトを得る
+  // テクスチャ座標を格納するバッファオブジェクトを得る
   GLuint getUvmapBuffer() const
   {
     return uvmapBuffer;
   }
 
-  // バイラテラルフィルタの分散を設定する
-  void setVariance(float columnVariance, float rowVariance, float valueVariance);
+  // 法線ベクトルを格納するバッファオブジェクトを得る
+  GLuint getNormalBuffer() const
+  {
+    return normalBuffer;
+  }
 
   // 法線ベクトルの計算
-  GLuint getNormal();
+  GLuint getNormal() const;
+
+  // バイラテラルフィルタの分散を設定する
+  void setVariance(float columnVariance, float rowVariance, float valueVariance) const;
 
   // デプスデータを取得する
   virtual GLuint getDepth()

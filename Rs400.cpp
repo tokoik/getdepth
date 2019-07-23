@@ -217,14 +217,13 @@ Rs400::Rs400()
     extTranslationLoc = glGetUniformLocation(shader->get(), "extTranslation");
   }
 
-  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-  int depthCount, colorCount;
-  makeTexture(&depthCount, &colorCount);
+  // テクスチャとバッファオブジェクトを作成してポイント数を返す
+  const int depthCount(makeTexture());
 
   // データ転送用のメモリを確保する
   point.resize(depthCount);
   uvmap.resize(depthCount);
-	color.resize(colorCount);
+	color.resize(colorWidth * colorHeight);
 }
 
 // デストラクタ

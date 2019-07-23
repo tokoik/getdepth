@@ -1,9 +1,8 @@
-getdepth
-========
+# getdepth
 
-Kinect v1, Kinect v2, RealSense DS325/311, RealSense D415/D435 からカラーとデプスを取得するサンプル
+Kinect v1, Kinect v2, DepthSense DS325/311, RealSense D415/D435 からカラーとデプスを取得するサンプル
 
-    Copyright (c) 2011, 2012, 2013, 2014, 2015 Kohe Tokoi. All Rights Reserved.
+    Copyright (c) 2011-2019 Kohe Tokoi. All Rights Reserved.
     
     Permission is hereby granted, free of charge,  to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -20,6 +19,8 @@ Kinect v1, Kinect v2, RealSense DS325/311, RealSense D415/D435 からカラー�
     KOHE TOKOI  BE LIABLE FOR ANY CLAIM,  DAMAGES OR OTHER LIABILITY,  WHETHER IN
     AN ACTION  OF CONTRACT,  TORT  OR  OTHERWISE,  ARISING  FROM,  OUT OF  OR  IN
     CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## クラスについて
 
 ### KinectV1 / KinectV2 / Ds325 / Rs400 クラスについて
 
@@ -71,7 +72,9 @@ Kinect v1, Kinect v2, RealSense DS325/311, RealSense D415/D435 からカラー�
 * これを描画する VAO に組み込んで getColor() メソッドで得たカラーデータをマッピングしてください。
 * とにかく getdepth.cpp を読んでください。
 
-### サンプルプログラムについて
+## サンプルプログラムについて
+
+### サンプルプログラムの概要
 
 * OpenGL のテクスチャに入っているデプスマップを使ってポリゴンメッシュを描きます。
 * シェーダを使ってテクスチャに入っているデプスからポイントの座標を求めてテクスチャに格納します。
@@ -82,19 +85,19 @@ Kinect v1, Kinect v2, RealSense DS325/311, RealSense D415/D435 からカラー�
 * 頂点属性はテプスとカラーのテクスチャをサンプリングするテクスチャ座標だけを送っています。
 * simple.frag の main() の内容を変更してみてください。
 
-    + fc = idiff + ispec;
+  * fc = idiff + ispec;
 
-        - グレーに陰影がついたものになります。
-        - マテリアルは main() の material で設定しています。
+    * グレーに陰影がついたものになります。
+    * マテリアルは main() の material で設定しています。
 
-    + fc = texture(color, texcoord);
+  * fc = texture(color, texcoord);
 
-        - メッシュにカラーがマッピングされます。
+    * メッシュにカラーがマッピングされます。
 
-    + fc = texture(color, texcoord) * idiff + ispec;
+  * fc = texture(color, texcoord) * idiff + ispec;
 
-        - メッシュにカラーをマッピングして、さらに正面から光を当てます。
-        - 陰影をつけたものに陰影を重ねてつけるので、かなり変になります。
+    * メッシュにカラーをマッピングして、さらに正面から光を当てます。
+    * 陰影をつけたものに陰影を重ねてつけるので、かなり変になります。
 
 ### サンプルプログラムの操作方法
 
@@ -103,7 +106,7 @@ Kinect v1, Kinect v2, RealSense DS325/311, RealSense D415/D435 からカラー�
 * マスのホイールで向いている方向に前後できます。
 * ESC で終了します。
 
-### その他
+## その他
 
 * このプログラムは学生さんに説明するために書き始めたものですので、実用的ではありません。
 * テプスを頂点属性ではなくテクスチャにしたのは GPU によるフィルタリングの実験に使うためです。

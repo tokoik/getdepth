@@ -98,9 +98,8 @@ KinectV2::KinectV2()
     shader.reset(new Compute("position_v2.comp"));
   }
 
-  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-  int depthCount, colorCount;
-  makeTexture(&depthCount, &colorCount);
+  // テクスチャとバッファオブジェクトを作成してポイント数を返す
+  const int depthCount(makeTexture());
 
   // デプスデータの計測不能点を変換するために用いる一次メモリを確保する
   depth.resize(depthCount);
@@ -109,7 +108,7 @@ KinectV2::KinectV2()
   point.resize(depthCount);
 
   // カラーデータを変換する用いる一時メモリを確保する
-  color.resize(colorCount * 4);
+  color.resize(colorWidth * colorHeight * 4);
 
   // デプス値に対するカメラ座標の変換テーブルのテクスチャを作成する
   glGenTextures(1, &mapperTexture);

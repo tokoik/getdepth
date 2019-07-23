@@ -1,17 +1,15 @@
-#version 150 core
-#extension GL_ARB_explicit_attrib_location : enable
-#extension GL_ARB_explicit_uniform_location : enable
+#version 430 core
 
 // テクスチャ
-uniform sampler2D color;                              // カラーのテクスチャ
+uniform sampler2D color;                                    // カラーのテクスチャ
 
 // ラスタライザから受け取る頂点属性の補間値
-in vec4 idiff;                                        // 拡散反射光強度
-in vec4 ispec;                                        // 鏡面反射光強度
-in vec2 texcoord;                                     // テクスチャ座標
+in vec4 idiff;                                              // 拡散反射光強度
+in vec4 ispec;                                              // 鏡面反射光強度
+in vec2 texcoord;                                           // テクスチャ座標
 
 // フレームバッファに出力するデータ
-layout (location = 0) out vec4 fc;                    // フラグメントの色
+layout (location = 0) out vec4 fc;                          // フラグメントの色
 
 void main(void)
 {

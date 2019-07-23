@@ -83,15 +83,14 @@ Ds325::Ds325(
     dkLoc = glGetUniformLocation(shader->get(), "dk");
   }
 
-  // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
-  int depthCount, colorCount;
-  makeTexture(&depthCount, &colorCount);
+  // テクスチャとバッファオブジェクトを作成してポイント数を返す
+  const int depthCount(makeTexture());
 
   // データ転送用のメモリを確保する
   depth.resize(depthCount);
   point.resize(depthCount);
   uvmap.resize(depthCount);
-  color.resize(colorCount);
+  color.resize(colorWidth * colorHeight);
 
   // DepthSense の各ノードを初期化する
   for (Node &node : device.getNodes()) configureNode(node);

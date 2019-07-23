@@ -114,7 +114,7 @@ void GgApplication::run()
   sensor.getDepthResolution(&width, &height);
 
   // 描画に使うメッシュ
-  const Mesh mesh(width, height, sensor.getUvmapBuffer());
+  const Mesh mesh(width, height, sensor.getUvmapBuffer(), sensor.getNormalBuffer());
 
 #if USE_REFRACTION
   // 背景画像のキャプチャに使う OpenCV のビデオキャプチャを初期化する
@@ -188,7 +188,7 @@ void GgApplication::run()
 #endif
 
 #if USE_SHADER
-    const GLuint positionTexture(sensor.getPosition());
+    const GLuint pointTexture(sensor.getPosition());
 #else
     const GLuint positionTexture(sensor.getPoint());
 #endif
@@ -215,12 +215,7 @@ void GgApplication::run()
     // 頂点座標テクスチャ
     glUniform1i(positionLoc, 0);
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, positionTexture);
-
-    // 法線ベクトルテクスチャ
-    glUniform1i(normalLoc, 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normalBuffer);
+    glBindTexture(GL_TEXTURE_2D, pointTexture);
 
 #if USE_REFRACTION
     // 背景テクスチャ

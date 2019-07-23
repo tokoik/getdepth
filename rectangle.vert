@@ -1,4 +1,4 @@
-#version 150 core
+#version 430 core
 
 // テクスチャ座標
 out vec2 texcoord;

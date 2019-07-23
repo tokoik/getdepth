@@ -27,13 +27,10 @@ class Mesh : public Shape
   // 頂点のインデックスを格納するバッファオブジェクト
   GLuint indexBuffer;
 
-  // テクスチャ座標を生成してバインドされているバッファオブジェクトに転送する
-  void genCoord();
-
 public:
 
   // コンストラクタ
-  Mesh(int stacks, int slices, GLuint coordBuffer = 0, GLuint normalBuffer = 0);
+  Mesh(int stacks, int slices, GLuint coordBuffer, GLuint normalBuffer);
 
   // デストラクタ
   virtual ~Mesh();

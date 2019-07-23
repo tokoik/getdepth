@@ -22,6 +22,7 @@ public:
   Shape(const Shape &shape) = delete;
 
   // 代入演算子を封じる
+  Shape &operator=(const Shape &shape) = delete;
 
   // デストラクタ
   virtual ~Shape();

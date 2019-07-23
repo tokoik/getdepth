@@ -1,7 +1,7 @@
 #version 430 core
 
 // ワークグループのサイズ
-layout(local_size_x = 16, local_size_y = 20) in;
+layout (local_size_x = 16, local_size_y = 20) in;
 
 // 入力
 layout (binding = 0, r16ui) readonly uniform uimage2D depth;
@@ -25,11 +25,11 @@ const ivec2 tileSize = ivec2(gl_WorkGroupSize) - ivec2(0, filterOffset.y * 2);
 const ivec2 neighborhoodSize = tileSize + filterOffset * 2;
 
 // バイラテラルフィルタの距離に対する重みの Shader Storage Buffer Object
-layout (binding = 3, std430) buffer Weight
+layout (binding = 3, std430) readonly buffer Weight
 {
-  readonly float columnWeight[filterSize.y];
-  readonly float rowWeight[filterSize.x];
-  readonly float variance;
+  float columnWeight[filterSize.y];
+  float rowWeight[filterSize.x];
+  float variance;
 };
 
 // カメラパラメータ
