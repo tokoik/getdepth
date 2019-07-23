@@ -36,16 +36,16 @@ class Rs400 : public DepthCamera
 	const GLushort *depthPtr;
 
 	// カメラ座標転送用のメモリ
-	std::vector<std::array<GLfloat, 3>> point;
+	std::vector<Point> point;
 
 	// テクスチャ座標転送用のメモリ
-	std::vector<std::array<GLfloat, 2>> uvmap;
+	std::vector<Uvmap> uvmap;
 
 	// カラーデータ転送用のメモリ
-	std::vector<std::array<GLubyte, 3>> color;
+	std::vector<Color> color;
 
 	// 新着のカラーデータ
-	const std::array<GLubyte, 3> *colorPtr;
+	const Color *colorPtr;
 
 	// カメラ座標を計算するシェーダ
 	static std::unique_ptr<Compute> shader;

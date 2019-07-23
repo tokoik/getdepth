@@ -43,8 +43,8 @@ void DepthCamera::makeTexture(int *depthCount, int *colorCount)
   glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 
   // デプスデータの画素位置のカラーのテクスチャ座標を格納するバッファオブジェクトを準備する
-  glGenBuffers(1, &coordBuffer);
-  glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+  glGenBuffers(1, &uvmapBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
   glBufferData(GL_ARRAY_BUFFER, *depthCount * 2 * sizeof (GLfloat), nullptr, GL_DYNAMIC_DRAW);
 
   // バイラテラルフィルタの重みを格納するバッファオブジェクトを準備する
@@ -62,7 +62,7 @@ DepthCamera::~DepthCamera()
   if (colorTexture > 0) glDeleteTextures(1, &colorTexture);
 
   // バッファオブジェクトを削除する
-  if (coordBuffer > 0) glDeleteBuffers(1, &coordBuffer);
+  if (uvmapBuffer > 0) glDeleteBuffers(1, &uvmapBuffer);
   if (weightBuffer > 0) glDeleteBuffers(1, &weightBuffer);
 }
 

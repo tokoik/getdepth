@@ -57,7 +57,7 @@ class KinectV1 : public DepthCamera
   std::vector<GLushort> depth;
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
-  std::vector<std::array<GLfloat, 3>> point;
+  std::vector<Point> point;
 
   // カラーデータのストリームハンドル
   HANDLE colorStream;

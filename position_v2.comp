@@ -5,13 +5,13 @@ layout(local_size_x = 16, local_size_y = 20) in;
 
 // 入力
 layout (binding = 0, r16ui) readonly uniform uimage2D depth;
-layout (binding = 1, rg32f) readonly uniform image2D mapper;
+layout (binding = 4, rg32f) readonly uniform image2D mapper;
 
 // イメージのサイズ - 1
 const ivec2 ds = imageSize(depth) - 1;
 
 // 出力
-layout (binding = 2, rgba32f) writeonly uniform image2D position;
+layout (binding = 1, rgba32f) writeonly uniform image2D point;
 
 // フィルタのサイズ
 const ivec2 filterSize = ivec2(5, 5);
@@ -26,7 +26,7 @@ const ivec2 tileSize = ivec2(gl_WorkGroupSize) - ivec2(0, filterOffset.y * 2);
 const ivec2 neighborhoodSize = tileSize + filterOffset * 2;
 
 // バイラテラルフィルタの距離に対する重みの Shader Storage Buffer Object
-layout(binding = 2, std430) buffer Weight
+layout(binding = 3, std430) buffer Weight
 {
   readonly float columnWeight[filterSize.y];
   readonly float rowWeight[filterSize.x];
@@ -128,6 +128,6 @@ void main(void)
     const vec2 k = imageLoad(mapper, pixel_xy).xy;
 
     // デプス値からカメラ座標値を求める
-    imageStore(position, pixel_xy, vec4(vec2(k.x, -k.y) * z, z, 1.0));
+    imageStore(point, pixel_xy, vec4(vec2(k.x, -k.y) * z, z, 1.0));
   }
 }

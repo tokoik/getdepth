@@ -90,7 +90,7 @@ KinectV1::KinectV1()
   if (shader.get() == nullptr)
   {
     // カメラ座標算出用のシェーダを作成する
-    shader.reset(new Compute(depthWidth, depthHeight, "position_v1.comp"));
+    shader.reset(new Compute("position_v1.comp"));
 
     // シェーダの uniform 変数の場所を調べる
     scaleLoc = glGetUniformLocation(shader->get(), "scale");
@@ -145,7 +145,7 @@ GLuint KinectV1::getDepth()
       if (rect.Pitch)
       {
         // カラーデータのテクスチャ座標のバッファオブジェクトをメインメモリにマップする
-        glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
         GLfloat (*const uvmap)[2](static_cast<GLfloat (*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
 
         // すべての点について
@@ -208,7 +208,7 @@ GLuint KinectV1::getPoint()
       if (rect.Pitch)
       {
         // カラーデータのテクスチャ座標のバッファオブジェクトをメインメモリにマップする
-        glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
         GLfloat (*const uvmap)[2](static_cast<GLfloat (*)[2]>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
 
         // すべての点について
@@ -264,11 +264,14 @@ GLuint KinectV1::getPoint()
 GLuint KinectV1::getPosition()
 {
   const GLuint depthTexture(getDepth());
-  const GLenum depthFormat(GL_R16UI);
   shader->use();
   glUniform2fv(scaleLoc, 1, scale);
+  glBindImageTexture(depthBinding, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
+  glBindImageTexture(pointBinding, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
-  return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
+  shader->execute(depthWidth, depthHeight, 16, 16);
+
+  return pointTexture;
 }
 
 // カラーデータを取得する

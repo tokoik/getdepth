@@ -21,11 +21,15 @@ class DepthCamera
 
 protected:
 
-  // デプスの結合ポイント
-  static const int depthBinding = 0;
-
-  // バイラテラルフィルタの重みの結合ポイント
-  static const int filterBinding = 2;
+  // 結合ポイント
+  enum Binding
+  {
+    depthBinding = 0,
+    pointBinding = 1,
+    uvmapBinding = 2,
+    filterBinding = 3,
+    mapperBinding = 4
+  };
 
   // フィルターのサイズ
   static constexpr int filterSize[] = { 5, 5 };
@@ -42,7 +46,7 @@ protected:
   // デプスデータを格納するテクスチャ
   GLuint depthTexture;
 
-  // デプスデータから変換したポイントのカメラ座標を格納するテクスチャ
+  // デプスデータから変換したカメラ座標を格納するテクスチャ
   GLuint pointTexture;
 
   // カラーセンサのサイズ
@@ -52,7 +56,16 @@ protected:
   GLuint colorTexture;
 
   // デプスデータの画素におけるカラーデータのテクスチャ座標を格納するバッファオブジェクト
-  GLuint coordBuffer;
+  GLuint uvmapBuffer;
+
+  // カメラ座標のデータ型
+  using Point = std::array<GLfloat, 3>;
+
+  // テクスチャ座標のデータ型
+  using Uvmap = std::array<GLfloat, 2>;
+
+  // カラーのデータ型
+  using Color = std::array<GLubyte, 3>;
 
   // バイラテラルフィルタの距離に対する重みと値に対する分散
   struct Weight
@@ -72,7 +85,7 @@ public:
 
   // コンストラクタ
   DepthCamera()
-    : depthTexture(0), pointTexture(0), colorTexture(0), coordBuffer(0), weightBuffer(0)
+    : depthTexture(0), pointTexture(0), colorTexture(0), uvmapBuffer(0), weightBuffer(0)
     , message(nullptr)
   {
   }
@@ -113,9 +126,9 @@ public:
   }
 
   // カラーデータのテクスチャ座標を格納するバッファオブジェクトを得る
-  GLuint getCoordBuffer() const
+  GLuint getUvmapBuffer() const
   {
-    return coordBuffer;
+    return uvmapBuffer;
   }
 
   // バイラテラルフィルタの分散を設定する

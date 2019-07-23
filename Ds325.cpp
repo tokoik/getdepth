@@ -75,7 +75,7 @@ Ds325::Ds325(
   if (shader.get() == nullptr)
   {
     // カメラ座標算出用のシェーダを作成する
-    shader.reset(new Compute(depthWidth, depthHeight, "position_ds.comp"));
+    shader.reset(new Compute("position_ds.comp"));
 
     // シェーダの uniform 変数の場所を調べる
     dcLoc = glGetUniformLocation(shader->get(), "dc");
@@ -424,7 +424,7 @@ GLuint Ds325::getDepth()
   if (depthPtr && depthMutex.try_lock())
   {
     // テクスチャ座標のバッファオブジェクトを指定する
-    glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
 
     // テクスチャ座標をバッファオブジェクトに転送する
     glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
@@ -514,7 +514,7 @@ GLuint Ds325::getPoint()
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point.data());
 
     // テクスチャ座標のバッファオブジェクトを指定する
-    glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
 
     // テクスチャ座標をバッファオブジェクトに転送する
     glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
@@ -585,20 +585,23 @@ GLuint Ds325::getPosition()
   }
 
   // テクスチャ座標のバッファオブジェクトを指定する
-  glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
 
   // テクスチャ座標をバッファオブジェクトに転送する
   glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
 
   // カメラ座標をシェーダで算出する
   const GLuint depthTexture(getDepth());
-  const GLenum depthFormat(GL_R16UI);
   shader->use();
   glUniform2f(dcLoc, depthIntrinsics.cx, depthIntrinsics.cy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   glUniform3f(dkLoc, depthIntrinsics.k1, depthIntrinsics.k2, depthIntrinsics.k3);
+  glBindImageTexture(depthBinding, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
+  glBindImageTexture(pointBinding, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
-  return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
+  shader->execute(depthWidth, depthHeight, 16, 16);
+
+  return pointTexture;
 }
 
 // カラーデータを取得する

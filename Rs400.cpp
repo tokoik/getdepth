@@ -205,7 +205,7 @@ Rs400::Rs400()
   if (shader.get() == nullptr)
   {
     // 頂点位置計算用のシェーダ
-    shader.reset(new Compute(depthWidth, depthHeight, "position_rs.comp"));
+    shader.reset(new Compute("position_rs.comp"));
 
     // uniform block の場所を取得する
     dppLoc = glGetUniformLocation(shader->get(), "dpp");
@@ -319,7 +319,7 @@ GLuint Rs400::getDepth()
 
     // カラーフレームを取り出す
     const auto cframe(frames.get_color_frame());
-    colorPtr = static_cast<const std::array<GLubyte, 3> *>(cframe.get_data());
+    colorPtr = static_cast<const Color *>(cframe.get_data());
 
     // デプスデータをアンロックする
     deviceMutex.unlock();
@@ -383,7 +383,7 @@ GLuint Rs400::getPoint()
 		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RGB, GL_FLOAT, point.data());
 
 		// テクスチャ座標のバッファオブジェクトを指定する
-		glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
 
 		// テクスチャ座標をバッファオブジェクトに転送する
 		glBufferSubData(GL_ARRAY_BUFFER, 0, uvmap.size() * sizeof uvmap[0], uvmap.data());
@@ -412,9 +412,13 @@ GLuint Rs400::getPosition()
   glUniform1f(maxDepthLoc, maxDepth);
   glUniformMatrix3fv(extRotationLoc, 1, GL_FALSE, extrinsics.rotation);
   glUniform3fv(extTranslationLoc, 1, extrinsics.translation);
+  glBindImageTexture(depthBinding, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
+  glBindImageTexture(pointBinding, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding + 1, coordBuffer);
-  return shader->execute(1, &depthTexture, &depthFormat, 16, 16)[0];
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, uvmapBinding, uvmapBuffer);
+  shader->execute(depthWidth, depthHeight, 16, 16);
+
+  return pointTexture;
 }
 
 // カラーデータを取得する

@@ -95,7 +95,7 @@ KinectV2::KinectV2()
   if (shader.get() == nullptr)
   {
     // カメラ座標算出用のシェーダを作成する
-    shader.reset(new Compute(depthWidth, depthHeight, "position_v2.comp"));
+    shader.reset(new Compute("position_v2.comp"));
   }
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
@@ -158,7 +158,7 @@ GLuint KinectV2::getDepth()
     depthFrame->AccessUnderlyingBuffer(&depthSize, &depthBuffer);
 
     // カラーのテクスチャ座標を求めてバッファオブジェクトに転送する
-    glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
     ColorSpacePoint *const uvmap(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
     coordinateMapper->MapDepthFrameToColorSpace(depthSize, depthBuffer, static_cast<UINT>(depth.size()), uvmap);
     glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -211,7 +211,7 @@ GLuint KinectV2::getPoint()
     depthFrame->AccessUnderlyingBuffer(&depthSize, &depthBuffer);
 
     // カラーのテクスチャ座標を求めてバッファオブジェクトに転送する
-    glBindBuffer(GL_ARRAY_BUFFER, coordBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, uvmapBuffer);
     ColorSpacePoint *const uvmap(static_cast<ColorSpacePoint *>(glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY)));
     coordinateMapper->MapDepthFrameToColorSpace(depthSize, depthBuffer, static_cast<UINT>(depth.size()), uvmap);
     glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -256,11 +256,15 @@ GLuint KinectV2::getPoint()
 // カメラ座標を算出する
 GLuint KinectV2::getPosition()
 {
-  const GLuint texture[] = { getDepth(), mapperTexture };
-  const GLenum format[] = { GL_R16UI, GL_RG32F };
+  const GLuint depthTexture(getDepth());
   shader->use();
+  glBindImageTexture(depthBinding, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
+  glBindImageTexture(pointBinding, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+  glBindImageTexture(mapperBinding, mapperTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RG32F);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
-  return shader->execute(2, texture, format, 16, 16)[0];
+  shader->execute(depthWidth, depthHeight, 16, 16);
+
+  return pointTexture;
 }
 
 // カラーデータを取得する

@@ -1,7 +1,7 @@
 getdepth
 ========
 
-Kinect v1, Kinect v2, RealSense DS325/311 からカラーとデプスを取得するサンプル
+Kinect v1, Kinect v2, RealSense DS325/311, RealSense D415/D435 からカラーとデプスを取得するサンプル
 
     Copyright (c) 2011, 2012, 2013, 2014, 2015 Kohe Tokoi. All Rights Reserved.
     
@@ -21,14 +21,12 @@ Kinect v1, Kinect v2, RealSense DS325/311 からカラーとデプスを取得�
     AN ACTION  OF CONTRACT,  TORT  OR  OTHERWISE,  ARISING  FROM,  OUT OF  OR  IN
     CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-### KinectV1 / KinectV2 / Ds325 クラスについて
+### KinectV1 / KinectV2 / Ds325 / Rs400 クラスについて
 
-* v1 (master と同じ) ブランチにある KinectV1 (KinectV1.h) クラスは Kinect (v1) からカラーとデプスを取得します。
 * KinectV1 クラスは Kinect for Windows SDK 1.8 を使います。
-* v2 ブランチにある KinectV2 (KinectV2.h) クラスは Kinect (v2) からカラーとデプスを取得します。
 * KinectV2 クラスは Kinect for Windows SDK 2.0 を使います。
-* ds325 ブランチにある Ds325 (Ds325.h) クラスは RealSense Ds325/311 からカラーとデプスを取得します。
-* Ds325 クラスは RealSense SDK 1.9 を使います。
+* Ds325 クラスは DepthSense SDK 1.9 を使います。
+* Rs400 クラスは librealsense2 を使います。
 * 取得したカラーとデプスは OpenGL のテクスチャに格納します。
 * カラーのサンプリングに使うテクスチャ座標も計算します。
 
@@ -37,39 +35,48 @@ Kinect v1, Kinect v2, RealSense DS325/311 からカラーとデプスを取得�
 * KinectV1 クラスのオブジェクトを作ってください。
 * 一応、マルチセンサに対応してみましたが、テストしていません。
 * getActivated() メソッドは使用されている Kinect の数を返します。
-* これが 0 なら Kinect の起動に失敗してます。
+* Kinect の起動に失敗していれば例外を投げます。
 
 ### KinectV2 クラスの使い方
 
 * KinectV2 クラスのオブジェクトを作ってください。
 * Kinect v2 は一台の PC につき一台しか使えません。
 * getActivated() メソッドは Kinect v2 が使えれば 1 を返します。
-* これが 0 なら Kinect の起動に失敗してます。
+* Kinect の起動に失敗していれば例外を投げます。
 
 ### Ds325 クラスの使い方
 
 * Ds325 クラスのオブジェクトを作ってください。
 * 一応、マルチセンサに対応してみましたが、テストしていません。
+* getActivated() メソッドは使用されている DepthSense の数を返します。
+* DepthSense が 1 台も起動できなければ例外を投げます。
+
+### Rs400 クラスの使い方
+
+* Ds325 クラスのオブジェクトを作ってください。
+* 一応、マルチセンサに対応しています (3 台同時キャプチャの実績あり)。
 * getActivated() メソッドは使用されている RealSense の数を返します。
-* これが 0 なら RealSense の起動に失敗してます。
+* RealSense が 1 台も起動できなければ例外を投げます。
 
 ### 共通の設定
 
 * getDepth() メソッドを呼ぶとデプスをテクスチャに転送し、そのテクスチャを bind します。
-* この時、同時にカラーのサンプリングに使うテクスチャ座標も計算します。
-* getCoordBuffer() メソッドはテクスチャ座標の格納先のバッファオブジェクトを返します。
-* これを描画する VAO に組み込んでカラーデータをマッピングしてください。
+* この時、同時にカラーのサンプリングに使うテクスチャ座標も計算します (Rs400 を除く)。
+* getPoint() メソッドはカメラ座標をテクスチャに、テクスチャ座標をバッファオブジェクトに転送します。
+* getPosition() メソッドは getPoint() メソッドを GPU 実装したものです。
+* Rs400 クラスではテクスチャ座標を getPoint() および getPosition() メソッドで計算します。
+* getPoint() あるいは getPosition() メソッドで作成したテクスチャを VTF で頂点座標に使ってください。 
 * getColor() メソッドはカラーをテクスチャに転送し、そのテクスチャを bind します。
-* getPoint() メソッドは頂点位置をテクスチャに転送し、そのテクスチャを bind します。
-* とにかく main.cpp を読んでください。
+* getUvmapBuffer() メソッドはテクスチャ座標の格納先のバッファオブジェクトを返します。
+* これを描画する VAO に組み込んで getColor() メソッドで得たカラーデータをマッピングしてください。
+* とにかく getdepth.cpp を読んでください。
 
 ### サンプルプログラムについて
 
 * OpenGL のテクスチャに入っているデプスマップを使ってポリゴンメッシュを描きます。
-* シェーダを使ってテクスチャに入っているデプスからポイントの座標を求めて FBO に格納します。 
-* NuiTransformDepthImageToSkeleton() 相当の計算を position.frag で行っています。
-* position.frag で作ったテクスチャから normal.frag を使って法線ベクトルを求めています。
-* Kinect V1 / V2 版では NuiTransformDepthImageToSkeleton() 相当の計算を position.frag で行い，それから normal.frag を使って法線ベクトルを求めています。
+* シェーダを使ってテクスチャに入っているデプスからポイントの座標を求めてテクスチャに格納します。
+* position_xx.comp で作ったテクスチャから normal.comp を使って法線ベクトルを求めています。
+* Kinect V1 / V2 版では NuiTransformDepthImageToSkeleton() 相当の計算を position_v1(v2).comp で行っています。
 * RealSense 版では getPoint() で取得したテクスチャから normal.frag を使って法線ベクトルを求めています。
 * この二つのテクスチャとカラーのテクスチャを使ってメッシュをレンダリングしています。
 * 頂点属性はテプスとカラーのテクスチャをサンプリングするテクスチャ座標だけを送っています。

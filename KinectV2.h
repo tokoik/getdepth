@@ -37,7 +37,7 @@ class KinectV2 : public DepthCamera
   std::vector<GLushort> depth;
 
   // デプスデータからカメラ座標を求めるときに用いる一時メモリ
-  std::vector<std::array<GLfloat, 3>> point;
+  std::vector<Point> point;
 
   // デプス値に対するカメラ座標の変換テーブルのテクスチャ
   GLuint mapperTexture;
