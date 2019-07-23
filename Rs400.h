@@ -48,7 +48,7 @@ class Rs400 : public DepthCamera
 	const std::array<GLubyte, 3> *colorPtr;
 
 	// カメラ座標を計算するシェーダ
-	static std::unique_ptr<Calculate> shader;
+	static std::unique_ptr<Compute> shader;
 
   // デプスセンサの主点位置の uniform 変数 dpp の場所
   static GLint dppLoc;

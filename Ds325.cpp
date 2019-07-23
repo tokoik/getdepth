@@ -75,7 +75,7 @@ Ds325::Ds325(
   if (shader.get() == nullptr)
   {
     // カメラ座標算出用のシェーダを作成する
-    shader.reset(new Calculate(depthWidth, depthHeight, "position_ds" SHADER_EXT));
+    shader.reset(new Compute(depthWidth, depthHeight, "position_ds.comp"));
 
     // シェーダの uniform 変数の場所を調べる
     dcLoc = glGetUniformLocation(shader->get(), "dc");
@@ -636,7 +636,7 @@ Context Ds325::context;
 std::thread Ds325::worker;
 
 // カメラ座標を計算するシェーダ
-std::unique_ptr<Calculate> Ds325::shader(nullptr);
+std::unique_ptr<Compute> Ds325::shader(nullptr);
 
 // カメラパラメータの uniform 変数の場所
 GLint Ds325::dcLoc, Ds325::dfLoc, Ds325::dkLoc;

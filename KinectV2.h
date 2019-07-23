@@ -49,7 +49,7 @@ class KinectV2 : public DepthCamera
   std::vector<GLubyte> color;
 
   // カメラ座標を計算するシェーダ
-  static std::unique_ptr<Calculate> shader;
+  static std::unique_ptr<Compute> shader;
 
 public:
 

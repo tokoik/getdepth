@@ -95,7 +95,7 @@ KinectV2::KinectV2()
   if (shader.get() == nullptr)
   {
     // カメラ座標算出用のシェーダを作成する
-    shader.reset(new Calculate(depthWidth, depthHeight, "position_v2" SHADER_EXT));
+    shader.reset(new Compute(depthWidth, depthHeight, "position_v2.comp"));
   }
 
   // depthCount と colorCount を計算してテクスチャとバッファオブジェクトを作成する
@@ -291,6 +291,6 @@ GLuint KinectV2::getColor()
 IKinectSensor *KinectV2::sensor(nullptr);
 
 // カメラ座標を計算するシェーダ
-std::unique_ptr<Calculate> KinectV2::shader(nullptr);
+std::unique_ptr<Compute> KinectV2::shader(nullptr);
 
 #endif

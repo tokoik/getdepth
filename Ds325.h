@@ -164,7 +164,7 @@ class Ds325 : public DepthCamera
 	const std::array<GLubyte, 3> *colorPtr;
 
   // カメラ座標を計算するシェーダ
-  static std::unique_ptr<Calculate> shader;
+  static std::unique_ptr<Compute> shader;
 
   // カメラパラメータの uniform 変数の場所
   static GLint dcLoc, dfLoc, dkLoc;

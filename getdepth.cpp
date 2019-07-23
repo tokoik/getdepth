@@ -162,7 +162,7 @@ void GgApplication::run()
   const GgSimpleShader::MaterialBuffer material(materialData);
 
   // 頂点位置から法線ベクトルを計算するシェーダ
-  const Calculate normal(width, height, "normal" SHADER_EXT);
+  const Compute normal(width, height, "normal.comp");
 
   // 背景色を設定する
   glClearColor(background[0], background[1], background[2], background[3]);

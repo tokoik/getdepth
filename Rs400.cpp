@@ -205,7 +205,7 @@ Rs400::Rs400()
   if (shader.get() == nullptr)
   {
     // 頂点位置計算用のシェーダ
-    shader.reset(new Calculate(depthWidth, depthHeight, "position_rs" SHADER_EXT));
+    shader.reset(new Compute(depthWidth, depthHeight, "position_rs.comp"));
 
     // uniform block の場所を取得する
     dppLoc = glGetUniformLocation(shader->get(), "dpp");
@@ -443,7 +443,7 @@ GLuint Rs400::getColor()
 int Rs400::activated(0);
 
 // カメラ座標を計算するシェーダ
-std::unique_ptr<Calculate> Rs400::shader(nullptr);
+std::unique_ptr<Compute> Rs400::shader(nullptr);
 
 // デプスセンサのカメラパラメータの uniform 変数の場所
 GLint Rs400::dppLoc, Rs400::dfLoc;

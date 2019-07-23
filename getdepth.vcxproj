@@ -127,7 +127,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Fragment.h" />
     <ClInclude Include="Compute.h" />
     <ClInclude Include="DepthCamera.h" />
     <ClInclude Include="Ds325.h" />
@@ -141,7 +140,6 @@
     <ClInclude Include="Shape.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Fragment.cpp" />
     <ClCompile Include="Compute.cpp" />
     <ClCompile Include="DepthCamera.cpp" />
     <ClCompile Include="Ds325.cpp" />
@@ -157,15 +155,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="normal.comp" />
-    <None Include="normal.frag" />
     <None Include="position_ds.comp" />
-    <None Include="position_ds.frag" />
     <None Include="position_rs.comp" />
-    <None Include="position_rs.frag" />
     <None Include="position_v1.comp" />
-    <None Include="position_v1.frag" />
     <None Include="position_v2.comp" />
-    <None Include="position_v2.frag" />
     <None Include="README.md" />
     <None Include="rectangle.vert" />
     <None Include="refraction.frag" />

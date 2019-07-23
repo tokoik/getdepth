@@ -90,7 +90,7 @@ KinectV1::KinectV1()
   if (shader.get() == nullptr)
   {
     // カメラ座標算出用のシェーダを作成する
-    shader.reset(new Calculate(depthWidth, depthHeight, "position_v1" SHADER_EXT));
+    shader.reset(new Compute(depthWidth, depthHeight, "position_v1.comp"));
 
     // シェーダの uniform 変数の場所を調べる
     scaleLoc = glGetUniformLocation(shader->get(), "scale");
@@ -313,7 +313,7 @@ int KinectV1::connected(0);
 int KinectV1::activated(0);
 
 // カメラ座標を計算するシェーダ
-std::unique_ptr<Calculate> KinectV1::shader(nullptr);
+std::unique_ptr<Compute> KinectV1::shader(nullptr);
 
 // スクリーン座標からカメラ座標に変換する係数の uniform 変数 scale の場所
 GLint KinectV1::scaleLoc;

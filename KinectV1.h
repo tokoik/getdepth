@@ -69,7 +69,7 @@ class KinectV1 : public DepthCamera
   GLfloat scale[2];
 
   // カメラ座標を計算するシェーダ
-  static std::unique_ptr<Calculate> shader;
+  static std::unique_ptr<Compute> shader;
 
   // スクリーン座標からカメラ座標に変換する係数の uniform 変数 scale の場所
   static GLint scaleLoc;

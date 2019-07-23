@@ -48,9 +48,6 @@
     <ClInclude Include="Compute.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Fragment.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Rs400.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -89,17 +86,11 @@
     <ClCompile Include="Compute.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Fragment.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Rs400.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="normal.frag">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
     <None Include="simple.frag">
       <Filter>シェーダー ファイル</Filter>
     </None>
@@ -119,15 +110,6 @@
     <None Include="normal.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
-    <None Include="position_v1.frag">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
-    <None Include="position_v2.frag">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
-    <None Include="position_ds.frag">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
     <None Include="position_ds.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
@@ -138,9 +120,6 @@
       <Filter>シェーダー ファイル</Filter>
     </None>
     <None Include="position_rs.comp">
-      <Filter>シェーダー ファイル</Filter>
-    </None>
-    <None Include="position_rs.frag">
       <Filter>シェーダー ファイル</Filter>
     </None>
   </ItemGroup>
