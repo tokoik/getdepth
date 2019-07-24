@@ -402,7 +402,6 @@ GLuint Rs400::getPosition()
 {
   // カメラ座標をシェーダで算出する
   const GLuint depthTexture(getDepth());
-	const GLenum depthFormat(GL_R16UI);
   shader->use();
   glUniform2f(dppLoc, depthIntrinsics.ppx, depthIntrinsics.ppy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);

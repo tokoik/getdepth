@@ -12,39 +12,49 @@ layout (std140) uniform Light
 // 材質
 layout (std140) uniform Material
 {
-  vec4 kamb;                                                // 環境光の反射係数
-  vec4 kdiff;                                               // 拡散反射係数
-  vec4 kspec;                                               // 鏡面反射係数
-  float kshi;                                               // 輝き係数
+  vec4 kamb;                                                      // 環境光の反射係数
+  vec4 kdiff;                                                     // 拡散反射係数
+  vec4 kspec;                                                     // 鏡面反射係数
+  float kshi;                                                     // 輝き係数
 };
 
 // 変換行列
-uniform mat4 mv;                                            // 視点座標系への変換行列
-uniform mat4 mp;                                            // 投影変換行列
-uniform mat4 mn;                                            // 法線ベクトルの変換行列
+uniform mat4 mv;                                                  // 視点座標系への変換行列
+uniform mat4 mp;                                                  // 投影変換行列
+uniform mat4 mn;                                                  // 法線ベクトルの変換行列
 
 // テクスチャ
-uniform sampler2D position;                                 // 頂点位置のテクスチャ
-uniform sampler2D normal;                                   // 法線ベクトルのテクスチャ
-uniform sampler2D back;                                     // 背景のテクスチャ
+uniform sampler2D point;                                          // 頂点位置のテクスチャ
+uniform sampler2D back;                                           // 背景のテクスチャ
+uniform samplerBuffer normal;                                     // 法線ベクトル
 
-// 頂点属性
-layout (location = 0) in vec2 pc;                           // 頂点のテクスチャ座標
-layout (location = 1) in vec2 cc;                           // カラーのテクスチャ座標
+// メッシュのサイズ
+uniform ivec2 meshSize;
 
 // ラスタライザに送る頂点属性
-out vec4 nv;                                                // 法線ベクトル
-out vec4 idiff;                                             // 拡散反射光強度
-out vec4 ispec;                                             // 鏡面反射光強度
-out vec2 texcoord;                                          // テクスチャ座標
+out vec3 nv;                                                      // 法線ベクトル
+out vec4 idiff;                                                   // 拡散反射光強度
+out vec4 ispec;                                                   // 鏡面反射光強度
+out vec2 texcoord;                                                // テクスチャ座標
 
 void main(void)
 {
-  // 頂点位置
-  vec4 pv = texture(position, pc);
+  // 頂点位置のテクスチャのサンプリング位置
+  //   各頂点において gl_VertexID が 0, 1, 2, 3, ... のように割り当てられるから、
+  //     x = gl_VertexID >> 1      = 0, 0, 1, 1, 2, 2, 3, 3, ...
+  //     y = 1 - (gl_VertexID & 1) = 1, 0, 1, 0, 1, 0, 1, 0, ...
+  //   のように GL_TRIANGLE_STRIP 向けの頂点座標値が得られる。
+  //   y に gl_InstaceID を足せば glDrawArrayInstanced() のインスタンスごとに y が変化する。
+  //   これをメッシュのサイズで割れば縦横 (0, 1) の範囲の点群が得られる。
+  const int x = gl_VertexID >> 1;
+  const int y = gl_InstanceID + 1 - (gl_VertexID & 1);
+  const vec2 pc = (vec2(x, y) + 0.5) / vec2(meshSize);
+
+  // 頂点位置のサンプリング
+  const vec4 pv = texture(point, pc);
 
   // 座標計算
-  vec4 p = mv * pv;                                         // 視点座標系の頂点の位置
+  const vec4 p = mv * pv;                                         // 視点座標系の頂点の位置
 
   // クリッピング座標系における座標値
   gl_Position = mp * p;
@@ -52,14 +62,17 @@ void main(void)
   // テクスチャ座標
   texcoord = gl_Position.xy * 0.5 + 0.5;
 
-  // 法線ベクトル
-  nv = texture(normal, pc);
+  // 頂点インデックス
+  const int i = y * meshSize.x + x;
+
+  // 法線ベクトルの取り出し
+  nv = vec3(texelFetch(normal, i));
 
   // 陰影計算
-  vec3 v = normalize(p.xyz);                                // 視線ベクトル
-  vec3 l = normalize((lpos * p.w - p * lpos.w).xyz);        // 光線ベクトル
-  vec3 n = normalize((mn * nv).xyz);                        // 法線ベクトル
-  vec3 h = normalize(l - v);                                // 中間ベクトル
+  const vec3 v = normalize(vec3(p));                              // 視線ベクトル
+  const vec3 l = normalize(vec3(lpos * p.w - p * lpos.w));        // 光線ベクトル
+  const vec3 n = normalize(mat3(mn) * nv);                        // 法線ベクトル
+  const vec3 h = normalize(l - v);                                // 中間ベクトル
 
   // 拡散反射光強度
   idiff = max(dot(n, l), 0.0) * kdiff * ldiff + kamb * lamb;

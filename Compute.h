@@ -19,10 +19,17 @@ class Compute
 public:
 
   // コンストラクタ
-  Compute(const char *comp);
+  Compute(const char *comp)
+    : program(ggLoadComputeShader(comp))
+  {
+  }
 
   // デストラクタ
-  virtual ~Compute();
+  virtual ~Compute()
+  {
+    // シェーダプログラムを削除する
+    glDeleteShader(program);
+  }
 
   // シェーダプログラムを得る
   GLuint get() const
@@ -37,5 +44,8 @@ public:
   }
 
   // 計算を実行する
-  void execute(GLuint width, GLuint height, GLuint local_size_x = 1, GLuint local_size_y = 1) const;
+  void execute(GLuint width, GLuint height, GLuint local_size_x = 1, GLuint local_size_y = 1) const
+  {
+    glDispatchCompute((width + local_size_x - 1) / local_size_x, (height + local_size_y - 1) / local_size_y, 1);
+  }
 };

@@ -77,7 +77,7 @@ Kinect v1, Kinect v2, DepthSense DS325/311, RealSense D415/D435 からカラー�
 ### サンプルプログラムの概要
 
 * OpenGL のテクスチャに入っているデプスマップを使ってポリゴンメッシュを描きます。
-* シェーダを使ってテクスチャに入っているデプスからポイントの座標を求めてテクスチャに格納します。
+* シェーダを使ってテクスチャに入っているデプスからポイントのカメラ座標を求めてテクスチャに格納します。
 * position_xx.comp で作ったテクスチャから normal.comp を使って法線ベクトルを求めています。
 * Kinect V1 / V2 版では NuiTransformDepthImageToSkeleton() 相当の計算を position_v1(v2).comp で行っています。
 * RealSense 版では getPoint() で取得したテクスチャから normal.frag を使って法線ベクトルを求めています。

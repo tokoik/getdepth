@@ -102,19 +102,19 @@ void GgApplication::run()
   SENSOR sensor;
   if (!sensor.isOpend()) throw std::runtime_error(sensor.getMessage());
 
-  // バイラテラルフィルタの初期値を設定する
-  sensor.setVariance(deviation1 * deviation1, deviation1 * deviation1, deviation2 * deviation2);
-
   // キーボード操作のコールバック関数を登録する
   window.setUserPointer(&sensor);
   window.setKeyboardFunc(updateVariance);
+
+  // バイラテラルフィルタの初期値を設定する
+  sensor.setVariance(deviation1 * deviation1, deviation1 * deviation1, deviation2 * deviation2);
 
   // デプスセンサの解像度
   int width, height;
   sensor.getDepthResolution(&width, &height);
 
   // 描画に使うメッシュ
-  const Mesh mesh(width, height, sensor.getUvmapBuffer(), sensor.getNormalBuffer());
+  const Mesh mesh(width, height);
 
 #if USE_REFRACTION
   // 背景画像のキャプチャに使う OpenCV のビデオキャプチャを初期化する
@@ -138,22 +138,34 @@ void GgApplication::run()
 
   // 透明人間用のシェーダ
   const GgSimpleShader simple("refraction.vert", "refraction.frag");
-  const GLint positionLoc(glGetUniformLocation(simple.get(), "position"));
-  const GLint normalLoc(glGetUniformLocation(simple.get(), "normal"));
+  const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
   const GLint backLoc(glGetUniformLocation(simple.get(), "back"));
-  const GLint sizeLoc(glGetUniformLocation(simple.get(), "size"));
+  const GLint normalLoc(glGetUniformLocation(simple.get(), "normal"));
+  const GLint windowSizeLoc(glGetUniformLocation(simple.get(), "windowSize"));
 #else
-  // カラーセンサの解像度
-  int cwidth, cheight;
-  sensor.getColorResolution(&cwidth, &cheight);
+  // テクスチャ座標のテクスチャバッファオブジェクト
+  GLuint uvmapTexture;
+  glGenTextures(1, &uvmapTexture);
+  glBindTexture(GL_TEXTURE_BUFFER, uvmapTexture);
+  glTexBuffer(GL_TEXTURE_BUFFER, GL_RG32F, sensor.getUvmapBuffer());
 
   // 描画用のシェーダ
   const GgSimpleShader simple("simple.vert", "simple.frag");
-  const GLint positionLoc(glGetUniformLocation(simple.get(), "position"));
-  const GLint normalLoc(glGetUniformLocation(simple.get(), "normal"));
+  const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
   const GLint colorLoc(glGetUniformLocation(simple.get(), "color"));
+  const GLint uvmapLoc(glGetUniformLocation(simple.get(), "uvmap"));
+  const GLint normalLoc(glGetUniformLocation(simple.get(), "normal"));
   const GLint rangeLoc(glGetUniformLocation(simple.get(), "range"));
 #endif
+
+  // メッシュのサイズの uniform 変数の場所
+  const GLint meshSizeLoc(glGetUniformLocation(simple.get(), "meshSize"));
+
+  // 法線ベクトルのテクスチャバッファオブジェクト
+  GLuint normalTexture;
+  glGenTextures(1, &normalTexture);
+  glBindTexture(GL_TEXTURE_BUFFER, normalTexture);
+  glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, sensor.getNormalBuffer());
 
   // 光源データ
   const GgSimpleShader::LightBuffer light(lightData);
@@ -190,7 +202,7 @@ void GgApplication::run()
 #if USE_SHADER
     const GLuint pointTexture(sensor.getPosition());
 #else
-    const GLuint positionTexture(sensor.getPoint());
+    const GLuint pointTexture(sensor.getPoint());
 #endif
 
     // 法線ベクトルの計算
@@ -212,31 +224,41 @@ void GgApplication::run()
     simple.use(mp, mw, light);
     material.select();
 
-    // 頂点座標テクスチャ
-    glUniform1i(positionLoc, 0);
+    // カメラ座標のテクスチャ
+    glUniform1i(pointLoc, 0);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, pointTexture);
 
 #if USE_REFRACTION
     // 背景テクスチャ
-    glUniform1i(backLoc, 2);
-    glActiveTexture(GL_TEXTURE2);
+    glUniform1i(backLoc, 1);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, bmap);
 
     // ウィンドウサイズ
-    glUniform2f(sizeLoc, static_cast<GLfloat>(window.getWidth()), static_cast<GLfloat>(window.getHeight()));
+    glUniform2iv(windowSizeLoc, 1, window.getSize());
 #else
     // 前景テクスチャ
-    glUniform1i(colorLoc, 2);
-    glActiveTexture(GL_TEXTURE2);
+    glUniform1i(colorLoc, 1);
+    glActiveTexture(GL_TEXTURE1);
     sensor.getColor();
+
+    // テクスチャ座標のテクスチャバッファオブジェクト
+    glUniform1i(uvmapLoc, 2);
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_BUFFER, uvmapTexture);
 
     // 疑似カラー処理
     glUniform2fv(rangeLoc, 1, sensor.range);
 #endif
 
+    // 法線ベクトルののテクスチャバッファオブジェクト
+    glUniform1i(normalLoc, 3);
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_BUFFER, normalTexture);
+
     // 図形描画
-    mesh.draw();
+    mesh.draw(meshSizeLoc);
 
     // バッファを入れ替える
     window.swapBuffers();

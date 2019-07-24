@@ -130,6 +130,24 @@ public:
     *height = colorHeight;
   }
 
+  // デプスデータを格納するテクスチャを得る
+  GLuint getDepthTexture() const
+  {
+    return depthTexture;
+  }
+
+  // カラーデータを格納するテクスチャを得る
+  GLuint getColorTexture() const
+  {
+    return colorTexture;
+  }
+
+  // カメラ座標を格納するテクスチャを得る
+  GLuint getPointTexture() const
+  {
+    return pointTexture;
+  }
+
   // テクスチャ座標を格納するバッファオブジェクトを得る
   GLuint getUvmapBuffer() const
   {

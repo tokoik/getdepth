@@ -135,12 +135,9 @@
     <ClInclude Include="KinectV1.h" />
     <ClInclude Include="KinectV2.h" />
     <ClInclude Include="Mesh.h" />
-    <ClInclude Include="Rect.h" />
     <ClInclude Include="Rs400.h" />
-    <ClInclude Include="Shape.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Compute.cpp" />
     <ClCompile Include="DepthCamera.cpp" />
     <ClCompile Include="Ds325.cpp" />
     <ClCompile Include="gg.cpp" />
@@ -148,10 +145,7 @@
     <ClCompile Include="KinectV2.cpp" />
     <ClCompile Include="getdepth.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="Rect.cpp" />
     <ClCompile Include="Rs400.cpp" />
-    <ClCompile Include="Shape.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="normal.comp" />
@@ -160,7 +154,6 @@
     <None Include="position_v1.comp" />
     <None Include="position_v2.comp" />
     <None Include="README.md" />
-    <None Include="rectangle.vert" />
     <None Include="refraction.frag" />
     <None Include="refraction.vert" />
     <None Include="simple.frag" />
