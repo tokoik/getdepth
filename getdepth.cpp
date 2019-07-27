@@ -109,13 +109,6 @@ void GgApplication::run()
   // バイラテラルフィルタの初期値を設定する
   sensor.setVariance(deviation1 * deviation1, deviation1 * deviation1, deviation2 * deviation2);
 
-  // デプスセンサの解像度
-  int width, height;
-  sensor.getDepthResolution(&width, &height);
-
-  // 描画に使うメッシュ
-  const Mesh mesh(width, height);
-
 #if USE_REFRACTION
   // 背景画像のキャプチャに使う OpenCV のビデオキャプチャを初期化する
   cv::VideoCapture camera(CAPTURE_DEVICE);
@@ -160,6 +153,9 @@ void GgApplication::run()
 
   // 材質データ
   const GgSimpleShader::MaterialBuffer material(materialData);
+
+  // 描画に使うメッシュ
+  const Mesh mesh;
 
   // 背景色を設定する
   glClearColor(background[0], background[1], background[2], background[3]);
@@ -241,8 +237,13 @@ void GgApplication::run()
     // 法線ベクトルののシェーダストレージバッファオブジェクト
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, sensor.getNormalBuffer());
 
+    // デプスセンサの解像度
+    int width, height;
+    sensor.getDepthResolution(&width, &height);
+
     // 図形描画
-    mesh.draw(meshSizeLoc);
+    glUniform2i(meshSizeLoc, width, height);
+    mesh.draw(width, height);
 
     // バッファを入れ替える
     window.swapBuffers();

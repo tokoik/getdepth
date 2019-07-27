@@ -13,17 +13,10 @@ class Mesh
   // 頂点配列オブジェクト
   GLuint vao;
 
-  // メッシュの幅
-  const GLsizei slices;
-
-  // メッシュの高さ
-  const GLsizei stacks;
-
 public:
 
   // コンストラクタ
-  Mesh(int slices, int stacks)
-    : slices(slices), stacks(stacks)
+  Mesh()
   {
     // 頂点配列オブジェクトを作成する
     glGenVertexArrays(1, &vao);
@@ -44,11 +37,8 @@ public:
   }
 
   // 描画
-  virtual void draw(GLuint meshSizeLoc) const
+  virtual void draw(GLint slices, GLint stacks) const
   {
-    // 描画するメッシュのサイズを設定する
-    glUniform2i(meshSizeLoc, slices, stacks);
-
     // 頂点配列オブジェクトを指定する
     glBindVertexArray(vao);
 
