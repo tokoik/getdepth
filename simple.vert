@@ -29,8 +29,16 @@ uniform mat4 mn;                                            // 法線ベクト�
 // テクスチャ
 uniform sampler2D point;                                    // 頂点位置のテクスチャ
 uniform sampler2D color;                                    // カラーのテクスチャ
-uniform samplerBuffer uvmap;                                // テクスチャ座標
-uniform samplerBuffer normal;                               // 法線ベクトル
+
+// バッファオブジェクト
+layout (binding = 0, std430) readonly buffer Uvmap
+{
+  vec2 uvmap[];                                             // テクスチャ座標
+};
+layout (binding = 1, std430) readonly buffer Normal
+{
+  vec4 normal[];                                            // 法線ベクトル
+};
 
 // メッシュのサイズ
 uniform ivec2 meshSize;
@@ -69,13 +77,10 @@ void main(void)
   const int i = y * meshSize.x + x;
 
   // テクスチャ座標の取り出し
-  const vec2 cc = vec2(texelFetch(uvmap, i));
-
-  // テクスチャ座標
-  texcoord = cc / vec2(textureSize(color, 0));
+  texcoord = uvmap[i] / vec2(textureSize(color, 0));
 
   // 法線ベクトルの取り出し
-  const vec3 nv = vec3(texelFetch(normal, i));
+  vec3 nv = vec3(normal[i]);
 
   // 陰影計算
   const vec3 v = normalize(vec3(p));                        // 視線ベクトル

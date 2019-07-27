@@ -143,12 +143,6 @@ void GgApplication::run()
   const GLint normalLoc(glGetUniformLocation(simple.get(), "normal"));
   const GLint windowSizeLoc(glGetUniformLocation(simple.get(), "windowSize"));
 #else
-  // テクスチャ座標のテクスチャバッファオブジェクト
-  GLuint uvmapTexture;
-  glGenTextures(1, &uvmapTexture);
-  glBindTexture(GL_TEXTURE_BUFFER, uvmapTexture);
-  glTexBuffer(GL_TEXTURE_BUFFER, GL_RG32F, sensor.getUvmapBuffer());
-
   // 描画用のシェーダ
   const GgSimpleShader simple("simple.vert", "simple.frag");
   const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
@@ -160,12 +154,6 @@ void GgApplication::run()
 
   // メッシュのサイズの uniform 変数の場所
   const GLint meshSizeLoc(glGetUniformLocation(simple.get(), "meshSize"));
-
-  // 法線ベクトルのテクスチャバッファオブジェクト
-  GLuint normalTexture;
-  glGenTextures(1, &normalTexture);
-  glBindTexture(GL_TEXTURE_BUFFER, normalTexture);
-  glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, sensor.getNormalBuffer());
 
   // 光源データ
   const GgSimpleShader::LightBuffer light(lightData);
@@ -243,19 +231,15 @@ void GgApplication::run()
     glActiveTexture(GL_TEXTURE1);
     sensor.getColor();
 
-    // テクスチャ座標のテクスチャバッファオブジェクト
-    glUniform1i(uvmapLoc, 2);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_BUFFER, uvmapTexture);
+    // テクスチャ座標のシェーダストレージバッファオブジェクト
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, sensor.getUvmapBuffer());
 
     // 疑似カラー処理
     glUniform2fv(rangeLoc, 1, sensor.range);
 #endif
 
-    // 法線ベクトルののテクスチャバッファオブジェクト
-    glUniform1i(normalLoc, 3);
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_BUFFER, normalTexture);
+    // 法線ベクトルののシェーダストレージバッファオブジェクト
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, sensor.getNormalBuffer());
 
     // 図形描画
     mesh.draw(meshSizeLoc);
