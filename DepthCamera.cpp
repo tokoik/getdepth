@@ -15,6 +15,20 @@ DepthCamera::DepthCamera()
   {
     // 法線ベクトル算出用のシェーダを作成する
     normal.reset(new Compute("normal.comp"));
+
+    // カメラ座標のイメージユニットの uniform 変数の場所を求める
+    pointLoc = glGetUniformLocation(normal->get(), "point");
+
+    // 法線ベクトルのバッファオブジェクトを参照する結合ポイントを指定する
+    const GLuint normalIndex(glGetProgramResourceIndex(normal->get(), GL_SHADER_STORAGE_BLOCK, "Normal"));
+    glShaderStorageBlockBinding(normal->get(), normalIndex, NormalBinding);
+  }
+
+  // まだメッシュが作られていなかったら
+  if (mesh.get() == nullptr)
+  {
+    // 描画用のメッシュを作成する
+    mesh.reset(new Mesh);
   }
 }
 
@@ -92,8 +106,9 @@ int DepthCamera::makeTexture()
 GLuint DepthCamera::getNormal() const
 {
   normal->use();
-  glBindImageTexture(0, pointTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, normalBuffer);
+  glUniform1i(pointLoc, PointImageUnit);
+  glBindImageTexture(PointImageUnit, pointTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, NormalBinding, normalBuffer);
   normal->execute(depthWidth, depthHeight);
 
   return normalBuffer;
@@ -131,3 +146,9 @@ void DepthCamera::setVariance(float columnVariance, float rowVariance, float val
 
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Compute> DepthCamera::normal(nullptr);
+
+// 描画するメッシュ
+std::unique_ptr<Mesh> DepthCamera::mesh(nullptr);
+
+// 法線ベクトルを求めるカメラ座標のイメージユニットの uniform 変数 point の場所
+GLuint DepthCamera::pointLoc;

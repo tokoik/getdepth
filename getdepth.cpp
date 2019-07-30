@@ -133,20 +133,20 @@ void GgApplication::run()
   const GgSimpleShader simple("refraction.vert", "refraction.frag");
   const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
   const GLint backLoc(glGetUniformLocation(simple.get(), "back"));
-  const GLint normalLoc(glGetUniformLocation(simple.get(), "normal"));
   const GLint windowSizeLoc(glGetUniformLocation(simple.get(), "windowSize"));
+  const GLuint normalIndex(glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Normal"));
+  glShaderStorageBlockBinding(simple.get(), normalIndex, DepthCamera::NormalBinding);
 #else
   // 描画用のシェーダ
   const GgSimpleShader simple("simple.vert", "simple.frag");
   const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
   const GLint colorLoc(glGetUniformLocation(simple.get(), "color"));
-  const GLint uvmapLoc(glGetUniformLocation(simple.get(), "uvmap"));
-  const GLint normalLoc(glGetUniformLocation(simple.get(), "normal"));
   const GLint rangeLoc(glGetUniformLocation(simple.get(), "range"));
+  const GLuint uvmapIndex(glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Uvmap"));
+  glShaderStorageBlockBinding(simple.get(), uvmapIndex, DepthCamera::UvmapBinding);
+  const GLuint normalIndex(glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Normal"));
+  glShaderStorageBlockBinding(simple.get(), normalIndex, DepthCamera::NormalBinding);
 #endif
-
-  // メッシュのサイズの uniform 変数の場所
-  const GLint meshSizeLoc(glGetUniformLocation(simple.get(), "meshSize"));
 
   // 光源データ
   const GgSimpleShader::LightBuffer light(lightData);
@@ -228,22 +228,17 @@ void GgApplication::run()
     sensor.getColor();
 
     // テクスチャ座標のシェーダストレージバッファオブジェクト
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, sensor.getUvmapBuffer());
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::UvmapBinding, sensor.getUvmapBuffer());
 
     // 疑似カラー処理
     glUniform2fv(rangeLoc, 1, sensor.range);
 #endif
 
     // 法線ベクトルののシェーダストレージバッファオブジェクト
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, sensor.getNormalBuffer());
-
-    // デプスセンサの解像度
-    int width, height;
-    sensor.getDepthResolution(&width, &height);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::NormalBinding, sensor.getNormalBuffer());
 
     // 図形描画
-    glUniform2i(meshSizeLoc, width, height);
-    mesh.draw(width, height);
+    sensor.draw();
 
     // バッファを入れ替える
     window.swapBuffers();

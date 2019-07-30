@@ -50,6 +50,12 @@ class Rs400 : public DepthCamera
 	// カメラ座標を計算するシェーダ
 	static std::unique_ptr<Compute> shader;
 
+  // デプスデータのイメージユニットの uniform 変数 depth の場所
+  static GLint depthLoc;
+
+  // カメラ座標のイメージユニットの uniform 変数 point の場所
+  static GLint pointLoc;
+
   // デプスセンサの主点位置の uniform 変数 dpp の場所
   static GLint dppLoc;
 

@@ -19,7 +19,10 @@ void main(void)
 {
   // 屈折方向のテクスチャ座標
   const vec2 tc = vec2(gl_FragCoord) / windowSize + refract(vec3(0.0, 0.0, -1.0), normalize(nv), 0.67).xy * 0.2;
+  //const vec2 tc = vec2(gl_FragCoord) / windowSize;
 
   // 屈折マッピング
-  fc = texture(back, tc);// * idiff + ispec;
+  fc = texture(back, tc);
+  //fc = idiff + ispec;
+  //fc = texture(back, tc) * idiff + ispec;
 }

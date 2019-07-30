@@ -3,15 +3,17 @@
 // ワークグループのサイズ
 layout (local_size_x = 16, local_size_y = 20) in;
 
-// 入力
-layout (binding = 0, r16ui) readonly uniform uimage2D depth;
+// デプスデータを入力するイメージユニット
+layout (r16ui) readonly uniform uimage2D depth;
 
 // イメージのサイズ - 1
 const ivec2 ds = imageSize(depth) - 1;
 
-// 出力
-layout (binding = 1, rgba32f) writeonly uniform image2D point;
-layout (binding = 2, std430) writeonly buffer Uvmap
+// カメラ座標を出力するイメージユニット
+layout (rgba32f) writeonly uniform image2D point;
+
+// テクスチャ座標を出力するバッファオブジェクト
+layout (std430) writeonly buffer Uvmap
 {
   vec2 uvmap[];
 };
@@ -29,7 +31,7 @@ const ivec2 tileSize = ivec2(gl_WorkGroupSize) - ivec2(0, filterOffset.y * 2);
 const ivec2 neighborhoodSize = tileSize + filterOffset * 2;
 
 // バイラテラルフィルタの距離に対する重みの Shader Storage Buffer Object
-layout (binding = 3, std430) readonly buffer Weight
+layout (std430) readonly buffer Weight
 {
   float columnWeight[filterSize.y];
   float rowWeight[filterSize.x];

@@ -204,10 +204,12 @@ Rs400::Rs400()
   // まだシェーダが作られていなかったら
   if (shader.get() == nullptr)
   {
-    // 頂点位置計算用のシェーダ
+    // カメラ座標算出用のシェーダを作成する
     shader.reset(new Compute("position_rs.comp"));
 
-    // uniform block の場所を取得する
+    // シェーダの uniform 変数の場所を調べる
+    depthLoc = glGetUniformLocation(shader->get(), "depth");
+    pointLoc = glGetUniformLocation(shader->get(), "point");
     dppLoc = glGetUniformLocation(shader->get(), "dpp");
     dfLoc = glGetUniformLocation(shader->get(), "df");
     cppLoc = glGetUniformLocation(shader->get(), "cpp");
@@ -215,6 +217,12 @@ Rs400::Rs400()
     maxDepthLoc = glGetUniformLocation(shader->get(), "maxDepth");
     extRotationLoc = glGetUniformLocation(shader->get(), "extRotation");
     extTranslationLoc = glGetUniformLocation(shader->get(), "extTranslation");
+
+    // シェーダストレージブロックに結合ポイントを割り当てる
+    const GLuint weightIndex(glGetProgramResourceIndex(shader->get(), GL_SHADER_STORAGE_BLOCK, "Weight"));
+    glShaderStorageBlockBinding(shader->get(), weightIndex, WeightBinding);
+    const GLuint uvmapIndex(glGetProgramResourceIndex(shader->get(), GL_SHADER_STORAGE_BLOCK, "Uvmap"));
+    glShaderStorageBlockBinding(shader->get(), uvmapIndex, UvmapBinding);
   }
 
   // テクスチャとバッファオブジェクトを作成してポイント数を返す
@@ -403,6 +411,8 @@ GLuint Rs400::getPosition()
   // カメラ座標をシェーダで算出する
   const GLuint depthTexture(getDepth());
   shader->use();
+  glUniform1i(depthLoc, DepthImageUnit);
+  glUniform1i(pointLoc, PointImageUnit);
   glUniform2f(dppLoc, depthIntrinsics.ppx, depthIntrinsics.ppy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   glUniform2f(cppLoc, colorIntrinsics.ppx, colorIntrinsics.ppy);
@@ -410,10 +420,10 @@ GLuint Rs400::getPosition()
   glUniform1f(maxDepthLoc, maxDepth);
   glUniformMatrix3fv(extRotationLoc, 1, GL_FALSE, extrinsics.rotation);
   glUniform3fv(extTranslationLoc, 1, extrinsics.translation);
-  glBindImageTexture(depthBinding, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
-  glBindImageTexture(pointBinding, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, uvmapBinding, uvmapBuffer);
+  glBindImageTexture(DepthImageUnit, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
+  glBindImageTexture(PointImageUnit, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, WeightBinding, weightBuffer);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UvmapBinding, uvmapBuffer);
   shader->execute(depthWidth, depthHeight, 16, 16);
 
   return pointTexture;
@@ -446,6 +456,12 @@ int Rs400::activated(0);
 
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Compute> Rs400::shader(nullptr);
+
+// デプスデータのイメージユニットの uniform 変数 depth の場所
+GLint Rs400::depthLoc;
+
+// カメラ座標のイメージユニットの uniform 変数 point の場所
+GLint Rs400::pointLoc;
 
 // デプスセンサのカメラパラメータの uniform 変数の場所
 GLint Rs400::dppLoc, Rs400::dfLoc;

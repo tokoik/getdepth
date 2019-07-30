@@ -31,17 +31,14 @@ uniform sampler2D point;                                    // 頂点位置の�
 uniform sampler2D color;                                    // カラーのテクスチャ
 
 // バッファオブジェクト
-layout (binding = 0, std430) readonly buffer Uvmap
+layout (std430) readonly buffer Uvmap
 {
   vec2 uvmap[];                                             // テクスチャ座標
 };
-layout (binding = 1, std430) readonly buffer Normal
+layout (std430) readonly buffer Normal
 {
   vec4 normal[];                                            // 法線ベクトル
 };
-
-// メッシュのサイズ
-uniform ivec2 meshSize;
 
 // 疑似カラー処理
 uniform vec2 range = vec2(0.3, 6.0);
@@ -62,7 +59,7 @@ void main(void)
   //   これをメッシュのサイズで割れば縦横 (0, 1) の範囲の点群が得られる。
   const int x = gl_VertexID >> 1;
   const int y = gl_InstanceID + 1 - (gl_VertexID & 1);
-  const vec2 pc = (vec2(x, y) + 0.5) / vec2(meshSize);
+  const vec2 pc = (vec2(x, y) + 0.5) / vec2(textureSize(point, 0));
 
   // 頂点位置のサンプリング
   const vec4 pv = texture(point, pc);
@@ -74,7 +71,7 @@ void main(void)
   gl_Position = mp * p;
 
   // 頂点インデックス
-  const int i = y * meshSize.x + x;
+  const int i = y * textureSize(point, 0).x + x;
 
   // テクスチャ座標の取り出し
   texcoord = uvmap[i] / vec2(textureSize(color, 0));

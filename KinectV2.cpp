@@ -96,6 +96,15 @@ KinectV2::KinectV2()
   {
     // カメラ座標算出用のシェーダを作成する
     shader.reset(new Compute("position_v2.comp"));
+
+    // シェーダの uniform 変数の場所を調べる
+    depthLoc = glGetUniformLocation(shader->get(), "depth");
+    pointLoc = glGetUniformLocation(shader->get(), "point");
+    mapperLoc = glGetUniformLocation(shader->get(), "mapper");
+
+    // シェーダストレージブロックに結合ポイントを割り当てる
+    const GLuint weightIndex(glGetProgramResourceIndex(shader->get(), GL_SHADER_STORAGE_BLOCK, "Weight"));
+    glShaderStorageBlockBinding(shader->get(), weightIndex, WeightBinding);
   }
 
   // テクスチャとバッファオブジェクトを作成してポイント数を返す
@@ -257,10 +266,13 @@ GLuint KinectV2::getPosition()
 {
   const GLuint depthTexture(getDepth());
   shader->use();
-  glBindImageTexture(depthBinding, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
-  glBindImageTexture(pointBinding, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-  glBindImageTexture(mapperBinding, mapperTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RG32F);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
+  glUniform1i(depthLoc, DepthImageUnit);
+  glUniform1i(pointLoc, PointImageUnit);
+  glUniform1i(mapperLoc, MapperImageUnit);
+  glBindImageTexture(DepthImageUnit, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
+  glBindImageTexture(PointImageUnit, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+  glBindImageTexture(MapperImageUnit, mapperTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RG32F);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, WeightBinding, weightBuffer);
   shader->execute(depthWidth, depthHeight, 16, 16);
 
   return pointTexture;
@@ -295,5 +307,14 @@ IKinectSensor *KinectV2::sensor(nullptr);
 
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Compute> KinectV2::shader(nullptr);
+
+// デプスデータのイメージユニットの uniform 変数 depth の場所
+GLint KinectV2::depthLoc;
+
+// カメラ座標のイメージユニットの uniform 変数 point の場所
+GLint KinectV2::pointLoc;
+
+// 変換テーブルのイメージユニットの uniform 変数 point の場所
+GLint KinectV2::mapperLoc;
 
 #endif

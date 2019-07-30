@@ -11,6 +11,9 @@ using namespace gg;
 // 計算用のシェーダ
 #include "Compute.h"
 
+// メッシュの描画
+#include "Mesh.h"
+
 // 標準ライブラリ
 #include <memory>
 
@@ -19,26 +22,33 @@ class DepthCamera
   // エラーメッセージ
   const char *message;
 
+  // フィルタのサイズ
+  static constexpr int filterSize[] = { 5, 5 };
+
+  // バイラテラルフィルタの距離に対する重みと値に対する分散
+  struct Weight
+  {
+    std::array<GLfloat, filterSize[0]> columnWeight;
+    std::array<GLfloat, filterSize[1]> rowWeight;
+    float variance;
+  };
+
+  // カメラ座標における法線ベクトルを格納するバッファオブジェクト
+  GLuint normalBuffer;
+
+  // 法線ベクトルを計算するシェーダ
+  static std::unique_ptr<Compute> normal;
+
+  // 法線ベクトルを求めるカメラ座標のイメージユニットの uniform 変数 point の場所
+  static GLuint pointLoc;
+
 protected:
 
-  // エラーメッセージをセットする
+  // エラーメッセージを設定する
   void setMessage(const char *message)
   {
     this->message = message;
   }
-
-  // 結合ポイント
-  enum Binding
-  {
-    depthBinding = 0,
-    pointBinding = 1,
-    uvmapBinding = 2,
-    filterBinding = 3,
-    mapperBinding = 4
-  };
-
-  // フィルターのサイズ
-  static constexpr int filterSize[] = { 5, 5 };
 
   // カメラ座標のデータ型
   using Point = std::array<GLfloat, 3>;
@@ -70,27 +80,39 @@ protected:
   // カメラ座標に対応したテクスチャ座標を格納するバッファオブジェクト
   GLuint uvmapBuffer;
 
-  // カメラ座標における法線ベクトルを格納するバッファオブジェクト
-  GLuint normalBuffer;
-
-  // 法線ベクトルを計算するシェーダ
-  static std::unique_ptr<Compute> normal;
-
-  // バイラテラルフィルタの距離に対する重みと値に対する分散
-  struct Weight
-  {
-    std::array<GLfloat, filterSize[0]> columnWeight;
-    std::array<GLfloat, filterSize[1]> rowWeight;
-    float variance;
-  };
-
-  // バイラテラルフィルタの距離に対する重みを格納する Shader Storage Buffer Objec
+  // バイラテラルフィルタの距離に対する重みを格納する Shader Storage Buffer Object
   GLuint weightBuffer;
 
   // テクスチャとバッファオブジェクトを作成してポイント数を返す
   int makeTexture();
 
+  // 描画するメッシュ
+  static std::unique_ptr<Mesh> mesh;
+
 public:
+
+  // エラーメッセージを取り出す
+  const char *getMessage() const
+  {
+    return message;
+  }
+
+  // イメージユニット
+  enum ImageUnits
+  {
+    DepthImageUnit = 0,
+    PointImageUnit,
+    MapperImageUnit
+  };
+
+  // 結合ポイント
+  enum BindingPoints
+  {
+    // 0, 1 は GgSimpleShader で使っている
+    UvmapBinding = 2,
+    WeightBinding,
+    NormalBinding
+  };
 
   // コンストラクタ
   DepthCamera();
@@ -103,12 +125,6 @@ public:
 
   // デストラクタ
   virtual ~DepthCamera();
-
-  // エラーメッセージを取り出す
-  const char *getMessage() const
-  {
-    return message;
-  }
 
   // 使用可能なら true を返す
   bool isOpend() const
@@ -165,6 +181,12 @@ public:
 
   // バイラテラルフィルタの分散を設定する
   void setVariance(float columnVariance, float rowVariance, float valueVariance) const;
+
+  // 目種の描画
+  void draw()
+  {
+    mesh->draw(depthWidth, depthHeight);
+  }
 
   // デプスデータを取得する
   virtual GLuint getDepth()

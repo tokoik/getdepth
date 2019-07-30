@@ -3,11 +3,11 @@
 // ワークグループのサイズ
 layout (local_size_x = 1, local_size_y = 1) in;
 
-// 入力
-layout (binding = 0, rgba32f) readonly uniform image2D point;
+// カメラ座標を入力するイメージユニット
+layout (rgba32f) readonly uniform image2D point;
 
-// 出力
-layout (binding = 1, std430) writeonly buffer Normal
+// 法線ベクトルを出力するバッファオブジェクト
+layout (std430) writeonly buffer Normal
 {
   vec4 normal[];
 };

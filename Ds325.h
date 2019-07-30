@@ -166,6 +166,12 @@ class Ds325 : public DepthCamera
   // カメラ座標を計算するシェーダ
   static std::unique_ptr<Compute> shader;
 
+  // デプスデータのイメージユニットの uniform 変数 depth の場所
+  static GLint depthLoc;
+
+  // カメラ座標のイメージユニットの uniform 変数 point の場所
+  static GLint pointLoc;
+
   // カメラパラメータの uniform 変数の場所
   static GLint dcLoc, dfLoc, dkLoc;
 

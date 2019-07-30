@@ -78,9 +78,15 @@ Ds325::Ds325(
     shader.reset(new Compute("position_ds.comp"));
 
     // シェーダの uniform 変数の場所を調べる
+    depthLoc = glGetUniformLocation(shader->get(), "depth");
+    pointLoc = glGetUniformLocation(shader->get(), "point");
     dcLoc = glGetUniformLocation(shader->get(), "dc");
     dfLoc = glGetUniformLocation(shader->get(), "df");
     dkLoc = glGetUniformLocation(shader->get(), "dk");
+
+    // シェーダストレージブロックに結合ポイントを割り当てる
+    const GLuint weightIndex(glGetProgramResourceIndex(shader->get(), GL_SHADER_STORAGE_BLOCK, "Weight"));
+    glShaderStorageBlockBinding(shader->get(), weightIndex, WeightBinding);
   }
 
   // テクスチャとバッファオブジェクトを作成してポイント数を返す
@@ -592,12 +598,14 @@ GLuint Ds325::getPosition()
   // カメラ座標をシェーダで算出する
   const GLuint depthTexture(getDepth());
   shader->use();
+  glUniform1i(depthLoc, DepthImageUnit);
+  glUniform1i(pointLoc, PointImageUnit);
   glUniform2f(dcLoc, depthIntrinsics.cx, depthIntrinsics.cy);
   glUniform2f(dfLoc, depthIntrinsics.fx, depthIntrinsics.fy);
   glUniform3f(dkLoc, depthIntrinsics.k1, depthIntrinsics.k2, depthIntrinsics.k3);
-  glBindImageTexture(depthBinding, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
-  glBindImageTexture(pointBinding, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, filterBinding, weightBuffer);
+  glBindImageTexture(DepthImageUnit, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
+  glBindImageTexture(PointImageUnit, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, WeightBinding, weightBuffer);
   shader->execute(depthWidth, depthHeight, 16, 16);
 
   return pointTexture;
@@ -639,6 +647,12 @@ std::thread Ds325::worker;
 
 // カメラ座標を計算するシェーダ
 std::unique_ptr<Compute> Ds325::shader(nullptr);
+
+// デプスデータのイメージユニットの uniform 変数 depth の場所
+GLint Ds325::depthLoc;
+
+// カメラ座標のイメージユニットの uniform 変数 point の場所
+GLint Ds325::pointLoc;
 
 // カメラパラメータの uniform 変数の場所
 GLint Ds325::dcLoc, Ds325::dfLoc, Ds325::dkLoc;
