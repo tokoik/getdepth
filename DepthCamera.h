@@ -182,6 +182,9 @@ public:
   // バイラテラルフィルタの分散を設定する
   void setVariance(float columnVariance, float rowVariance, float valueVariance) const;
 
+  // デプスセンサの姿勢
+  GgMatrix attitude;
+
   // 目種の描画
   void draw()
   {

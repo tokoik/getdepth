@@ -20,14 +20,14 @@
 // ウィンドウ関連の処理
 #include "GgApplication.h"
 
-// 描画に用いるメッシュ
-#include "Mesh.h"
-
 // センサ関連の処理
 //#include "KinectV1.h"
 //#include "KinectV2.h"
 //#include "Ds325.h"
 #include "Rs400.h"
+
+// センサの数
+constexpr int sensorCount(3);
 
 // OpenCV によるビデオキャプチャに使うカメラ
 #define CAPTURE_DEVICE 1
@@ -70,22 +70,29 @@ constexpr float deviation1(2.0f);
 // バイラテラルフィルタのデフォルトの明度の標準偏差
 constexpr float deviation2(10.0f);
 
-// バイラテラルフィルタの重みの更新
+// すべてのバイラテラルフィルタの分散を設定するコールバック関数
 static void updateVariance(const GgApplication::Window *window, int key, int scancode, int action, int mods)
 {
-  // このインスタンスの this ポインタを得る
-  SENSOR *const sensor(static_cast<SENSOR *>(window->getUserPointer()));
+  // センサのリストを取り出す
+  void *const sensors(window->getUserPointer());
 
-  if (sensor && action)
+  // センサのリストが有効のときにキー操作が行われたら
+  if (sensors && action)
   {
-    // バイラテラルフィルタの分散
+    // バイラテラルフィルタの分散を求める
     const GLfloat sd1(window->getArrowX() * deviation1 * 0.1f + deviation1);
     const GLfloat sd2(window->getArrowY() * deviation2 * 0.1f + deviation2);
-    sensor->setVariance(sd1 * sd1, sd1 * sd1, sd2 * sd2);
+    const GLfloat variance1(sd1 * sd1), variance2(sd2 * sd2);
 
 #if defined(_DEBUG)
     std::cerr << "sd1 =" << sd1 << ", sd2 =" << sd2 << "\n";
 #endif
+
+    // すべてのバイラテラルフィルタの分散を設定する
+    for (auto &sensor : *static_cast<std::vector<std::unique_ptr<SENSOR>> *>(sensors))
+    {
+      sensor->setVariance(variance1, variance1, variance2);
+    }
   }
 }
 
@@ -95,24 +102,51 @@ static void updateVariance(const GgApplication::Window *window, int key, int sca
 void GgApplication::run()
 {
   // ウィンドウを開く
-  Window window("Depth Map Viewer");
-  if (!window.get()) throw std::runtime_error("GLFW のウィンドウが開けません");
+  Window window("Depth Map Viewer", 1280, 720);
+  if (!window.get())
+  {
+    throw std::runtime_error("GLFW のウィンドウが開けません");
+  }
 
-  // デプスセンサを有効にする
-  SENSOR sensor;
-  if (!sensor.isOpend()) throw std::runtime_error(sensor.getMessage());
+  // デプスセンサのリスト
+  std::vector<std::unique_ptr<SENSOR>> sensors;
+
+  // センサの数の分だけ
+  for (int i = 0; i < sensorCount; ++i)
+  {
+    // センサを起動する
+    std::unique_ptr<SENSOR> sensor(std::make_unique<SENSOR>());
+
+    // センサが起動できなかったら終わる
+    if (!sensor->isOpend()) break;
+
+    // バイラテラルフィルタの初期値を設定する
+    sensor->setVariance(deviation1 * deviation1, deviation1 * deviation1, deviation2 * deviation2);
+
+    // センサの姿勢を設定する
+    sensor->attitude = ggRotateY(6.2831853f * i / sensorCount) * ggTranslate(0.0f, 0.0f, 0.6f);
+
+    // センサを追加する
+    sensors.emplace_back(std::move(sensor));
+  }
+
+  // センサが一つもなければエラーにする
+  if (sensors.empty())
+  {
+    throw std::runtime_error("センサが起動できません");
+  }
 
   // キーボード操作のコールバック関数を登録する
-  window.setUserPointer(&sensor);
+  window.setUserPointer(&sensors);
   window.setKeyboardFunc(updateVariance);
-
-  // バイラテラルフィルタの初期値を設定する
-  sensor.setVariance(deviation1 * deviation1, deviation1 * deviation1, deviation2 * deviation2);
 
 #if USE_REFRACTION
   // 背景画像のキャプチャに使う OpenCV のビデオキャプチャを初期化する
   cv::VideoCapture camera(CAPTURE_DEVICE);
-  if (!camera.isOpened()) throw std::runtime_error("ビデオカメラが見つかりません");
+  if (!camera.isOpened())
+  {
+    throw std::runtime_error("ビデオカメラが見つかりません");
+  }
 
   // カメラの初期設定
   camera.grab();
@@ -134,8 +168,6 @@ void GgApplication::run()
   const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
   const GLint backLoc(glGetUniformLocation(simple.get(), "back"));
   const GLint windowSizeLoc(glGetUniformLocation(simple.get(), "windowSize"));
-  const GLuint normalIndex(glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Normal"));
-  glShaderStorageBlockBinding(simple.get(), normalIndex, DepthCamera::NormalBinding);
 #else
   // 描画用のシェーダ
   const GgSimpleShader simple("simple.vert", "simple.frag");
@@ -144,18 +176,15 @@ void GgApplication::run()
   const GLint rangeLoc(glGetUniformLocation(simple.get(), "range"));
   const GLuint uvmapIndex(glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Uvmap"));
   glShaderStorageBlockBinding(simple.get(), uvmapIndex, DepthCamera::UvmapBinding);
+#endif
   const GLuint normalIndex(glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Normal"));
   glShaderStorageBlockBinding(simple.get(), normalIndex, DepthCamera::NormalBinding);
-#endif
 
   // 光源データ
   const GgSimpleShader::LightBuffer light(lightData);
 
   // 材質データ
   const GgSimpleShader::MaterialBuffer material(materialData);
-
-  // 描画に使うメッシュ
-  const Mesh mesh;
 
   // 背景色を設定する
   glClearColor(background[0], background[1], background[2], background[3]);
@@ -183,62 +212,71 @@ void GgApplication::run()
     }
 #endif
 
+    // すべてのセンサについて
+    for (auto &sensor : sensors)
+    {
+      // 頂点位置の取得
 #if USE_SHADER
-    const GLuint pointTexture(sensor.getPosition());
+      sensor->getPosition();
 #else
-    const GLuint pointTexture(sensor.getPoint());
+      sensor->getPoint();
 #endif
 
-    // 法線ベクトルの計算
-    const GLuint normalBuffer(sensor.getNormal());
+      // カラーデータの取得
+      sensor->getColor();
+
+      // 法線ベクトルの計算
+      sensor->getNormal();
+    }
+
+    // モデル変換行列
+    const GgMatrix mm(window.getTrackball(1) * window.getTranslation(0));
+
+    // 投影変換行列
+    const GgMatrix mp(ggPerspective(cameraFovy, window.getAspect(), cameraNear, cameraFar));
 
     // 画面消去
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    // ビューポートをもとに戻す
-    window.resetViewport();
+    // すべてのセンサについて
+    for (auto &sensor : sensors)
+    {
+      // 描画用のシェーダプログラムの使用開始
+      simple.use(mp, mm * sensor->attitude, light);
+      material.select();
 
-    // プロジェクション変換行列
-    const GgMatrix mp(ggPerspective(cameraFovy, window.getAspect(), cameraNear, cameraFar));
-
-    // モデルビュー変換行列
-    const GgMatrix mw(window.getTrackball(1) * window.getTranslation(0));
-
-    // 描画用のシェーダプログラムの使用開始
-    simple.use(mp, mw, light);
-    material.select();
-
-    // カメラ座標のテクスチャ
-    glUniform1i(pointLoc, 0);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, pointTexture);
+      // カメラ座標のテクスチャ
+      glUniform1i(pointLoc, 0);
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, sensor->getPointTexture());
 
 #if USE_REFRACTION
-    // 背景テクスチャ
-    glUniform1i(backLoc, 1);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, bmap);
+      // 背景テクスチャ
+      glUniform1i(backLoc, 1);
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, bmap);
 
-    // ウィンドウサイズ
-    glUniform2iv(windowSizeLoc, 1, window.getSize());
+      // ウィンドウサイズ
+      glUniform2iv(windowSizeLoc, 1, window.getSize());
 #else
-    // 前景テクスチャ
-    glUniform1i(colorLoc, 1);
-    glActiveTexture(GL_TEXTURE1);
-    sensor.getColor();
+      // 前景テクスチャ
+      glUniform1i(colorLoc, 1);
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, sensor->getColorTexture());
 
-    // テクスチャ座標のシェーダストレージバッファオブジェクト
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::UvmapBinding, sensor.getUvmapBuffer());
+      // テクスチャ座標のシェーダストレージバッファオブジェクト
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::UvmapBinding, sensor->getUvmapBuffer());
 
-    // 疑似カラー処理
-    glUniform2fv(rangeLoc, 1, sensor.range);
+      // 疑似カラー処理
+      glUniform2fv(rangeLoc, 1, sensor->range);
 #endif
 
-    // 法線ベクトルののシェーダストレージバッファオブジェクト
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::NormalBinding, sensor.getNormalBuffer());
+      // 法線ベクトルののシェーダストレージバッファオブジェクト
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::NormalBinding, sensor->getNormalBuffer());
 
-    // 図形描画
-    sensor.draw();
+      // 図形描画
+      sensor->draw();
+    }
 
     // バッファを入れ替える
     window.swapBuffers();
