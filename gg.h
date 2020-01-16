@@ -32,7 +32,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <GLFW/glfw3.h>
 
 // Windows (Visual Studio) 用の設定
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 #  pragma warning(disable:4996)
 #  define _USE_MATH_DEFINES
 #  define NOMINMAX

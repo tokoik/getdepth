@@ -14,7 +14,9 @@
 #  else
 #    define CV_EXT_STR ".lib"
 #  endif
-#  pragma comment(lib, "opencv_world" CV_VERSION_STR CV_EXT_STR)
+#  pragma comment(lib, "opencv_core" CV_VERSION_STR CV_EXT_STR)
+#  pragma comment(lib, "opencv_highgui" CV_VERSION_STR CV_EXT_STR)
+#  pragma comment(lib, "opencv_videoio" CV_VERSION_STR CV_EXT_STR)
 #endif
 
 // ウィンドウ関連の処理

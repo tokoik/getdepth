@@ -45,7 +45,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #define READ_TEXTURE_COORDINATE_FROM_OBJ 0
 
 // Windows のとき
-#if defined(_WIN32)
+#if defined(_MSC_VER)
 // プラットフォームを調べる
 #  if defined(_WIN64)
 #    define GLFW3_PLATFORM "x64"
