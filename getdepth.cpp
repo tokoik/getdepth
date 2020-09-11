@@ -29,21 +29,24 @@
 #include "Rs400.h"
 
 // センサの数
-constexpr int sensorCount(3);
+constexpr int sensorCount(1);
 
 // OpenCV によるビデオキャプチャに使うカメラ
-#define CAPTURE_DEVICE 1
+#define CAPTURE_DEVICE 0
 
 // 頂点位置の生成をシェーダで行うなら 1
 #define USE_SHADER 1
 
 // 透明人間にするなら 1
-#define USE_REFRACTION 0
+#define USE_REFRACTION 1
 
 // カメラパラメータ
 constexpr GLfloat cameraFovy(1.0f);                     // 画角
 constexpr GLfloat cameraNear(0.1f);                     // 前方面までの距離
 constexpr GLfloat cameraFar(50.0f);                     // 後方面までの距離
+
+// カメラの位置
+constexpr GLfloat origin[]{ 0.0f, 0.0f, 0.0f };
 
 // 光源
 constexpr GgSimpleShader::Light lightData =
@@ -126,7 +129,7 @@ void GgApplication::run()
     sensor->setVariance(deviation1 * deviation1, deviation1 * deviation1, deviation2 * deviation2);
 
     // センサの姿勢を設定する
-    sensor->attitude = ggRotateY(6.2831853f * i / sensorCount) * ggTranslate(0.0f, 0.0f, 0.6f);
+    sensor->attitude = ggRotateY(6.2831853f * i / sensorCount) * ggTranslate(origin);
 
     // センサを追加する
     sensors.emplace_back(std::move(sensor));
@@ -152,8 +155,8 @@ void GgApplication::run()
 
   // カメラの初期設定
   camera.grab();
-  const GLsizei capture_env_width(GLsizei(camera.get(CV_CAP_PROP_FRAME_WIDTH)));
-  const GLsizei capture_env_height(GLsizei(camera.get(CV_CAP_PROP_FRAME_HEIGHT)));
+  const GLsizei capture_env_width(GLsizei(camera.get(cv::CAP_PROP_FRAME_WIDTH)));
+  const GLsizei capture_env_height(GLsizei(camera.get(cv::CAP_PROP_FRAME_HEIGHT)));
 
   // 背景画像のテクスチャ
   GLuint bmap;
@@ -168,6 +171,7 @@ void GgApplication::run()
   // 透明人間用のシェーダ
   const GgSimpleShader simple("refraction.vert", "refraction.frag");
   const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
+  const GLint colorLoc(glGetUniformLocation(simple.get(), "color"));
   const GLint backLoc(glGetUniformLocation(simple.get(), "back"));
   const GLint windowSizeLoc(glGetUniformLocation(simple.get(), "windowSize"));
 #else
@@ -176,9 +180,9 @@ void GgApplication::run()
   const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
   const GLint colorLoc(glGetUniformLocation(simple.get(), "color"));
   const GLint rangeLoc(glGetUniformLocation(simple.get(), "range"));
+#endif
   const GLuint uvmapIndex(glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Uvmap"));
   glShaderStorageBlockBinding(simple.get(), uvmapIndex, DepthCamera::UvmapBinding);
-#endif
   const GLuint normalIndex(glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Normal"));
   glShaderStorageBlockBinding(simple.get(), normalIndex, DepthCamera::NormalBinding);
 
@@ -252,26 +256,26 @@ void GgApplication::run()
       glActiveTexture(GL_TEXTURE0);
       glBindTexture(GL_TEXTURE_2D, sensor->getPointTexture());
 
-#if USE_REFRACTION
-      // 背景テクスチャ
-      glUniform1i(backLoc, 1);
-      glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_2D, bmap);
-
-      // ウィンドウサイズ
-      glUniform2iv(windowSizeLoc, 1, window.getSize());
-#else
       // 前景テクスチャ
       glUniform1i(colorLoc, 1);
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, sensor->getColorTexture());
 
-      // テクスチャ座標のシェーダストレージバッファオブジェクト
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::UvmapBinding, sensor->getUvmapBuffer());
+#if USE_REFRACTION
+      // 背景テクスチャ
+      glUniform1i(backLoc, 2);
+      glActiveTexture(GL_TEXTURE2);
+      glBindTexture(GL_TEXTURE_2D, bmap);
 
+      // ウィンドウサイズ
+      glUniform2iv(windowSizeLoc, 1, window.getSize());
+#else
       // 疑似カラー処理
       glUniform2fv(rangeLoc, 1, sensor->range);
 #endif
+
+      // テクスチャ座標のシェーダストレージバッファオブジェクト
+      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::UvmapBinding, sensor->getUvmapBuffer());
 
       // 法線ベクトルののシェーダストレージバッファオブジェクト
       glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::NormalBinding, sensor->getNormalBuffer());

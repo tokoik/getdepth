@@ -9,11 +9,11 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerEnvironment>Path="C:\OpenCV\x64\vc14\bin;$(ProjectDir)bin\$(Platform);$(Path)"</LocalDebuggerEnvironment>
+    <LocalDebuggerEnvironment>Path="C:\OpenCV\x64\vc14\bin;C:\gstreamer\1.0\msvc_x86_64\bin;$(ProjectDir)bin\$(Platform);$(Path)"</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerEnvironment>Path="C:\OpenCV\x64\vc14\bin;$(ProjectDir)bin\$(Platform);$(Path)"</LocalDebuggerEnvironment>
+    <LocalDebuggerEnvironment>Path="C:\OpenCV\x64\vc14\bin;C:\gstreamer\1.0\msvc_x86_64\bin;$(ProjectDir)bin\$(Platform);$(Path)"</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

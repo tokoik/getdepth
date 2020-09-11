@@ -25,9 +25,14 @@ uniform mat4 mn;                                            // 法線ベクト�
 
 // テクスチャ
 uniform sampler2D point;                                    // 頂点位置のテクスチャ
+uniform sampler2D color;                                    // カラーのテクスチャ
 uniform sampler2D back;                                     // 背景のテクスチャ
 
 // バッファオブジェクト
+layout (std430) readonly buffer Uvmap
+{
+  vec2 uvmap[];                                             // テクスチャ座標
+};
 layout (std430) readonly buffer Normal
 {
   vec4 normal[];                                            // 法線ベクトル
@@ -38,6 +43,7 @@ out vec3 nv;                                                // 法線ベクト�
 out vec4 idiff;                                             // 拡散反射光強度
 out vec4 ispec;                                             // 鏡面反射光強度
 out vec2 texcoord;                                          // テクスチャ座標
+out vec2 tc;                                                // メッシュのテクスチャ座標
 
 void main(void)
 {
@@ -50,10 +56,12 @@ void main(void)
   //   これをメッシュのサイズで割れば縦横 (0, 1) の範囲の点群が得られる。
   const int x = gl_VertexID >> 1;
   const int y = gl_InstanceID + 1 - (gl_VertexID & 1);
-  const vec2 pc = (vec2(x, y) + 0.5) / vec2(textureSize(point, 0));
+
+  // メッシュのテクスチャ座標
+  tc = (vec2(x, y) + 0.5) / vec2(textureSize(point, 0));
 
   // 頂点位置のサンプリング
-  const vec4 pv = texture(point, pc);
+  const vec4 pv = texture(point, tc);
 
   // 座標計算
   const vec4 p = mv * pv;                                   // 視点座標系の頂点の位置
@@ -61,11 +69,11 @@ void main(void)
   // クリッピング座標系における座標値
   gl_Position = mp * p;
 
-  // テクスチャ座標
-  texcoord = gl_Position.xy * 0.5 + 0.5;
-
   // 頂点インデックス
   const int i = y * textureSize(point, 0).x + x;
+
+  // テクスチャ座標の取り出し
+  texcoord = uvmap[i] / vec2(textureSize(color, 0));
 
   // 法線ベクトルの取り出し
   nv = vec3(normal[i]);
