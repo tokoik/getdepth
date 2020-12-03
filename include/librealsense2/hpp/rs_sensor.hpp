@@ -99,7 +99,6 @@ namespace rs2
     };
 
 
-
     class sensor : public options
     {
     public:
@@ -213,7 +212,6 @@ namespace rs2
             error::handle(e);
         }
 
-
         /**
         * Retrieves the list of stream profiles supported by the sensor.
         * \return   list of stream profiles that given sensor can provide
@@ -225,6 +223,33 @@ namespace rs2
             rs2_error* e = nullptr;
             std::shared_ptr<rs2_stream_profile_list> list(
                 rs2_get_stream_profiles(_sensor.get(), &e),
+                rs2_delete_stream_profiles_list);
+            error::handle(e);
+
+            auto size = rs2_get_stream_profiles_count(list.get(), &e);
+            error::handle(e);
+
+            for (auto i = 0; i < size; i++)
+            {
+                stream_profile profile(rs2_get_stream_profile(list.get(), i, &e));
+                error::handle(e);
+                results.push_back(profile);
+            }
+
+            return results;
+        }
+
+        /**
+        * Retrieves the list of stream profiles currently streaming on the sensor.
+        * \return list of stream profiles that given sensor is streaming
+        */
+        std::vector<stream_profile> get_active_streams() const
+        {
+            std::vector<stream_profile> results{};
+
+            rs2_error* e = nullptr;
+            std::shared_ptr<rs2_stream_profile_list> list(
+                rs2_get_active_streams(_sensor.get(), &e),
                 rs2_delete_stream_profiles_list);
             error::handle(e);
 
@@ -261,7 +286,7 @@ namespace rs2
             for (auto i = 0; i < size; i++)
             {
                 auto f = std::shared_ptr<rs2_processing_block>(
-                    rs2_get_processing_block(list.get(), i, &e), 
+                    rs2_get_processing_block(list.get(), i, &e),
                     rs2_delete_processing_block);
                 error::handle(e);
                 results.push_back(f);
@@ -345,6 +370,54 @@ namespace rs2
             && std::string(lhs.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER)) == rhs.get_info(RS2_CAMERA_INFO_SERIAL_NUMBER);
     }
 
+    class color_sensor : public sensor
+    {
+    public:
+        color_sensor(sensor s)
+            : sensor(s.get())
+        {
+            rs2_error* e = nullptr;
+            if (rs2_is_sensor_extendable_to(_sensor.get(), RS2_EXTENSION_COLOR_SENSOR, &e) == 0 && !e)
+            {
+                _sensor.reset();
+            }
+            error::handle(e);
+        }
+        operator bool() const { return _sensor.get() != nullptr; }
+    };
+
+    class motion_sensor : public sensor
+    {
+    public:
+        motion_sensor(sensor s)
+            : sensor(s.get())
+        {
+            rs2_error* e = nullptr;
+            if (rs2_is_sensor_extendable_to(_sensor.get(), RS2_EXTENSION_MOTION_SENSOR, &e) == 0 && !e)
+            {
+                _sensor.reset();
+            }
+            error::handle(e);
+        }
+        operator bool() const { return _sensor.get() != nullptr; }
+    };
+
+    class fisheye_sensor : public sensor
+    {
+    public:
+        fisheye_sensor(sensor s)
+            : sensor(s.get())
+        {
+            rs2_error* e = nullptr;
+            if (rs2_is_sensor_extendable_to(_sensor.get(), RS2_EXTENSION_FISHEYE_SENSOR, &e) == 0 && !e)
+            {
+                _sensor.reset();
+            }
+            error::handle(e);
+        }
+        operator bool() const { return _sensor.get() != nullptr; }
+    };
+
     class roi_sensor : public sensor
     {
     public:
@@ -421,7 +494,7 @@ namespace rs2
         }
 
         /**
-        * Retrieve the stereoscopic baseline value from sensor
+        * Retrieve the stereoscopic baseline value from the sensor.
         */
         float get_stereo_baseline() const
         {
@@ -449,10 +522,15 @@ namespace rs2
             error::handle(e);
         }
 
-        /** Load SLAM localization map from host to device
-        * \param[in] lmap_buf   localization map blob
-        * \return true on success
-        */
+        /**
+         * Load relocalization map onto device. Only one relocalization map can be imported at a time;
+         * any previously existing map will be overwritten.
+         * The imported map exists simultaneously with the map created during the most recent tracking session after start(),
+         * and they are merged after the imported map is relocalized.
+         * This operation must be done before start().
+         * \param[in] lmap_buf map data as a binary blob
+         * \return true if success
+         */
         bool import_localization_map(const std::vector<uint8_t>& lmap_buf) const
         {
             rs2_error* e = nullptr;
@@ -461,21 +539,22 @@ namespace rs2
             return !!res;
         }
 
-        /** Extract SLAM localization map from device and store on host
-        * \return - localization map blob
-        */
+        /**
+         * Get relocalization map that is currently on device, created and updated during most recent tracking session.
+         * Can be called before or after stop().
+         * \return map data as a binary blob
+         */
         std::vector<uint8_t> export_localization_map() const
         {
+            std::vector<uint8_t> results;
             rs2_error* e = nullptr;
-            std::shared_ptr<const rs2_raw_data_buffer> loc_map(
-                    rs2_export_localization_map(_sensor.get(), &e),
-                    rs2_delete_raw_data);
+            const rs2_raw_data_buffer *map = rs2_export_localization_map(_sensor.get(), &e);
             error::handle(e);
+            std::shared_ptr<const rs2_raw_data_buffer> loc_map(map, rs2_delete_raw_data);
 
             auto start = rs2_get_raw_data(loc_map.get(), &e);
             error::handle(e);
 
-            std::vector<uint8_t> results;
             if (start)
             {
                 auto size = rs2_get_raw_data_size(loc_map.get(), &e);
@@ -486,12 +565,16 @@ namespace rs2
             return results;
         }
 
-        /** Create a named reference frame anchored to a specific 3D pose
-        * \param[in] guid   String to designate the reference (limited to 127 chars)
-        * \param[in] pos    3D Pose position in meters
-        * \param[in] orient 3D Pose attitude (quaternion)
-        * \return true on success
-        */
+        /**
+         * Creates a named virtual landmark in the current map, known as static node.
+         * The static node's pose is provided relative to the origin of current coordinate system of device poses.
+         * This function fails if the current tracker confidence is below 3 (high confidence).
+         * \param[in] guid unique name of the static node (limited to 127 chars).
+         * If a static node with the same name already exists in the current map or the imported map, the static node is overwritten.
+         * \param[in] pos position of the static node in the 3D space.
+         * \param[in] orient_quat orientation of the static node in the 3D space, represented by a unit quaternion.
+         * \return true if success.
+         */
         bool set_static_node(const std::string& guid, const rs2_vector& pos, const rs2_quaternion& orient) const
         {
             rs2_error* e = nullptr;
@@ -501,16 +584,33 @@ namespace rs2
         }
 
 
-        /** Retrieve a named reference frame anchored to a specific 3D pose
-        * \param[in] guid       String to designate the reference (limited to 127 chars)
-        * \param[out] pos       3D Pose position in meters
-        * \param[out] orient    3D Pose attitude (quaternion)
-        * \return true on success
-        */
+        /**
+         * Gets the current pose of a static node that was created in the current map or in an imported map.
+         * Static nodes of imported maps are available after relocalizing the imported map.
+         * The static node's pose is returned relative to the current origin of coordinates of device poses.
+         * Thus, poses of static nodes of an imported map are consistent with current device poses after relocalization.
+         * This function fails if the current tracker confidence is below 3 (high confidence).
+         * \param[in] guid unique name of the static node (limited to 127 chars).
+         * \param[out] pos position of the static node in the 3D space.
+         * \param[out] orient_quat orientation of the static node in the 3D space, represented by a unit quaternion.
+         * \return true if success.
+         */
         bool get_static_node(const std::string& guid, rs2_vector& pos, rs2_quaternion& orient) const
         {
             rs2_error* e = nullptr;
             auto res = rs2_get_static_node(_sensor.get(), guid.c_str(), &pos, &orient, &e);
+            error::handle(e);
+            return !!res;
+        }
+
+        /**
+         * Removes a static node from the current map.
+         * \param[in] guid unique name of the static node (limited to 127 chars).
+         */
+        bool remove_static_node(const std::string& guid) const
+        {
+            rs2_error* e = nullptr;
+            auto res = rs2_remove_static_node(_sensor.get(), guid.c_str(), &e);
             error::handle(e);
             return !!res;
         }
@@ -561,6 +661,68 @@ namespace rs2
 
         operator bool() const { return _sensor.get() != nullptr; }
         explicit wheel_odometer(std::shared_ptr<rs2_sensor> dev) : wheel_odometer(sensor(dev)) {}
+    };
+
+    class calibrated_sensor : public sensor
+    {
+    public:
+        calibrated_sensor( sensor s )
+            : sensor( s.get() )
+        {
+            rs2_error* e = nullptr;
+            if( rs2_is_sensor_extendable_to( _sensor.get(), RS2_EXTENSION_CALIBRATED_SENSOR, &e ) == 0 && !e )
+            {
+                _sensor.reset();
+            }
+            error::handle( e );
+        }
+
+        operator bool() const { return _sensor.get() != nullptr; }
+
+        /** Override the intrinsics at the sensor level, as DEPTH_TO_RGB calibration does */
+        void override_intrinsics( rs2_intrinsics const& intr )
+        {
+            rs2_error* e = nullptr;
+            rs2_override_intrinsics( _sensor.get(), &intr, &e );
+            error::handle( e );
+        }
+
+        /** Override the intrinsics at the sensor level, as DEPTH_TO_RGB calibration does */
+        void override_extrinsics( rs2_extrinsics const& extr )
+        {
+            rs2_error* e = nullptr;
+            rs2_override_extrinsics( _sensor.get(), &extr, &e );
+            error::handle( e );
+        }
+
+        /** Override the intrinsics at the sensor level, as DEPTH_TO_RGB calibration does */
+        rs2_dsm_params get_dsm_params() const
+        {
+            rs2_error* e = nullptr;
+            rs2_dsm_params params;
+            rs2_get_dsm_params( _sensor.get(), &params, &e );
+            error::handle( e );
+            return params;
+        }
+
+        /** Set the sensor DSM parameters
+         * This should ideally be done when the stream is NOT running. If it is, the
+         * parameters may not take effect immediately. */
+        void override_dsm_params( rs2_dsm_params const & params )
+        {
+            rs2_error* e = nullptr;
+            rs2_override_dsm_params( _sensor.get(), &params, &e );
+            error::handle( e );
+        }
+
+        /** Reset the sensor DSM calibration
+         */
+        void reset_calibration()
+        {
+            rs2_error* e = nullptr;
+            rs2_reset_sensor_calibration( _sensor.get(), &e );
+            error::handle( e );
+        }
     };
 }
 #endif // LIBREALSENSE_RS2_SENSOR_HPP

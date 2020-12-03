@@ -20,11 +20,11 @@
 #define ALIGN_TO_COLOR 0
 
 // パイプラインの設定
-constexpr int depth_width = 640;		// depth_intr.width;
-constexpr int depth_height = 480;		// depth_intr.height;
+constexpr int depth_width = 1024;		// depth_intr.width;
+constexpr int depth_height = 768;		// depth_intr.height;
 constexpr int depth_fps = 30;				// 30 or 60 due to resolution
-constexpr int color_width = 640;		// color_intr.width
-constexpr int color_height = 480;		// color_intr.height
+constexpr int color_width = 1920;		// color_intr.width
+constexpr int color_height = 1080;	// color_intr.height
 constexpr int color_fps = 30;				// 30 or 60
 
 // 標準ライブラリ
@@ -35,7 +35,9 @@ constexpr int color_fps = 30;				// 30 or 60
 #if defined(DEBUG)
 static void check_frame_format(int format)
 {
-	switch (format)
+  std::cerr << "\n";
+
+  switch (format)
 	{
 	case RS2_FORMAT_ANY: std::cout << "RS2_FORMAT_ANY\n"; break;
 	case RS2_FORMAT_Z16: std::cout << "RS2_FORMAT_Z16\n"; break;
@@ -64,6 +66,7 @@ static void check_frame_format(int format)
 #  define CHECK_FRAME_FORMAT(format) check_frame_format(format)
 static void check_intrinsics(const rs2_intrinsics &intrinsics)
 {
+  std::cerr << "\n";
   std::cerr << "Width = " << intrinsics.width << ", Height = " << intrinsics.height << "\n";
   std::cerr << "Principal Point = (" << intrinsics.ppx << ", " << intrinsics.ppy << ")\n";
   std::cerr << "Focal Length = (" << intrinsics.fx << ", " << intrinsics.fy << ")\n";

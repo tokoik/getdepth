@@ -29,10 +29,10 @@
 #include "Rs400.h"
 
 // センサの数
-constexpr int sensorCount(1);
+constexpr int sensorCount(3);
 
 // OpenCV によるビデオキャプチャに使うカメラ
-#define CAPTURE_DEVICE 0
+#define CAPTURE_DEVICE 1
 
 // 頂点位置の生成をシェーダで行うなら 1
 #define USE_SHADER 1
@@ -130,6 +130,7 @@ void GgApplication::run()
 
     // センサの姿勢を設定する
     sensor->attitude = ggRotateY(6.2831853f * i / sensorCount) * ggTranslate(origin);
+    //sensor->attitude = ggTranslate(origin[0] + 2.0f * (i - sensorCount / 2), origin[1], origin[2]);
 
     // センサを追加する
     sensors.emplace_back(std::move(sensor));
@@ -248,7 +249,7 @@ void GgApplication::run()
     for (auto &sensor : sensors)
     {
       // 描画用のシェーダプログラムの使用開始
-      simple.use(mp, mm * sensor->attitude, light);
+      simple.use(mp, sensor->attitude * mm, light);
       material.select();
 
       // カメラ座標のテクスチャ
