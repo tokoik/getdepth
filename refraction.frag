@@ -17,9 +17,9 @@ layout (location = 0) out vec4 fc;                          // フラグメン�
 void main(void)
 {
   // 屈折方向のテクスチャ座標
-  if (gl_FragCoord.z < 0.95) {
+  if (gl_FragCoord.z < 0.98) {
     const vec2 offset = refract(vec3(0.0, 0.0, -1.0), normalize(nv), 0.67).xy * 0.2;
-    fc = mix(texture(back, tc + offset), texture(color, texcoord), 0.6) + ispec;
+    fc = mix(texture(back, tc + offset), texture(color, texcoord), 0.3) + ispec;
   }
   else
   {
@@ -30,3 +30,4 @@ void main(void)
   //fc = idiff + ispec;
   //fc = texture(back, tc) * idiff + ispec;
 }
+
