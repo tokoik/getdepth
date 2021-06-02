@@ -3,6 +3,7 @@
 // テクスチャ
 uniform sampler2D color;                                    // カラーのテクスチャ
 uniform sampler2D back;		                                  // 背景のテクスチャ
+uniform float alpha = 0.3;                                  // 透明度
 
 // ラスタライザから受け取る頂点属性の補間値
 in vec3 nv;                                                 // 法線ベクトル
@@ -19,7 +20,7 @@ void main(void)
   // 屈折方向のテクスチャ座標
   if (gl_FragCoord.z < 0.98) {
     const vec2 offset = refract(vec3(0.0, 0.0, -1.0), normalize(nv), 0.67).xy * 0.2;
-    fc = mix(texture(back, tc + offset), texture(color, texcoord), 0.3) + ispec;
+    fc = mix(texture(back, tc + offset) + ispec, texture(color, texcoord), alpha);
   }
   else
   {

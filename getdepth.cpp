@@ -4,6 +4,7 @@
 
 // 標準ライブラリ
 #include <Windows.h>
+#include <algorithm>
 
 // OpenCV
 #include <opencv2/highgui/highgui.hpp>
@@ -174,6 +175,7 @@ void GgApplication::run()
   const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
   const GLint colorLoc(glGetUniformLocation(simple.get(), "color"));
   const GLint backLoc(glGetUniformLocation(simple.get(), "back"));
+  const GLint alphaLoc(glGetUniformLocation(simple.get(), "alpha"));
   const GLint windowSizeLoc(glGetUniformLocation(simple.get(), "windowSize"));
 #else
   // 描画用のシェーダ
@@ -236,6 +238,9 @@ void GgApplication::run()
       sensor->getNormal();
     }
 
+    // 不透明度
+    const GLfloat alpha(std::max(std::min(1.0f - window.getArrowY() * 0.05f, 1.0f), -1.0f));
+
     // モデル変換行列
     const GgMatrix mm(window.getTrackball(1) * window.getTranslation(0));
 
@@ -267,6 +272,9 @@ void GgApplication::run()
       glUniform1i(backLoc, 2);
       glActiveTexture(GL_TEXTURE2);
       glBindTexture(GL_TEXTURE_2D, bmap);
+
+      // 不透明度
+      glUniform1f(alphaLoc, alpha);
 
       // ウィンドウサイズ
       glUniform2iv(windowSizeLoc, 1, window.getSize());
