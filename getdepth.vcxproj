@@ -22,32 +22,32 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{EE64C4A7-DD98-46F1-A06B-F535C246B9EA}</ProjectGuid>
     <RootNamespace>getdepth</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -75,11 +75,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\librealsense2\include;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include;C:\LibOVR\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include;C:\LibOVR\Include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x86\vc15\lib;C:\LibOVR\Lib\Windows\$(Platform)\$(Configuration)\VS2017</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files (x86)\SoftKinetic\DepthSenseSDK\lib;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x86;C:\OpenCV\x86\vc16\lib;C:\LibOVR\Lib\Windows\$(Platform)\$(Configuration)\VS2017</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -87,11 +87,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\librealsense2\include;C:\Program Files\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include;C:\LibOVR\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;C:\Program Files\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include;C:\LibOVR\Include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x64\vc15\lib;C:\gstreamer\1.0\msvc_x86_64\lib;C:\LibOVR\Lib\Windows\$(Platform)\$(Configuration)\VS2017</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x64;C:\OpenCV\x64\vc16\lib;C:\gstreamer\1.0\msvc_x86_64\lib;C:\LibOVR\Lib\Windows\$(Platform)\$(Configuration)\VS2017</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -101,13 +101,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\librealsense2\include;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include;C:\LibOVR\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include;C:\LibOVR\Include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files %28x86%29\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x86\vc15\lib;C:\LibOVR\Lib\Windows\$(Platform)\$(Configuration)\VS2017</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files (x86)\SoftKinetic\DepthSenseSDK\lib;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x86;C:\OpenCV\x86\vc16\lib;C:\LibOVR\Lib\Windows\$(Platform)\$(Configuration)\VS2017</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -117,13 +117,13 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\librealsense2\include;C:\Program Files\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include;C:\LibOVR\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;C:\Program Files\SoftKinetic\DepthSenseSDK\include;C:\OpenCV\include;C:\LibOVR\Include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib;C:\OpenCV\x64\vc15\lib;C:\gstreamer\1.0\msvc_x86_64\lib;C:\LibOVR\Lib\Windows\$(Platform)\$(Configuration)\VS2017</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(Projectdir)lib\$(Platform);C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x64;C:\OpenCV\x64\vc16\lib;C:\gstreamer\1.0\msvc_x86_64\lib;C:\LibOVR\Lib\Windows\$(Platform)\$(Configuration)\VS2017</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
