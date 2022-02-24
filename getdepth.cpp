@@ -33,7 +33,7 @@
 constexpr int sensorCount(3);
 
 // OpenCV によるビデオキャプチャに使うカメラ
-#define CAPTURE_DEVICE 0
+#define CAPTURE_DEVICE 2
 
 // 頂点位置の生成をシェーダで行うなら 1
 #define USE_SHADER 1
@@ -42,7 +42,7 @@ constexpr int sensorCount(3);
 #define USE_REFRACTION 1
 
 // カメラパラメータ
-constexpr GLfloat cameraFovy(0.8f);                     // 画角
+constexpr GLfloat cameraFovy(0.7f);                     // 画角
 constexpr GLfloat cameraNear(0.1f);                     // 前方面までの距離
 constexpr GLfloat cameraFar(50.0f);                     // 後方面までの距離
 
