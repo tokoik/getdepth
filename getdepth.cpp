@@ -39,10 +39,10 @@ constexpr int sensorCount(3);
 #define USE_SHADER 1
 
 // 透明人間にするなら 1
-#define USE_REFRACTION 1
+#define USE_REFRACTION 0
 
 // カメラパラメータ
-constexpr GLfloat cameraFovy(0.8f);                     // 画角
+constexpr GLfloat cameraFovy(0.74f);                     // 画角
 constexpr GLfloat cameraNear(0.1f);                     // 前方面までの距離
 constexpr GLfloat cameraFar(50.0f);                     // 後方面までの距離
 
@@ -165,8 +165,8 @@ void GgApplication::run()
   glGenTextures(1, &bmap);
   glBindTexture(GL_TEXTURE_2D, bmap);
   glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, capture_env_width, capture_env_height, 0, GL_BGR, GL_UNSIGNED_BYTE, nullptr);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 

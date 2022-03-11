@@ -18,8 +18,8 @@ layout (location = 0) out vec4 fc;                          // フラグメン�
 void main(void)
 {
   // 屈折方向のテクスチャ座標
-  if (gl_FragCoord.z < 0.98) {
-    const vec2 offset = refract(vec3(0.0, 0.0, -1.0), normalize(nv), 0.67).xy * 0.2;
+  if (gl_FragCoord.z < 0.99) {
+    const vec2 offset = refract(vec3(0.0, 0.0, -1.0), normalize(nv), 0.8).xy * 0.2;
     fc = mix(texture(back, tc + offset) + ispec, texture(color, texcoord), alpha);
   }
   else
