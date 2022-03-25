@@ -11,6 +11,17 @@
 #  pragma comment (lib, "realsense2.lib")
 #endif
 
+// デプスデータをカラーデータに合わせる場合 1
+#define ALIGN_TO_COLOR 0
+
+// パイプラインの設定
+constexpr int depth_width = 1280;		// depth_intr.width;
+constexpr int depth_height = 720;		// depth_intr.height;
+constexpr int depth_fps = 30;				// 30 or 60 due to resolution
+constexpr int color_width = 1280;		// color_intr.width
+constexpr int color_height = 720;	  // color_intr.height
+constexpr int color_fps = 30;				// 30 or 60
+
 // 標準ライブラリ
 #include <iostream>
 #include <climits>
