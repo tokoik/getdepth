@@ -23,8 +23,8 @@
 constexpr int depth_width = 1280;		// depth_intr.width;
 constexpr int depth_height = 720;		// depth_intr.height;
 constexpr int depth_fps = 30;				// 30 or 60 due to resolution
-constexpr int color_width = 1920;		// color_intr.width
-constexpr int color_height = 1080;	// color_intr.height
+constexpr int color_width = 1280;		// color_intr.width
+constexpr int color_height = 720;	  // color_intr.height
 constexpr int color_fps = 30;				// 30 or 60
 
 // 標準ライブラリ
