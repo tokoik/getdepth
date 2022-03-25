@@ -75,11 +75,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\libs\win\include;C:\libs\include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;C:\Program Files (x86)\SoftKinetic\DepthSenseSDK\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\win\include;$(ProjectDir)libs\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\libs\win\$(Platform)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x86;C:\Program Files (x86)\SoftKinetic\DepthSenseSDK\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs\win\$(Platform)\lib;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x86</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -87,11 +88,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\libs\win\include;C:\libs\include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;C:\Program Files\SoftKinetic\DepthSenseSDK\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\win\include;$(ProjectDir)libs\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>C:\libs\win\$(Platform)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs\win\$(Platform)\lib;C:\Program Files %28x86%29\Intel RealSense SDK 2.0\lib\x64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -101,13 +103,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\libs\win\include;C:\libs\include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;C:\Program Files (x86)\SoftKinetic\DepthSenseSDK\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\win\include;$(ProjectDir)libs\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\libs\win\$(Platform)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x86;C:\Program Files (x86)\SoftKinetic\DepthSenseSDK\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs\win\$(Platform)\lib;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x86</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -117,42 +120,42 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\libs\win\include;C:\libs\include;C:\Program Files\Microsoft SDKs\Kinect\v1.8\inc;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\inc;C:\Program Files (x86)\Intel RealSense SDK 2.0\include;C:\Program Files\SoftKinetic\DepthSenseSDK\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)libs\win\include;$(ProjectDir)libs\include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>C:\libs\win\$(Platform)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)libs\win\$(Platform)\lib;C:\Program Files %28x86%29\Intel RealSense SDK 2.0\lib\x64</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Compute.h" />
     <ClInclude Include="DepthCamera.h" />
-    <ClInclude Include="Ds325.h" />
     <ClInclude Include="gg.h" />
-    <ClInclude Include="GgApplication.h" />
-    <ClInclude Include="KinectV1.h" />
-    <ClInclude Include="KinectV2.h" />
+    <ClInclude Include="GgApp.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Rs400.h" />
+    <ClInclude Include="Window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="C:\libs\ImGui\imgui.cpp" />
+    <ClCompile Include="C:\libs\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="C:\libs\ImGui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="C:\libs\ImGui\imgui_impl_opengl3.cpp" />
+    <ClCompile Include="C:\libs\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="C:\libs\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="C:\libs\ImGui\nfd_win.cpp" />
     <ClCompile Include="DepthCamera.cpp" />
-    <ClCompile Include="Ds325.cpp" />
     <ClCompile Include="gg.cpp" />
-    <ClCompile Include="KinectV1.cpp" />
-    <ClCompile Include="KinectV2.cpp" />
     <ClCompile Include="getdepth.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Rs400.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="normal.comp" />
-    <None Include="position_ds.comp" />
     <None Include="position_rs.comp" />
-    <None Include="position_v1.comp" />
-    <None Include="position_v2.comp" />
     <None Include="README.md" />
     <None Include="refraction.frag" />
     <None Include="refraction.vert" />

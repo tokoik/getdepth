@@ -18,15 +18,13 @@
 #  pragma comment(lib, "opencv_core" CV_VERSION_STR CV_EXT_STR)
 #  pragma comment(lib, "opencv_highgui" CV_VERSION_STR CV_EXT_STR)
 #  pragma comment(lib, "opencv_videoio" CV_VERSION_STR CV_EXT_STR)
+#  pragma comment(lib, "glfw3" CV_EXT_STR)
 #endif
 
 // ウィンドウ関連の処理
-#include "GgApplication.h"
+#include "GgApp.h"
 
 // センサ関連の処理
-//#include "KinectV1.h"
-//#include "KinectV2.h"
-//#include "Ds325.h"
 #include "Rs400.h"
 
 // センサの数
@@ -77,7 +75,7 @@ constexpr float deviation1(2.0f);
 constexpr float deviation2(10.0f);
 
 // すべてのバイラテラルフィルタの分散を設定するコールバック関数
-static void updateVariance(const GgApplication::Window *window, int key, int scancode, int action, int mods)
+static void updateVariance(const Window *window, int key, int scancode, int action, int mods)
 {
   // センサのリストを取り出す
   void *const sensors(window->getUserPointer());
@@ -105,7 +103,7 @@ static void updateVariance(const GgApplication::Window *window, int key, int sca
 //
 // アプリケーションの実行
 //
-void GgApplication::run()
+int GgApp::main(int argc, const char* const* argv)
 {
   // ウィンドウを開く
   Window window("Depth Map Viewer", 1280, 720);
@@ -242,7 +240,7 @@ void GgApplication::run()
     const GLfloat alpha(std::max(std::min(1.0f - window.getArrowY() * 0.05f, 1.0f), -1.0f));
 
     // モデル変換行列
-    const GgMatrix mm(window.getTrackball(1) * window.getTranslation(0));
+    const GgMatrix mm(window.getRotationMatrix(1) * window.getTranslationMatrix(0));
 
     // 投影変換行列
     const GgMatrix mp(ggPerspective(cameraFovy, window.getAspect(), cameraNear, cameraFar));
@@ -296,4 +294,6 @@ void GgApplication::run()
     // バッファを入れ替える
     window.swapBuffers();
   }
+
+  return EXIT_SUCCESS;
 }
