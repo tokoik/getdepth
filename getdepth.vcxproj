@@ -80,7 +80,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs\win\$(Platform)\lib;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\libs\win\$(Platform)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x86;C:\Program Files (x86)\SoftKinetic\DepthSenseSDK\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -93,7 +93,7 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs\win\$(Platform)\lib;C:\Program Files %28x86%29\Intel RealSense SDK 2.0\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\libs\win\$(Platform)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -110,7 +110,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs\win\$(Platform)\lib;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x86</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\libs\win\$(Platform)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\x86;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x86;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x86;C:\Program Files (x86)\SoftKinetic\DepthSenseSDK\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -127,7 +127,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(ProjectDir)libs\win\$(Platform)\lib;C:\Program Files %28x86%29\Intel RealSense SDK 2.0\lib\x64</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\libs\win\$(Platform)\lib;C:\Program Files\Microsoft SDKs\Kinect\v1.8\lib\amd64;C:\Program Files\Microsoft SDKs\Kinect\v2.0_1409\Lib\x64;C:\Program Files (x86)\Intel RealSense SDK 2.0\lib\x64;C:\Program Files\SoftKinetic\DepthSenseSDK\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
