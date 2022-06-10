@@ -16,21 +16,87 @@
 #  pragma comment (lib, "realsense2" RS_EXT_STR)
 #endif
 
-// デプスデータをカラーデータに合わせる場合 1
-#define ALIGN_TO_COLOR 0
-
-// パイプラインの設定
-constexpr int depth_width = 1280;		// depth_intr.width;
-constexpr int depth_height = 720;		// depth_intr.height;
-constexpr int depth_fps = 30;				// 30 or 60 due to resolution
-constexpr int color_width = 1280;		// color_intr.width
-constexpr int color_height = 720;	  // color_intr.height
-constexpr int color_fps = 30;				// 30 or 60
-
 // 標準ライブラリ
 #include <iostream>
 #include <climits>
 #include <cassert>
+
+// デプスデータをカラーデータに合わせる場合 1
+#define ALIGN_TO_COLOR 0
+
+#define D415 0
+#define D435 1
+#define D455 2
+#define L515 3
+
+#define REALSENSE D455
+
+#if REALSENSE == D415
+
+// センサの画角
+constexpr GLfloat depth_fovx{ 1.1345f };  // 65°
+constexpr GLfloat depth_fovy{ 0.6981f };  // 40°
+constexpr GLfloat color_fovx{ 1.2043f };  // 69°
+constexpr GLfloat color_fovy{ 0.7330f };  // 42°
+
+
+// パイプラインの設定
+constexpr int depth_width = 1280;		      // depth_intr.width;
+constexpr int depth_height = 720;		      // depth_intr.height;
+constexpr int depth_fps = 30;				      // 30 or 60 due to resolution
+constexpr int color_width = 1920;		      // color_intr.width
+constexpr int color_height = 1080;	      // color_intr.height
+constexpr int color_fps = 30;				      // 30 or 60
+
+#elif REALSENSE == D435
+
+// センサの画角
+constexpr GLfloat depth_fovx{ 1.5184f };  // 87°
+constexpr GLfloat depth_fovy{ 1.0123f };  // 58°
+constexpr GLfloat color_fovx{ 1.2043f };  // 69°
+constexpr GLfloat color_fovy{ 0.7330f };  // 42°
+
+// パイプラインの設定
+constexpr int depth_width = 1280;		      // depth_intr.width;
+constexpr int depth_height = 720;		      // depth_intr.height;
+constexpr int depth_fps = 30;				      // 30 or 60 due to resolution
+constexpr int color_width = 1920;		      // color_intr.width
+constexpr int color_height = 1080;        // color_intr.height
+constexpr int color_fps = 30;				      // 30 or 60
+
+#elif REALSENSE == D455
+
+// センサの画角
+constexpr GLfloat depth_fovx{ 1.5184f };  // 87°
+constexpr GLfloat depth_fovy{ 1.0123f };  // 58°
+constexpr GLfloat color_fovx{ 1.5708f };  // 90°
+constexpr GLfloat color_fovy{ 1.1335f };  // 65°
+
+// パイプラインの設定
+constexpr int depth_width = 1280;		      // depth_intr.width;
+constexpr int depth_height = 720;		      // depth_intr.height;
+constexpr int depth_fps = 30;				      // 30 or 60 due to resolution
+constexpr int color_width = 1280;		      // color_intr.width
+constexpr int color_height = 720;	        // color_intr.height
+constexpr int color_fps = 30;				      // 30 or 60
+
+#elif REALSENSE == L515
+
+// センサの画角
+constexpr GLfloat depth_fovx{ 1.2217f };  // 70°
+constexpr GLfloat depth_fovy{ 0.9599f };  // 55°
+constexpr GLfloat color_fovx{ 1.1345f };  // 65°
+constexpr GLfloat color_fovy{ 0.6981f };  // 40°
+
+// パイプラインの設定
+constexpr int depth_width = 1024;		      // depth_intr.width;
+constexpr int depth_height = 768;		      // depth_intr.height;
+constexpr int depth_fps = 30;				      // 30 or 60 due to resolution
+constexpr int color_width = 1920;		      // color_intr.width
+constexpr int color_height = 1080;	      // color_intr.height
+constexpr int color_fps = 30;				      // 30 or 60
+
+#endif
 
 #if defined(DEBUG)
 static void check_frame_format(int format)
@@ -96,8 +162,9 @@ static void check_intrinsics(const rs2_intrinsics &intrinsics)
 
 // コンストラクタ
 Rs400::Rs400()
-	: depthPtr(nullptr)
-  , colorPtr(nullptr)
+  : DepthCamera{ depth_width, depth_height, depth_fovx, depth_fovy, color_width, color_height, color_fovx, color_fovy }
+  , depthPtr{ nullptr }
+  , colorPtr{ nullptr }
 {
 	// RealSense のコンテキスト
 	static std::unique_ptr<rs2::context> context(nullptr);
@@ -321,14 +388,14 @@ GLuint Rs400::getDepth()
 #endif
 
     // デプスフレームを取り出す
-    const auto dframe(frames.get_depth_frame());
+    const auto dframe{ frames.get_depth_frame() };
     depthPtr = static_cast<const GLushort *>(dframe.get_data());
 
     // デプスデータをテクスチャに転送する
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, depthWidth, depthHeight, GL_RED_INTEGER, GL_UNSIGNED_SHORT, depthPtr);
 
     // カラーフレームを取り出す
-    const auto cframe(frames.get_color_frame());
+    const auto cframe{ frames.get_color_frame() };
     colorPtr = static_cast<const Color *>(cframe.get_data());
 
     // デプスデータをアンロックする
@@ -354,11 +421,11 @@ GLuint Rs400::getPoint()
     for (int i = 0; i < depthWidth * depthHeight; ++i)
     {
       // 画素位置
-      const int x(i % depthWidth);
-      const int y(i / depthWidth);
+      const int x{ i % depthWidth };
+      const int y{ i / depthWidth };
 
       // 格納先
-      const int j((depthHeight - y - 1) * depthWidth + x);
+      const int j{ (depthHeight - y - 1) * depthWidth + x };
 
       // カラーデータを格納する
       color[j] = colorPtr[i];
@@ -369,9 +436,9 @@ GLuint Rs400::getPoint()
       uvmap[j][1] = y + 0.5f;
 #else
       // デプスセンサのカメラ座標を m 単位で求める (計測不能点だったら最遠点に飛ばす)
-      const GLfloat dz(0.001f * ((depthPtr[i] != 0 && depthPtr[i] < maxDepth) ? depthPtr[i] : maxDepth));
-      const GLfloat dx(dz * (x - depthIntrinsics.ppx) / depthIntrinsics.fx);
-      const GLfloat dy(dz * (y - depthIntrinsics.ppy) / depthIntrinsics.fy);
+      const GLfloat dz{ 0.001f * ((depthPtr[i] != 0 && depthPtr[i] < maxDepth) ? depthPtr[i] : maxDepth) };
+      const GLfloat dx{ dz * (x - depthIntrinsics.ppx) / depthIntrinsics.fx };
+      const GLfloat dy{ dz * (y - depthIntrinsics.ppy) / depthIntrinsics.fy };
 
       // デプスセンサのカメラ座標を保存する
       point[j][0] = dx;
@@ -379,9 +446,9 @@ GLuint Rs400::getPoint()
       point[j][2] = -dz;
 
       // カラーセンサから見たカメラ座標を求める
-      const GLfloat cx(extrinsics.rotation[0] * dx + extrinsics.rotation[3] * dy + extrinsics.rotation[6] * dz + extrinsics.translation[0]);
-      const GLfloat cy(extrinsics.rotation[1] * dx + extrinsics.rotation[4] * dy + extrinsics.rotation[7] * dz + extrinsics.translation[1]);
-      const GLfloat cz(extrinsics.rotation[2] * dx + extrinsics.rotation[5] * dy + extrinsics.rotation[8] * dz + extrinsics.translation[2]);
+      const GLfloat cx{ extrinsics.rotation[0] * dx + extrinsics.rotation[3] * dy + extrinsics.rotation[6] * dz + extrinsics.translation[0] };
+      const GLfloat cy{ extrinsics.rotation[1] * dx + extrinsics.rotation[4] * dy + extrinsics.rotation[7] * dz + extrinsics.translation[1] };
+      const GLfloat cz{ extrinsics.rotation[2] * dx + extrinsics.rotation[5] * dy + extrinsics.rotation[8] * dz + extrinsics.translation[2] };
 
       // カラーセンサのカメラ座標をテクスチャ座標に変換して保存する
       uvmap[j][0] = cx * colorIntrinsics.fx / cz + colorIntrinsics.ppx;
@@ -412,7 +479,7 @@ GLuint Rs400::getPoint()
 GLuint Rs400::getPosition()
 {
   // カメラ座標をシェーダで算出する
-  const GLuint depthTexture(getDepth());
+  const GLuint depthTexture{ getDepth() };
   shader->use();
   glUniform1i(depthLoc, DepthImageUnit);
   glUniform1i(pointLoc, PointImageUnit);
@@ -455,10 +522,10 @@ GLuint Rs400::getColor()
 }
 
 // 使用しているセンサの数
-int Rs400::activated(0);
+int Rs400::activated{ 0 };
 
 // カメラ座標を計算するシェーダ
-std::unique_ptr<Compute> Rs400::shader(nullptr);
+std::unique_ptr<Compute> Rs400::shader{ nullptr };
 
 // デプスデータのイメージユニットの uniform 変数 depth の場所
 GLint Rs400::depthLoc;

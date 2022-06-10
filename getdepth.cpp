@@ -28,10 +28,10 @@
 #include "Rs400.h"
 
 // センサの数
-constexpr int sensorCount(3);
+constexpr int sensorCount{ 10 };
 
 // OpenCV によるビデオキャプチャに使うカメラ
-#define CAPTURE_DEVICE 2
+#define CAPTURE_DEVICE 0
 
 // 頂点位置の生成をシェーダで行うなら 1
 #define USE_SHADER 1
@@ -39,16 +39,16 @@ constexpr int sensorCount(3);
 // 透明人間にするなら 1
 #define USE_REFRACTION 0
 
-// カメラパラメータ
-constexpr GLfloat cameraFovy(0.7f);                     // 画角
-constexpr GLfloat cameraNear(0.1f);                     // 前方面までの距離
-constexpr GLfloat cameraFar(50.0f);                     // 後方面までの距離
+// レンダリングのカメラパラメータ
+constexpr GLfloat cameraFovy{ 0.7f };                   // 画角
+constexpr GLfloat cameraNear{ 0.1f };                   // 前方面までの距離
+constexpr GLfloat cameraFar{ 50.0f };                   // 後方面までの距離
 
-// カメラの位置
-constexpr GLfloat origin[]{ 0.0f, 0.0f, 0.0f };
+// レンダリングのカメラの位置
+constexpr GLfloat origin[]{ 0.0f, 0.0f, -3.0f };
 
 // 光源
-constexpr GgSimpleShader::Light lightData =
+constexpr GgSimpleShader::Light lightData
 {
   { 0.2f, 0.2f, 0.2f, 1.0f },                           // 環境光成分
   { 1.0f, 1.0f, 1.0f, 1.0f },                           // 拡散反射光成分
@@ -57,7 +57,7 @@ constexpr GgSimpleShader::Light lightData =
 };
 
 // 材質
-constexpr GgSimpleShader::Material materialData =
+constexpr GgSimpleShader::Material materialData
 {
   { 0.8f, 0.8f, 0.8f, 1.0f },                           // 環境光の反射係数
   { 0.8f, 0.8f, 0.8f, 1.0f },                           // 拡散反射係数
@@ -66,27 +66,27 @@ constexpr GgSimpleShader::Material materialData =
 };
 
 // 背景色
-constexpr GLfloat background[] = { 0.2f, 0.3f, 0.4f, 0.0f };
+constexpr GLfloat background[]{ 0.2f, 0.3f, 0.4f, 0.0f };
 
 // バイラテラルフィルタのデフォルトの位置の標準偏差
-constexpr float deviation1(2.0f);
+constexpr float deviation1{ 2.0f };
 
 // バイラテラルフィルタのデフォルトの明度の標準偏差
-constexpr float deviation2(10.0f);
+constexpr float deviation2{ 10.0f };
 
 // すべてのバイラテラルフィルタの分散を設定するコールバック関数
 static void updateVariance(const Window *window, int key, int scancode, int action, int mods)
 {
   // センサのリストを取り出す
-  void *const sensors(window->getUserPointer());
+  void* const sensors{ window->getUserPointer() };
 
   // センサのリストが有効のときにキー操作が行われたら
   if (sensors && action)
   {
     // バイラテラルフィルタの分散を求める
-    const GLfloat sd1(window->getArrowX() * deviation1 * 0.1f + deviation1);
-    const GLfloat sd2(window->getArrowY() * deviation2 * 0.1f + deviation2);
-    const GLfloat variance1(sd1 * sd1), variance2(sd2 * sd2);
+    const GLfloat sd1{ window->getArrowX() * deviation1 * 0.1f + deviation1 };
+    const GLfloat sd2{ window->getArrowY() * deviation2 * 0.1f + deviation2 };
+    const GLfloat variance1{ sd1 * sd1 }, variance2{ sd2 * sd2 };
 
 #if defined(_DEBUG)
     std::cerr << "sd1 =" << sd1 << ", sd2 =" << sd2 << "\n";
@@ -106,20 +106,19 @@ static void updateVariance(const Window *window, int key, int scancode, int acti
 int GgApp::main(int argc, const char* const* argv)
 {
   // ウィンドウを開く
-  Window window("Depth Map Viewer", 1280, 720);
-  if (!window.get())
-  {
-    throw std::runtime_error("GLFW のウィンドウが開けません");
-  }
+  Window window{ "Depth Map Viewer", 1280, 720 };
+
+  // ウィンドウが開けなかったらエラー
+  if (!window.get()) throw std::runtime_error("GLFW のウィンドウが開けません");
 
   // デプスセンサのリスト
   std::vector<std::unique_ptr<SENSOR>> sensors;
 
-  // センサの数の分だけ
+  // つながっているセンサを探す
   for (int i = 0; i < sensorCount; ++i)
   {
     // センサを起動する
-    std::unique_ptr<SENSOR> sensor(std::make_unique<SENSOR>());
+    auto sensor{ std::make_unique<SENSOR>() };
 
     // センサが起動できなかったら終わる
     if (!sensor->isOpend()) break;
@@ -127,18 +126,19 @@ int GgApp::main(int argc, const char* const* argv)
     // バイラテラルフィルタの初期値を設定する
     sensor->setVariance(deviation1 * deviation1, deviation1 * deviation1, deviation2 * deviation2);
 
-    // センサの姿勢を設定する
-    sensor->attitude = ggRotateY(6.2831853f * i / sensorCount) * ggTranslate(origin);
-    //sensor->attitude = ggTranslate(origin[0] + 2.0f * (i - sensorCount / 2), origin[1], origin[2]);
-
     // センサを追加する
     sensors.emplace_back(std::move(sensor));
   }
 
   // センサが一つもなければエラーにする
-  if (sensors.empty())
+  if (sensors.empty()) throw std::runtime_error("センサがひとつも起動できません");
+
+  // 見つけたセンサの数の分だけ
+  for (std::size_t i = 0; i < sensors.size(); ++i)
   {
-    throw std::runtime_error("センサが起動できません");
+    // センサの姿勢を設定する
+    sensors[i]->attitude = ggRotateY(sensors[i]->depthFov[0] * i) * ggTranslate(origin);
+    //sensor[i]->attitude = ggTranslate(origin[0] + 2.0f * (i - sensors.size() / 2), origin[1], origin[2]);
   }
 
   // キーボード操作のコールバック関数を登録する
@@ -147,16 +147,15 @@ int GgApp::main(int argc, const char* const* argv)
 
 #if USE_REFRACTION
   // 背景画像のキャプチャに使う OpenCV のビデオキャプチャを初期化する
-  cv::VideoCapture camera(CAPTURE_DEVICE);
-  if (!camera.isOpened())
-  {
-    throw std::runtime_error("ビデオカメラが見つかりません");
-  }
+  cv::VideoCapture camera{ CAPTURE_DEVICE };
+
+  // ビデオカメラが見つからなければエラー
+  if (!camera.isOpened()) throw std::runtime_error("ビデオカメラが見つかりません");
 
   // カメラの初期設定
   camera.grab();
-  const GLsizei capture_env_width(GLsizei(camera.get(cv::CAP_PROP_FRAME_WIDTH)));
-  const GLsizei capture_env_height(GLsizei(camera.get(cv::CAP_PROP_FRAME_HEIGHT)));
+  const GLsizei capture_env_width{ GLsizei(camera.get(cv::CAP_PROP_FRAME_WIDTH)) };
+  const GLsizei capture_env_height{ GLsizei(camera.get(cv::CAP_PROP_FRAME_HEIGHT)) };
 
   // 背景画像のテクスチャ
   GLuint bmap;
@@ -169,29 +168,29 @@ int GgApp::main(int argc, const char* const* argv)
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
   // 透明人間用のシェーダ
-  const GgSimpleShader simple("refraction.vert", "refraction.frag");
-  const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
-  const GLint colorLoc(glGetUniformLocation(simple.get(), "color"));
-  const GLint backLoc(glGetUniformLocation(simple.get(), "back"));
-  const GLint alphaLoc(glGetUniformLocation(simple.get(), "alpha"));
-  const GLint windowSizeLoc(glGetUniformLocation(simple.get(), "windowSize"));
+  const GgSimpleShader simple{ "refraction.vert", "refraction.frag" };
+  const GLint pointLoc{ glGetUniformLocation(simple.get(), "point") };
+  const GLint colorLoc{ glGetUniformLocation(simple.get(), "color") };
+  const GLint backLoc{ glGetUniformLocation(simple.get(), "back") };
+  const GLint alphaLoc{ glGetUniformLocation(simple.get(), "alpha") };
+  const GLint windowSizeLoc{ glGetUniformLocation(simple.get(), "windowSize") };
 #else
   // 描画用のシェーダ
-  const GgSimpleShader simple("simple.vert", "simple.frag");
-  const GLint pointLoc(glGetUniformLocation(simple.get(), "point"));
-  const GLint colorLoc(glGetUniformLocation(simple.get(), "color"));
-  const GLint rangeLoc(glGetUniformLocation(simple.get(), "range"));
+  const GgSimpleShader simple{ "simple.vert", "simple.frag" };
+  const GLint pointLoc{ glGetUniformLocation(simple.get(), "point") };
+  const GLint colorLoc{ glGetUniformLocation(simple.get(), "color") };
+  const GLint rangeLoc{ glGetUniformLocation(simple.get(), "range") };
 #endif
-  const GLuint uvmapIndex(glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Uvmap"));
+  const GLuint uvmapIndex{ glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Uvmap") };
   glShaderStorageBlockBinding(simple.get(), uvmapIndex, DepthCamera::UvmapBinding);
-  const GLuint normalIndex(glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Normal"));
+  const GLuint normalIndex{ glGetProgramResourceIndex(simple.get(), GL_SHADER_STORAGE_BLOCK, "Normal") };
   glShaderStorageBlockBinding(simple.get(), normalIndex, DepthCamera::NormalBinding);
 
   // 光源データ
-  const GgSimpleShader::LightBuffer light(lightData);
+  const GgSimpleShader::LightBuffer light{ lightData };
 
   // 材質データ
-  const GgSimpleShader::MaterialBuffer material(materialData);
+  const GgSimpleShader::MaterialBuffer material{ materialData };
 
   // 背景色を設定する
   glClearColor(background[0], background[1], background[2], background[3]);
@@ -220,7 +219,7 @@ int GgApp::main(int argc, const char* const* argv)
 #endif
 
     // すべてのセンサについて
-    for (auto &sensor : sensors)
+    for (auto& sensor : sensors)
     {
       // 頂点位置の取得
 #if USE_SHADER
@@ -237,13 +236,13 @@ int GgApp::main(int argc, const char* const* argv)
     }
 
     // 不透明度
-    const GLfloat alpha(std::max(std::min(1.0f - window.getArrowY() * 0.05f, 1.0f), -1.0f));
+    const GLfloat alpha{ std::max(std::min(1.0f - window.getArrowY() * 0.05f, 1.0f), -1.0f) };
 
     // モデル変換行列
-    const GgMatrix mm(window.getRotationMatrix(1) * window.getTranslationMatrix(0));
+    const GgMatrix mm{ window.getRotationMatrix(1) * window.getTranslationMatrix(0) };
 
     // 投影変換行列
-    const GgMatrix mp(ggPerspective(cameraFovy, window.getAspect(), cameraNear, cameraFar));
+    const GgMatrix mp{ ggPerspective(cameraFovy, window.getAspect(), cameraNear, cameraFar) };
 
     // 画面消去
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

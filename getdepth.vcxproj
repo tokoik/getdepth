@@ -154,6 +154,7 @@
     <ClCompile Include="Rs400.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="culling.geom" />
     <None Include="normal.comp" />
     <None Include="position_rs.comp" />
     <None Include="README.md" />

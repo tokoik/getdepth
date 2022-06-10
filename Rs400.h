@@ -113,7 +113,7 @@ public:
   virtual ~Rs400();
 
   // 計測不能点のデフォルト距離
-  static constexpr GLushort maxDepth = 10000;
+  static constexpr GLushort maxDepth = 0;
 
   // 疑似カラー処理の範囲
   static constexpr GLfloat range[2] = { 0.3f, 5.0f };

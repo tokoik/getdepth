@@ -5,10 +5,15 @@
 //
 
 // コンストラクタ
-DepthCamera::DepthCamera()
+DepthCamera::DepthCamera(int depthWidth, int depthHeight, GLfloat depthFovx, GLfloat depthFovy,
+  int colorWidth, int colorHeight, GLfloat colorFovx, GLfloat colorFovy)
 : message(nullptr)
-, depthTexture(0), pointTexture(0), colorTexture(0)
-, uvmapBuffer(0), weightBuffer(0), normalBuffer(0)
+, depthTexture{ 0 }, pointTexture{ 0 }, colorTexture{ 0 }
+, uvmapBuffer{ 0 }, weightBuffer{ 0 }, normalBuffer{ 0 }
+, depthWidth{ depthWidth }, depthHeight{ depthHeight }
+, depthFov{ depthFovx, depthFovy }
+, colorWidth{ colorWidth }, colorHeight{ colorHeight }
+, colorFov{ colorFovx, colorFovy }
 {
   // まだシェーダが作られていなかったら
   if (normal.get() == nullptr)
@@ -50,7 +55,7 @@ DepthCamera::~DepthCamera()
 int DepthCamera::makeTexture()
 {
   // カラーデータの境界色
-  static const GLfloat border[] = { 0.5f, 0.5f, 0.5f, 0.0f };
+  static const GLfloat border[]{ 0.5f, 0.5f, 0.5f, 0.0f };
 
   // デプスデータを格納するテクスチャを準備する
   glGenTextures(1, &depthTexture);

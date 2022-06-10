@@ -115,7 +115,8 @@ public:
   };
 
   // コンストラクタ
-  DepthCamera();
+  DepthCamera(int depthWidth, int depthHeight, GLfloat depthFovx, GLfloat depthFovy,
+    int colorWidth, int colorHeight, GLfloat colorFovx, GLfloat colorFovy);
 
   // コピーコンストラクタ (コピー禁止)
   DepthCamera(const DepthCamera &w) = delete;
@@ -125,6 +126,12 @@ public:
 
   // デストラクタ
   virtual ~DepthCamera();
+
+  // デプスセンサの画角
+  const GLfloat depthFov[2];
+
+  // カラーセンサの画角
+  const GLfloat colorFov[2];
 
   // 使用可能なら true を返す
   bool isOpend() const

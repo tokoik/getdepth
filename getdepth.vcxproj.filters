@@ -101,5 +101,8 @@
     <None Include="position_rs.comp">
       <Filter>シェーダー ファイル</Filter>
     </None>
+    <None Include="culling.geom">
+      <Filter>シェーダー ファイル</Filter>
+    </None>
   </ItemGroup>
 </Project>
