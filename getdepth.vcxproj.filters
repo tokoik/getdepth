@@ -104,5 +104,8 @@
     <None Include="culling.geom">
       <Filter>シェーダー ファイル</Filter>
     </None>
+    <None Include="smooth_rs.comp">
+      <Filter>シェーダー ファイル</Filter>
+    </None>
   </ItemGroup>
 </Project>

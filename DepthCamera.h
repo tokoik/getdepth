@@ -68,6 +68,9 @@ protected:
   // デプスデータを格納するテクスチャ
   GLuint depthTexture;
 
+  // 平滑化したデプスデータを格納するテクスチャ
+  GLuint smoothTexture;
+
   // カラーセンサのサイズ
   int colorWidth, colorHeight;
 
@@ -101,6 +104,7 @@ public:
   enum ImageUnits
   {
     DepthImageUnit = 0,
+    SmoothImageUnit,
     PointImageUnit,
     MapperImageUnit
   };

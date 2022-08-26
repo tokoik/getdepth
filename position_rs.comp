@@ -148,8 +148,8 @@ void main(void)
     // デプス値からカメラ座標値を求める
     const vec3 p = vec3(dp * z, z);
 
-    // カメラ座標を出力する（上下反転＋前後反転＝右手系）
-    imageStore(point, dst_xy, vec4(p.x, -p.yz, 1.0));
+    // カメラ座標を出力する（右手系⇒上下反転＋前後反転）
+    imageStore(point, dst_xy, vec4(p.x, -p.yz, 1.0 - step(csum.g, 0.0)));
 
     // カメラ座標からテクスチャ座標を求める
     const vec3 t = extRotation * p + extTranslation;

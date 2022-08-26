@@ -1,0 +1,35 @@
+#version 430 core
+
+// ワークグループのサイズ
+layout (local_size_x = 1, local_size_y = 1) in;
+
+// デプスデータを入力するイメージユニット
+layout (r16ui) readonly uniform uimage2D current;
+
+// デプスデータを平滑するイメージユニット
+layout (r16ui) uniform uimage2D previous;
+
+// 減衰率
+uniform float attenuation;
+
+void main(void)
+{
+  // 画素位置
+  const ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+
+  // 現在の深度
+  float current_depth = imageLoad(current, p).r;
+
+  // もし計測不能だったら以前の値を使う
+  if (current_depth > 0.0)
+  {
+    // 以前の深度
+    float previous_depth = imageLoad(previous, p).r;
+
+    // 後退差分
+    float difference = mix(previous_depth, current_depth, 0.1);
+
+    // 深度の保存
+    imageStore(previous, p, ivec4(round(difference)));
+  }
+}

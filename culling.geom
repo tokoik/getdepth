@@ -1,32 +1,34 @@
 #version 430 core
 
-// デバイス番号
-uniform int devId;
-
-// カメラの位置への変換行列
-uniform mat4 mcam[3];
-
-// クリッピング座標系への変換行列の逆行列
-uniform mat4 mc;
-
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 16) out;
 
-// テクスチャ座標
-in vec2 t[];
+// 入力
+in float w[];
+in vec4 idiff[];
+in vec4 ispec[];
+in vec2 texcoord[];
+
+// 出力
+out vec4 id;
+out vec4 is;
 out vec2 tc;
 
 void main()
 {
-  vec3 z = vec3(gl_in[0].gl_Position.z, gl_in[1].gl_Position.z, gl_in[2].gl_Position.z);
+  vec3 s = vec3(w[0], w[1], w[2]);
 
-  if (all(greaterThan(z, vec3(0.0))))
+  if (all(greaterThan(s, vec3(0.0))))
   {
     for (int i = 0; i < gl_in.length(); ++i) 
     {
-      gl_Position = mc * mcam[devId] * gl_in[i].gl_Position;
-      tc = t[i];
+      gl_Position = gl_in[i].gl_Position;
+      id = idiff[i];
+      is = ispec[i];
+      tc = texcoord[i];
       EmitVertex();
     }
+
+    EndPrimitive();
   }
 }

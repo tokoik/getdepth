@@ -47,6 +47,7 @@ uniform vec2 range = vec2(0.3, 6.0);
 out vec4 idiff;                                             // 拡散反射光強度
 out vec4 ispec;                                             // 鏡面反射光強度
 out vec2 texcoord;                                          // テクスチャ座標
+out float w;                                                // w 要素
 
 void main(void)
 {
@@ -63,6 +64,9 @@ void main(void)
 
   // 頂点位置のサンプリング
   const vec4 pv = texture(point, pc);
+
+  // w 要素
+  w = pv.w;
 
   // 座標計算
   const vec4 p = mv * pv;                                   // 視点座標系の頂点の位置

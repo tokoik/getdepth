@@ -45,7 +45,8 @@ constexpr GLfloat cameraNear{ 0.1f };                   // 前方面までの距
 constexpr GLfloat cameraFar{ 50.0f };                   // 後方面までの距離
 
 // レンダリングのカメラの位置
-constexpr GLfloat origin[]{ 0.0f, 0.0f, -3.0f };
+constexpr GLfloat origin[]{ 0.0f, 0.0f, 0.0f };
+constexpr GLfloat offset[]{ 0.0f, 0.0f, -0.05f };
 
 // 光源
 constexpr GgSimpleShader::Light lightData
@@ -137,7 +138,7 @@ int GgApp::main(int argc, const char* const* argv)
   for (std::size_t i = 0; i < sensors.size(); ++i)
   {
     // センサの姿勢を設定する
-    sensors[i]->attitude = ggRotateY(sensors[i]->depthFov[0] * i) * ggTranslate(origin);
+    sensors[i]->attitude = ggTranslate(origin) * ggRotateY(sensors[i]->depthFov[0] * i) * ggTranslate(offset);
     //sensor[i]->attitude = ggTranslate(origin[0] + 2.0f * (i - sensors.size() / 2), origin[1], origin[2]);
   }
 
@@ -176,7 +177,7 @@ int GgApp::main(int argc, const char* const* argv)
   const GLint windowSizeLoc{ glGetUniformLocation(simple.get(), "windowSize") };
 #else
   // 描画用のシェーダ
-  const GgSimpleShader simple{ "simple.vert", "simple.frag" };
+  const GgSimpleShader simple{ "simple.vert", "simple.frag", "culling.geom" };
   const GLint pointLoc{ glGetUniformLocation(simple.get(), "point") };
   const GLint colorLoc{ glGetUniformLocation(simple.get(), "color") };
   const GLint rangeLoc{ glGetUniformLocation(simple.get(), "range") };
@@ -239,7 +240,7 @@ int GgApp::main(int argc, const char* const* argv)
     const GLfloat alpha{ std::max(std::min(1.0f - window.getArrowY() * 0.05f, 1.0f), -1.0f) };
 
     // モデル変換行列
-    const GgMatrix mm{ window.getRotationMatrix(1) * window.getTranslationMatrix(0) };
+    const GgMatrix mm{ window.getTranslationMatrix(0) * window.getRotationMatrix(1) };
 
     // 投影変換行列
     const GgMatrix mp{ ggPerspective(cameraFovy, window.getAspect(), cameraNear, cameraFar) };
@@ -251,7 +252,7 @@ int GgApp::main(int argc, const char* const* argv)
     for (auto &sensor : sensors)
     {
       // 描画用のシェーダプログラムの使用開始
-      simple.use(mp, sensor->attitude * mm, light);
+      simple.use(mp, mm * sensor->attitude, light);
       material.select();
 
       // カメラ座標のテクスチャ

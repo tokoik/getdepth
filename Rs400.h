@@ -47,8 +47,20 @@ class Rs400 : public DepthCamera
 	// 新着のカラーデータ
 	const Color *colorPtr;
 
+  // デプスデータを平滑化するシェーダ
+  static std::unique_ptr<Compute> smooth;
+
+  // 現在のデプスデータのイメージユニットの uniform 変数の場所
+  static GLint currentLoc;
+
+  // 以前のデプスデータのイメージユニットの uniform 変数の場所
+  static GLint previousLoc;
+
+  // デプスデータの減衰率の uniform 変数の場所
+  static GLint attenuationLoc;
+
 	// カメラ座標を計算するシェーダ
-	static std::unique_ptr<Compute> shader;
+	static std::unique_ptr<Compute> position;
 
   // デプスデータのイメージユニットの uniform 変数 depth の場所
   static GLint depthLoc;
@@ -112,11 +124,11 @@ public:
   // デストラクタ
   virtual ~Rs400();
 
-  // 計測不能点のデフォルト距離
-  static constexpr GLushort maxDepth = 0;
+  // 計測不能点のデフォルト距離（単位 mm）
+  static constexpr GLuint maxDepth{ 5000 };
 
   // 疑似カラー処理の範囲
-  static constexpr GLfloat range[2] = { 0.3f, 5.0f };
+  static constexpr GLfloat range[]{ 0.3f, 5.0f };
 
   // デプスデータを取得する
   GLuint getDepth();

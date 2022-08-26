@@ -8,7 +8,7 @@
 DepthCamera::DepthCamera(int depthWidth, int depthHeight, GLfloat depthFovx, GLfloat depthFovy,
   int colorWidth, int colorHeight, GLfloat colorFovx, GLfloat colorFovy)
 : message(nullptr)
-, depthTexture{ 0 }, pointTexture{ 0 }, colorTexture{ 0 }
+, depthTexture{ 0 }, smoothTexture{ 0 }, pointTexture{ 0 }, colorTexture{ 0 }
 , uvmapBuffer{ 0 }, weightBuffer{ 0 }, normalBuffer{ 0 }
 , depthWidth{ depthWidth }, depthHeight{ depthHeight }
 , depthFov{ depthFovx, depthFovy }
@@ -65,6 +65,17 @@ int DepthCamera::makeTexture()
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+  // 平滑したデプスデータを格納するテクスチャを準備する
+  glGenTextures(1, &smoothTexture);
+  glBindTexture(GL_TEXTURE_2D, smoothTexture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, depthWidth, depthHeight, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, NULL);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+  const GLushort clear{ 0 };
+  glClearTexImage(smoothTexture, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, &clear);
 
   // デプスデータから求めたカメラ座標を格納するテクスチャを準備する
   glGenTextures(1, &pointTexture);

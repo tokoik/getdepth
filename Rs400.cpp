@@ -29,7 +29,7 @@
 #define D455 2
 #define L515 3
 
-#define REALSENSE D455
+#define REALSENSE D415
 
 #if REALSENSE == D415
 
@@ -271,28 +271,40 @@ Rs400::Rs400()
   // カラーセンサに対するデプスセンサの外部パラメータ
   extrinsics = dstream.get_extrinsics_to(cstream);
 
-  // まだシェーダが作られていなかったら
-  if (shader.get() == nullptr)
+  // まだ深度を平滑化するシェーダが作られていなかったら
+  if (smooth.get() == nullptr)
+  {
+    // 深度平滑用のシェーダを作成する
+    smooth.reset(new Compute("smooth_rs.comp"));
+
+    // uniform 変数の場所を調べる
+    currentLoc = glGetUniformLocation(smooth->get(), "current");
+    previousLoc = glGetUniformLocation(smooth->get(), "previous");
+    attenuationLoc = glGetUniformLocation(smooth->get(), "attenuation");
+  }
+
+  // まだカメラ座標を計算するシェーダが作られていなかったら
+  if (position.get() == nullptr)
   {
     // カメラ座標算出用のシェーダを作成する
-    shader.reset(new Compute("position_rs.comp"));
+    position.reset(new Compute("position_rs.comp"));
 
-    // シェーダの uniform 変数の場所を調べる
-    depthLoc = glGetUniformLocation(shader->get(), "depth");
-    pointLoc = glGetUniformLocation(shader->get(), "point");
-    dppLoc = glGetUniformLocation(shader->get(), "dpp");
-    dfLoc = glGetUniformLocation(shader->get(), "df");
-    cppLoc = glGetUniformLocation(shader->get(), "cpp");
-    cfLoc = glGetUniformLocation(shader->get(), "cf");
-    maxDepthLoc = glGetUniformLocation(shader->get(), "maxDepth");
-    extRotationLoc = glGetUniformLocation(shader->get(), "extRotation");
-    extTranslationLoc = glGetUniformLocation(shader->get(), "extTranslation");
+    // uniform 変数の場所を調べる
+    depthLoc = glGetUniformLocation(position->get(), "depth");
+    pointLoc = glGetUniformLocation(position->get(), "point");
+    dppLoc = glGetUniformLocation(position->get(), "dpp");
+    dfLoc = glGetUniformLocation(position->get(), "df");
+    cppLoc = glGetUniformLocation(position->get(), "cpp");
+    cfLoc = glGetUniformLocation(position->get(), "cf");
+    maxDepthLoc = glGetUniformLocation(position->get(), "maxDepth");
+    extRotationLoc = glGetUniformLocation(position->get(), "extRotation");
+    extTranslationLoc = glGetUniformLocation(position->get(), "extTranslation");
 
     // シェーダストレージブロックに結合ポイントを割り当てる
-    const GLuint weightIndex(glGetProgramResourceIndex(shader->get(), GL_SHADER_STORAGE_BLOCK, "Weight"));
-    glShaderStorageBlockBinding(shader->get(), weightIndex, WeightBinding);
-    const GLuint uvmapIndex(glGetProgramResourceIndex(shader->get(), GL_SHADER_STORAGE_BLOCK, "Uvmap"));
-    glShaderStorageBlockBinding(shader->get(), uvmapIndex, UvmapBinding);
+    const GLuint weightIndex{ glGetProgramResourceIndex(position->get(), GL_SHADER_STORAGE_BLOCK, "Weight") };
+    glShaderStorageBlockBinding(position->get(), weightIndex, WeightBinding);
+    const GLuint uvmapIndex{ glGetProgramResourceIndex(position->get(), GL_SHADER_STORAGE_BLOCK, "Uvmap") };
+    glShaderStorageBlockBinding(position->get(), uvmapIndex, UvmapBinding);
   }
 
   // テクスチャとバッファオブジェクトを作成してポイント数を返す
@@ -478,9 +490,18 @@ GLuint Rs400::getPoint()
 // カメラ座標を算出する
 GLuint Rs400::getPosition()
 {
-  // カメラ座標をシェーダで算出する
+  // デプスデータを平滑化する
   const GLuint depthTexture{ getDepth() };
-  shader->use();
+  smooth->use();
+  glUniform1i(currentLoc, DepthImageUnit);
+  glUniform1i(previousLoc, SmoothImageUnit);
+  glUniform1f(attenuationLoc, 0.3f);
+  glBindImageTexture(DepthImageUnit, depthTexture, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R16UI);
+  glBindImageTexture(SmoothImageUnit, smoothTexture, 0, GL_FALSE, 0, GL_READ_WRITE, GL_R16UI);
+  smooth->execute(depthWidth, depthHeight);
+
+  // カメラ座標をシェーダで算出する
+  position->use();
   glUniform1i(depthLoc, DepthImageUnit);
   glUniform1i(pointLoc, PointImageUnit);
   glUniform2f(dppLoc, depthIntrinsics.ppx, depthIntrinsics.ppy);
@@ -494,7 +515,7 @@ GLuint Rs400::getPosition()
   glBindImageTexture(PointImageUnit, pointTexture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, WeightBinding, weightBuffer);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UvmapBinding, uvmapBuffer);
-  shader->execute(depthWidth, depthHeight, 16, 16);
+  position->execute(depthWidth, depthHeight, 16, 16);
 
   return pointTexture;
 }
@@ -524,8 +545,20 @@ GLuint Rs400::getColor()
 // 使用しているセンサの数
 int Rs400::activated{ 0 };
 
+// デプスデータを計算するシェーダ
+std::unique_ptr<Compute> Rs400::smooth{ nullptr };
+
+// 現在のデプスデータのイメージユニットの uniform 変数の場所
+GLint Rs400::currentLoc;
+
+// 以前のデプスデータのイメージユニットの uniform 変数の場所
+GLint Rs400::previousLoc;
+
+// デプスデータの減衰率
+GLint Rs400::attenuationLoc;
+
 // カメラ座標を計算するシェーダ
-std::unique_ptr<Compute> Rs400::shader{ nullptr };
+std::unique_ptr<Compute> Rs400::position{ nullptr };
 
 // デプスデータのイメージユニットの uniform 変数 depth の場所
 GLint Rs400::depthLoc;
