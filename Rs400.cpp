@@ -8,12 +8,7 @@
 
 // RealSense 関連
 #ifdef _WIN32
-#  ifdef _DEBUG
-#    define RS_EXT_STR "d.lib"
-#  else
-#    define RS_EXT_STR ".lib"
-#  endif
-#  pragma comment (lib, "realsense2" RS_EXT_STR)
+#  pragma comment (lib, "realsense2.lib")
 #endif
 
 // 標準ライブラリ
