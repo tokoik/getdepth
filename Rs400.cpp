@@ -320,7 +320,7 @@ Rs400::~Rs400()
 void Rs400::add_device(rs2::device &dev)
 {
 	// RealSense 以外のカメラでないか調べる
-	if (dev.get_info(RS2_CAMERA_INFO_NAME) == "Platform Camera")
+	if (strcmp(dev.get_info(RS2_CAMERA_INFO_NAME), "Platform Camera") == 0)
 	{
 		// RealSense ではない
 		return;
