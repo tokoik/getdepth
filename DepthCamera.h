@@ -175,18 +175,6 @@ public:
     return pointTexture;
   }
 
-  // テクスチャ座標を格納するバッファオブジェクトを得る
-  GLuint getUvmapBuffer() const
-  {
-    return uvmapBuffer;
-  }
-
-  // 法線ベクトルを格納するバッファオブジェクトを得る
-  GLuint getNormalBuffer() const
-  {
-    return normalBuffer;
-  }
-
   // 法線ベクトルの計算
   GLuint getNormal() const;
 
@@ -199,6 +187,13 @@ public:
   // 目種の描画
   void draw()
   {
+    // テクスチャ座標のシェーダストレージバッファオブジェクト
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UvmapBinding, uvmapBuffer);
+
+    // 法線ベクトルののシェーダストレージバッファオブジェクト
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, NormalBinding, normalBuffer);
+
+    // メッシュを描画する
     mesh->draw(depthWidth, depthHeight);
   }
 

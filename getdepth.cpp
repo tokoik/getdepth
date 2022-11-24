@@ -281,12 +281,6 @@ int GgApp::main(int argc, const char* const* argv)
       glUniform2fv(rangeLoc, 1, sensor->range);
 #endif
 
-      // テクスチャ座標のシェーダストレージバッファオブジェクト
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::UvmapBinding, sensor->getUvmapBuffer());
-
-      // 法線ベクトルののシェーダストレージバッファオブジェクト
-      glBindBufferBase(GL_SHADER_STORAGE_BUFFER, DepthCamera::NormalBinding, sensor->getNormalBuffer());
-
       // 図形描画
       sensor->draw();
     }
