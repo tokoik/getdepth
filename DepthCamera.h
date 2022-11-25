@@ -20,10 +20,10 @@ using namespace gg;
 class DepthCamera
 {
   // エラーメッセージ
-  const char *message;
+  const char* message;
 
-  // フィルタのサイズ
-  static constexpr int filterSize[] = { 5, 5 };
+  // バイラテラルフィルタのサイズ
+  static constexpr int filterSize[]{ 5, 5 };
 
   // バイラテラルフィルタの距離に対する重みと値に対する分散
   struct Weight
@@ -33,6 +33,9 @@ class DepthCamera
     float variance;
   };
 
+  // 法線ベクトルのデータ型
+  using Normal = std::array<GLfloat, 4>;
+
   // カメラ座標における法線ベクトルを格納するバッファオブジェクト
   GLuint normalBuffer;
 
@@ -40,27 +43,15 @@ class DepthCamera
   static std::unique_ptr<Compute> normal;
 
   // 法線ベクトルを求めるカメラ座標のイメージユニットの uniform 変数 point の場所
-  static GLuint pointLoc;
+  static GLint pointLoc;
 
 protected:
 
   // エラーメッセージを設定する
-  void setMessage(const char *message)
+  void setMessage(const char* message)
   {
     this->message = message;
   }
-
-  // カメラ座標のデータ型
-  using Point = std::array<GLfloat, 3>;
-
-  // テクスチャ座標のデータ型
-  using Uvmap = std::array<GLfloat, 2>;
-
-  // 法線ベクトルのデータ型
-  using Normal = std::array<GLfloat, 4>;
-
-  // カラーのデータ型
-  using Color = std::array<GLubyte, 3>;
 
   // デプスセンサのサイズ
   int depthWidth, depthHeight;
@@ -71,17 +62,26 @@ protected:
   // 平滑化したデプスデータを格納するテクスチャ
   GLuint smoothTexture;
 
+  // デプスデータから変換したカメラ座標を格納するテクスチャ
+  GLuint pointTexture;
+
+  // カメラ座標のデータ型
+  using Point = std::array<GLfloat, 3>;
+
   // カラーセンサのサイズ
   int colorWidth, colorHeight;
 
   // カラーデータを格納するテクスチャ
   GLuint colorTexture;
 
-  // デプスデータから変換したカメラ座標を格納するテクスチャ
-  GLuint pointTexture;
+  // カラーのデータ型
+  using Color = std::array<GLubyte, 3>;
 
   // カメラ座標に対応したテクスチャ座標を格納するバッファオブジェクト
   GLuint uvmapBuffer;
+
+  // テクスチャ座標のデータ型
+  using Uvmap = std::array<GLfloat, 2>;
 
   // バイラテラルフィルタの距離に対する重みを格納する Shader Storage Buffer Object
   GLuint weightBuffer;
@@ -89,16 +89,10 @@ protected:
   // テクスチャとバッファオブジェクトを作成してポイント数を返す
   int makeTexture();
 
-  // 描画するメッシュ
+  // 描画に使うメッシュ
   static std::unique_ptr<Mesh> mesh;
 
 public:
-
-  // エラーメッセージを取り出す
-  const char *getMessage() const
-  {
-    return message;
-  }
 
   // イメージユニット
   enum ImageUnits
@@ -123,13 +117,19 @@ public:
     int colorWidth, int colorHeight, GLfloat colorFovx, GLfloat colorFovy);
 
   // コピーコンストラクタ (コピー禁止)
-  DepthCamera(const DepthCamera &w) = delete;
+  DepthCamera(const DepthCamera& camera) = delete;
 
   // 代入 (代入禁止)
-  DepthCamera &operator=(const DepthCamera &w) = delete;
+  DepthCamera& operator=(const DepthCamera& camera) = delete;
 
   // デストラクタ
   virtual ~DepthCamera();
+
+  // エラーメッセージを取り出す
+  const auto getMessage() const
+  {
+    return message;
+  }
 
   // デプスセンサの画角
   const GLfloat depthFov[2];
@@ -137,64 +137,54 @@ public:
   // カラーセンサの画角
   const GLfloat colorFov[2];
 
-  // 使用可能なら true を返す
-  bool isOpend() const
-  {
-    return message == nullptr;
-  }
+  // デプスセンサの姿勢
+  GgMatrix attitude;
+
+  // バイラテラルフィルタの分散を設定する
+  void setVariance(float column_variance, float row_variance, float value_variance) const;
 
   // デプスセンサのサイズを得る
-  void getDepthResolution(int *width, int *height) const
+  void getDepthResolution(int* width, int* height) const
   {
     *width = depthWidth;
     *height = depthHeight;
   }
 
   // カラーセンサのサイズを得る
-  void getColorResolution(int *width, int *height) const
+  void getColorResolution(int* width, int* height) const
   {
     *width = colorWidth;
     *height = colorHeight;
   }
 
   // デプスデータを格納するテクスチャを得る
-  GLuint getDepthTexture() const
+  auto getDepthTexture() const
   {
     return depthTexture;
   }
 
   // カラーデータを格納するテクスチャを得る
-  GLuint getColorTexture() const
+  auto getColorTexture() const
   {
     return colorTexture;
   }
 
   // カメラ座標を格納するテクスチャを得る
-  GLuint getPointTexture() const
+  auto getPointTexture() const
   {
     return pointTexture;
   }
 
-  // 法線ベクトルの計算
+  // 法線ベクトルを計算する
   GLuint getNormal() const;
 
-  // バイラテラルフィルタの分散を設定する
-  void setVariance(float columnVariance, float rowVariance, float valueVariance) const;
+  // メッシュを描画する
+  void draw() const;
 
-  // デプスセンサの姿勢
-  GgMatrix attitude;
-
-  // 目種の描画
-  void draw()
+  // 使用中なら true を返す
+  bool isOpend() const
   {
-    // テクスチャ座標のシェーダストレージバッファオブジェクト
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, UvmapBinding, uvmapBuffer);
-
-    // 法線ベクトルののシェーダストレージバッファオブジェクト
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, NormalBinding, normalBuffer);
-
-    // メッシュを描画する
-    mesh->draw(depthWidth, depthHeight);
+    return message == nullptr;
   }
 
   // デプスデータを取得する

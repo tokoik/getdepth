@@ -266,7 +266,7 @@ Rs400::Rs400()
   extrinsics = dstream.get_extrinsics_to(cstream);
 
   // まだ深度を平滑化するシェーダが作られていなかったら
-  if (smooth.get() == nullptr)
+  if (!smooth)
   {
     // 深度平滑用のシェーダを作成する
     smooth.reset(new Compute("smooth_rs.comp"));
@@ -278,7 +278,7 @@ Rs400::Rs400()
   }
 
   // まだカメラ座標を計算するシェーダが作られていなかったら
-  if (position.get() == nullptr)
+  if (!position)
   {
     // カメラ座標算出用のシェーダを作成する
     position.reset(new Compute("position_rs.comp"));
