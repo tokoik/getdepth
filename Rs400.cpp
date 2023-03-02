@@ -24,7 +24,7 @@
 #define D455 2
 #define L515 3
 
-#define REALSENSE D415
+#define REALSENSE L515
 
 #if REALSENSE == D415
 

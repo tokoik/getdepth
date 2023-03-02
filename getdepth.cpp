@@ -31,13 +31,13 @@
 constexpr int sensorCount{ 10 };
 
 // OpenCV によるビデオキャプチャに使うカメラ
-#define CAPTURE_DEVICE 0
+#define CAPTURE_DEVICE 1
 
 // 頂点位置の生成をシェーダで行うなら 1
 #define USE_SHADER 1
 
 // 透明人間にするなら 1
-#define USE_REFRACTION 0
+#define USE_REFRACTION 1
 
 // レンダリングのカメラパラメータ
 constexpr GLfloat cameraFovy{ 0.7f };                   // 画角
@@ -78,6 +78,9 @@ constexpr float deviation2{ 10.0f };
 // すべてのバイラテラルフィルタの分散を設定するコールバック関数
 static void updateVariance(const Window *window, int key, int scancode, int action, int mods)
 {
+  // 左右の矢印キーでなければ戻る
+  if (key != GLFW_KEY_LEFT && key != GLFW_KEY_RIGHT) return;
+
   // センサのリストを取り出す
   void* const sensors{ window->getUserPointer() };
 
@@ -154,6 +157,8 @@ int GgApp::main(int argc, const char* const* argv)
   if (!camera.isOpened()) throw std::runtime_error("ビデオカメラが見つかりません");
 
   // カメラの初期設定
+  camera.set(cv::CAP_PROP_FRAME_WIDTH, 1920.0);
+  camera.set(cv::CAP_PROP_FRAME_HEIGHT, 1080.0);
   camera.grab();
   const GLsizei capture_env_width{ GLsizei(camera.get(cv::CAP_PROP_FRAME_WIDTH)) };
   const GLsizei capture_env_height{ GLsizei(camera.get(cv::CAP_PROP_FRAME_HEIGHT)) };
@@ -209,7 +214,7 @@ int GgApp::main(int argc, const char* const* argv)
     {
       // キャプチャ映像から画像を切り出す
       cv::Mat frame;
-      camera.retrieve(frame, 3);
+      camera.retrieve(frame);
 
       // 切り出した画像をテクスチャに転送する
       cv::Mat flipped;
