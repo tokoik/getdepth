@@ -3,11 +3,27 @@
 // ワークグループのサイズ
 layout (local_size_x = 16, local_size_y = 20) in;
 
+// フィルタのサイズ
+const ivec2 filterSize = ivec2(5, 5);
+
+// フィルタのオフセット
+const ivec2 filterOffset = filterSize / 2;
+
+// 一度に処理する領域のサイズ
+const ivec2 tileSize = ivec2(gl_WorkGroupSize) - ivec2(0, filterOffset.y * 2);
+
+// 近傍を含む領域のサイズ
+const ivec2 neighborhoodSize = tileSize + filterOffset * 2;
+
+// 処理する領域の近傍を含めたコピー
+shared float pixel[neighborhoodSize.y][neighborhoodSize.x];
+shared float row[neighborhoodSize.y][tileSize.x]; 
+
 // デプスデータを入力するイメージユニット
 layout (r16ui) readonly uniform uimage2D depth;
 
 // イメージのサイズ - 1
-const ivec2 ds = imageSize(depth) - 1;
+const ivec2 depthSize = imageSize(depth) - 1;
 
 // カメラ座標を出力するイメージユニット
 layout (rgba32f) writeonly uniform image2D point;
@@ -17,18 +33,6 @@ layout (std430) writeonly buffer Uvmap
 {
   vec2 uvmap[];
 };
-
-// フィルタのサイズ
-const ivec2 filterSize = ivec2(5, 5);
-
-// フィルタの中心位置
-const ivec2 filterOffset = filterSize / 2;
-
-// 一度に処理する領域のサイズ
-const ivec2 tileSize = ivec2(gl_WorkGroupSize) - ivec2(0, filterOffset.y * 2);
-
-// 近傍を含む領域のサイズ
-const ivec2 neighborhoodSize = tileSize + filterOffset * 2;
 
 // バイラテラルフィルタの距離に対する重みの Shader Storage Buffer Object
 layout (std430) readonly buffer Weight
@@ -51,14 +55,10 @@ uniform vec3 extTranslation;
 // 深度の最大値
 uniform float maxDepth = 5000.0;
 
-// 処理する領域の近傍を含めたコピー
-shared float pixel[neighborhoodSize.y][neighborhoodSize.x];
-shared float row[neighborhoodSize.y][tileSize.x]; 
-
 // インデックスがイメージの領域から外れないようにする
 ivec2 clampLocation(ivec2 xy)
 {
-  return clamp(xy, ivec2(0), ds);
+  return clamp(xy, ivec2(0), depthSize);
 }
 
 // 他のスレッドの共有メモリへのアクセス完了と他のワークグループの処理完了を待つ
@@ -79,8 +79,8 @@ void main(void)
   // 書き込み先のイメージ上の画素位置
   const ivec2 dst_xy = tile_xy * tileSize + thread_xy;
 
-  // 読み込み元のイメージ上の画素位置（上下反転＋
-  const ivec2 src_xy = ivec2(dst_xy.x, ds.y - dst_xy.y + filterOffset.y);
+  // 読み込み元のイメージ上の画素位置（＋上下反転）
+  const ivec2 src_xy = ivec2(dst_xy.x, depthSize.y - dst_xy.y + filterOffset.y);
 
   // スレッドが処理する画素位置
   const uint x = thread_xy.x;
@@ -91,8 +91,10 @@ void main(void)
   {
     if (x + i < neighborhoodSize.x)
     {
-      // 上限を反転した位置から読み込む
+      // 上下を反転した読み出し位置
       const ivec2 read_at = clampLocation(ivec2(src_xy.x + i - filterOffset.x, src_xy.y));
+
+      // 共有メモリに書き込む
       pixel[y][x + i] = float(imageLoad(depth, read_at).r);
     }
   }
@@ -111,18 +113,18 @@ void main(void)
   {
     const float c = pixel[y][x + i];
     if (c == 0.0) continue;
-    const float d = c - base;
-    const float e = exp(-0.5 * d * d / variance) * rowWeight[i];
+    const float b = c - base;
+    const float e = exp(-0.5 * b * b / variance) * rowWeight[i];
     csum += vec2(c * e, e);
   }
 
-  // デプス値を取り出す
-  //row[y][x] = mix(csum.r / csum.g, 0.0, step(0.0, -csum.r));
+  // デプス値の重み付け和の平均を保存する
   row[y][x] = csum.r > 0.0 ? csum.r / csum.g : 0.0;
 
-  // 他のスレッドの共有メモリへのアクセス完了と他のワークグループの処理完了を待つ
+  // 他のスレッドの共有メモリへのアクセス完了と処理完了を待つ
   retirePhase();
 
+  // tile の高さ分の数のスレッドを使って（そのほかのスレッドは終了）
   if (y < tileSize.y)
   {
     // 対象画素の値とその重みのペアを作る
@@ -133,8 +135,8 @@ void main(void)
     {
       const float c = row[y + j][x];
       if (c == 0.0) continue;
-      const float d = c - base;
-      const float e = exp(-0.5 * d * d / variance) * columnWeight[j];
+      const float b = c - base;
+      const float e = exp(-0.5 * b * b / variance) * columnWeight[j];
       csum += vec2(c * e, e);
     }
 
