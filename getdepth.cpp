@@ -1,9 +1,11 @@
-﻿//
+//
 // RGB-D カメラからのデプスマップ取得
 //
 
 // 標準ライブラリ
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 #include <algorithm>
 
 // OpenCV
